@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { todayISO } from "../dates";
-import { courseProgress, selectTimeline } from "../selectors";
+import { addDays, todayISO } from "../dates";
+import { courseProgress, selectTimeline, selectUpcoming } from "../selectors";
 import type { HubState } from "../store/hub";
 
 const today = todayISO();
@@ -58,6 +58,39 @@ describe("selectTimeline", () => {
       meetings: [{ id: "m1", title: "Future", date: "2099-01-01", time: "10:00", durationMin: 30 }],
     });
     expect(selectTimeline(state, today)).toHaveLength(0);
+  });
+});
+
+describe("selectUpcoming", () => {
+  it("collects the next 7 days, excluding today, sorted chronologically", () => {
+    const state = makeState({
+      activities: [
+        { id: "today", title: "Dentist", date: today, time: "10:00", category: "appointment" },
+        { id: "d1", title: "Soccer", date: addDays(today, 1), time: "17:00", category: "activity" },
+        { id: "d5", kidId: "k1", title: "Pediatrician", date: addDays(today, 5), time: "09:30", category: "appointment" },
+        { id: "d9", title: "Too far", date: addDays(today, 9) },
+      ],
+      meetings: [{ id: "m1", title: "Sync", date: addDays(today, 2), time: "11:00", durationMin: 30 }],
+      assignments: [
+        { id: "a1", title: "PSet", dueDate: addDays(today, 3), done: false },
+        { id: "a2", title: "Done", dueDate: addDays(today, 3), done: true },
+      ],
+    });
+
+    const radar = selectUpcoming(state, 7);
+    expect(radar.map((e) => e.id)).toEqual(["d1", "m1", "a1", "d5"]);
+  });
+
+  it("flags appointments and deadlines with badges", () => {
+    const state = makeState({
+      activities: [
+        { id: "appt", title: "Checkup", date: addDays(today, 2), category: "appointment" },
+      ],
+      assignments: [{ id: "due", title: "Essay", dueDate: addDays(today, 2), done: false }],
+    });
+    const radar = selectUpcoming(state, 7);
+    expect(radar.find((e) => e.id === "appt")?.badge).toBe("appt");
+    expect(radar.find((e) => e.id === "due")?.badge).toBe("due");
   });
 });
 

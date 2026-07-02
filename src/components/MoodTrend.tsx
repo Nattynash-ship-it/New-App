@@ -10,8 +10,10 @@ const COL_W = 20; // 14px bar + 6px gap
 const BAR_W = 14;
 const PLOT_H = 64;
 const CHART_W = DAYS * COL_W - 6;
-// Validated against the light surface (chroma, contrast, lightness band).
-const BAR_COLOR = "#178A6B";
+// Signature lime — single series on the dark surface (contrast validated).
+const BAR_COLOR = "#C8F04D";
+const GRID_COLOR = "#28313A";
+const LABEL_COLOR = "#8E99A1";
 
 const MOOD_LABEL: Record<number, string> = {
   1: "Heavy",
@@ -88,7 +90,7 @@ export function MoodTrend() {
         onMouseLeave={() => setActive(null)}
       >
         {/* recessive baseline */}
-        <line x1="0" y1={PLOT_H + 0.5} x2={CHART_W} y2={PLOT_H + 0.5} stroke="#E7E6E0" strokeWidth="1" />
+        <line x1="0" y1={PLOT_H + 0.5} x2={CHART_W} y2={PLOT_H + 0.5} stroke={GRID_COLOR} strokeWidth="1" />
 
         {points.map((p, i) => {
           const x = i * COL_W;
@@ -103,7 +105,7 @@ export function MoodTrend() {
                 />
               ) : (
                 // no check-in that day — faint placeholder at the baseline
-                <circle cx={x + BAR_W / 2} cy={PLOT_H - 3} r="1.5" fill="#1A1D1B" opacity="0.12" />
+                <circle cx={x + BAR_W / 2} cy={PLOT_H - 3} r="1.5" fill="#EDF2EE" opacity="0.18" />
               )}
               {/* full-column hit target for hover */}
               <rect
@@ -126,7 +128,7 @@ export function MoodTrend() {
                   y={PLOT_H + 11}
                   textAnchor={i === 0 ? "start" : i === DAYS - 1 ? "end" : "middle"}
                   fontSize="6.5"
-                  fill="#6B7069"
+                  fill={LABEL_COLOR}
                 >
                   {i === DAYS - 1 ? "Today" : formatShort(p.date)}
                 </text>

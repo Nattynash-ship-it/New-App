@@ -213,8 +213,8 @@ export function seedRoutines(): Routine[] {
 
 export function seedKids(): Kid[] {
   return [
-    { id: "kid_1", name: "Maya", color: "#B07B2E", points: 42 },
-    { id: "kid_2", name: "Eli", color: "#4A5D8A", points: 35 },
+    { id: "kid_1", name: "Maya", color: "#8A5FD6", points: 42 },
+    { id: "kid_2", name: "Eli", color: "#4E74E6", points: 35 },
   ];
 }
 

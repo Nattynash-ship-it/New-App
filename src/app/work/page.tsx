@@ -7,10 +7,10 @@ import { useHub, useHydrated } from "@/core/store/hub";
 import type { ProjectStatus } from "@/core/types";
 
 const STATUS_STYLE: Record<ProjectStatus, string> = {
-  active: "bg-work-soft text-work",
-  waiting: "bg-family-soft text-family",
-  blocked: "bg-fitness-soft text-fitness",
-  done: "bg-accent-soft text-accent-dark",
+  active: "bg-work-soft text-work-bright",
+  waiting: "bg-family-soft text-family-bright",
+  blocked: "bg-fitness-soft text-fitness-bright",
+  done: "bg-accent-soft text-accent",
 };
 
 function MeetingList() {
@@ -38,7 +38,7 @@ function MeetingList() {
               </div>
               <button
                 onClick={() => removeMeeting(m.id)}
-                className="rounded-full px-2 py-1 text-xs text-muted opacity-0 transition-opacity hover:bg-fitness-soft hover:text-fitness group-hover:opacity-100"
+                className="rounded-full px-2 py-1 text-xs text-muted opacity-0 transition-opacity hover:bg-fitness-soft hover:text-fitness-bright group-hover:opacity-100"
                 aria-label={`Remove ${m.title}`}
               >
                 Remove
@@ -122,7 +122,7 @@ function ProjectCard({ projectId }: { projectId: string }) {
 
 export default function WorkPage() {
   const hydrated = useHydrated();
-  const projectIds = useHub((s) => s.projects.map((p) => p.id));
+  const projectIds = useHub((s) => s.projects).map((p) => p.id);
 
   if (!hydrated) return <Skeleton />;
 

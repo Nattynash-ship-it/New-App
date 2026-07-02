@@ -64,7 +64,7 @@ function CheckInCard() {
             onClick={() => setMood(m.value)}
             className={`flex flex-1 flex-col items-center gap-1 rounded-xl border py-2.5 text-lg transition-all ${
               mood === m.value
-                ? "border-accent bg-accent-soft text-accent-dark"
+                ? "border-accent bg-accent-soft text-accent"
                 : "border-line text-muted hover:border-ink/25"
             }`}
             aria-pressed={mood === m.value}

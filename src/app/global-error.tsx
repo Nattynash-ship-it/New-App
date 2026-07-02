@@ -9,10 +9,10 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", background: "#FAFAF7", color: "#1A1D1B" }}>
+      <body style={{ fontFamily: "system-ui, sans-serif", background: "#0B0F13", color: "#EDF2EE" }}>
         <div style={{ maxWidth: 420, margin: "120px auto", padding: 24, textAlign: "center" }}>
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>Something went wrong</h1>
-          <p style={{ marginTop: 12, fontSize: 14, color: "#6B7069" }}>
+          <p style={{ marginTop: 12, fontSize: 14, color: "#8E99A1" }}>
             {error.message || "An unexpected error occurred."}
           </p>
           <button
@@ -22,8 +22,9 @@ export default function GlobalError({
               padding: "10px 22px",
               borderRadius: 999,
               border: "none",
-              background: "#2F6D5E",
-              color: "#fff",
+              background: "#C8F04D",
+              color: "#151B06",
+              fontWeight: 600,
               cursor: "pointer",
             }}
           >

@@ -46,7 +46,7 @@ export function WeekPlanner() {
                 <th
                   key={d}
                   className={`rounded-lg px-1 py-1.5 text-center text-[11px] font-semibold ${
-                    i === 0 ? "bg-meals-soft text-meals" : "text-muted"
+                    i === 0 ? "bg-meals-soft text-meals-bright" : "text-muted"
                   }`}
                   scope="col"
                 >
@@ -108,7 +108,7 @@ export function WeekPlanner() {
                               setDraft("");
                             }}
                             aria-label={`Plan ${slot} for ${formatShort(date)}`}
-                            className="w-full rounded-lg py-1 text-center text-[13px] leading-none text-muted/50 hover:bg-meals-soft hover:text-meals"
+                            className="w-full rounded-lg py-1 text-center text-[13px] leading-none text-muted/50 hover:bg-meals-soft hover:text-meals-bright"
                           >
                             +
                           </button>

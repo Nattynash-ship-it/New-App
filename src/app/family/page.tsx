@@ -27,7 +27,7 @@ function ActivityCalendar() {
               <li key={a.id} className="group flex items-center gap-3 py-2.5">
                 <span
                   className="h-8 w-8 shrink-0 rounded-full text-center text-sm font-semibold leading-8 text-white"
-                  style={{ backgroundColor: kid?.color ?? "#2F6D5E" }}
+                  style={{ backgroundColor: kid?.color ?? "#87992D" }}
                   title={kid?.name ?? "Family"}
                 >
                   {(kid?.name ?? "F").charAt(0)}
@@ -44,7 +44,7 @@ function ActivityCalendar() {
                 </div>
                 <button
                   onClick={() => removeActivity(a.id)}
-                  className="rounded-full px-2 py-1 text-xs text-muted opacity-0 hover:bg-fitness-soft hover:text-fitness group-hover:opacity-100"
+                  className="rounded-full px-2 py-1 text-xs text-muted opacity-0 hover:bg-fitness-soft hover:text-fitness-bright group-hover:opacity-100"
                 >
                   Remove
                 </button>
@@ -92,7 +92,7 @@ function GeneralStore() {
               {k.name.charAt(0)}
             </span>
             {k.name}
-            <span className="font-semibold text-family">{k.points} pts</span>
+            <span className="font-semibold text-family-bright">{k.points} pts</span>
           </button>
         ))}
       </div>
@@ -109,7 +109,7 @@ function GeneralStore() {
                 <span className="text-sm">{c.title}</span>
                 <button
                   onClick={() => completeChore(c.id, activeKid.id)}
-                  className="btn-ghost shrink-0 !px-2.5 !py-1 text-xs !text-family hover:!border-family"
+                  className="btn-ghost shrink-0 !px-2.5 !py-1 text-xs !text-family-bright hover:!border-family"
                 >
                   +{c.points}
                 </button>
@@ -157,7 +157,7 @@ function GeneralStore() {
                   <span>
                     {kid?.name}: {tx.reason}
                   </span>
-                  <span className={tx.delta > 0 ? "text-meals" : "text-fitness"}>
+                  <span className={tx.delta > 0 ? "text-meals-bright" : "text-fitness-bright"}>
                     {tx.delta > 0 ? "+" : ""}
                     {tx.delta}
                   </span>

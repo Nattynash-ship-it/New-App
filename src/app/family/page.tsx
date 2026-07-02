@@ -5,24 +5,77 @@ import { Card, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/componen
 import { formatFriendly, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
 
+const CATEGORY_FILTERS = [
+  { key: "all", label: "Everything" },
+  { key: "appointment", label: "✚ Appointments" },
+  { key: "activity", label: "Activities" },
+  { key: "school", label: "School" },
+] as const;
+
+type FilterKey = (typeof CATEGORY_FILTERS)[number]["key"];
+
+const CATEGORY_CHIP: Record<string, { classes: string; label: string }> = {
+  appointment: { classes: "bg-fitness-soft text-fitness-bright", label: "✚ appointment" },
+  school: { classes: "bg-school-soft text-school-bright", label: "school" },
+};
+
 function ActivityCalendar() {
   const activities = useHub((s) => s.activities);
   const kids = useHub((s) => s.kids);
   const removeActivity = useHub((s) => s.removeActivity);
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const upcoming = [...activities]
     .filter((a) => a.date >= todayISO())
+    .filter((a) => filter === "all" || (a.category ?? "activity") === filter)
     .sort((a, b) => (a.date + (a.time ?? "99")).localeCompare(b.date + (b.time ?? "99")));
+
+  const apptCount = activities.filter(
+    (a) => a.date >= todayISO() && a.category === "appointment",
+  ).length;
 
   return (
     <Card>
-      <SectionTitle>Kids&apos; schedule</SectionTitle>
+      <SectionTitle
+        right={
+          apptCount > 0 ? (
+            <span className="text-xs text-muted">
+              {apptCount} appointment{apptCount === 1 ? "" : "s"} coming up
+            </span>
+          ) : undefined
+        }
+      >
+        Kids&apos; schedule
+      </SectionTitle>
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {CATEGORY_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`chip border transition-colors ${
+              filter === f.key
+                ? "border-accent bg-accent-soft text-accent"
+                : "border-line text-muted hover:border-ink/25"
+            }`}
+            aria-pressed={filter === f.key}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {upcoming.length === 0 ? (
-        <EmptyState>Nothing coming up. Try “Soccer practice for Maya on Tuesday at 5pm”.</EmptyState>
+        <EmptyState>
+          {filter === "appointment"
+            ? "No appointments coming up. Try “Dentist for Maya next Tuesday at 3pm”."
+            : "Nothing coming up. Try “Soccer practice for Maya on Tuesday at 5pm”."}
+        </EmptyState>
       ) : (
         <ul className="divide-y divide-line">
           {upcoming.map((a) => {
             const kid = kids.find((k) => k.id === a.kidId);
+            const chip = a.category ? CATEGORY_CHIP[a.category] : undefined;
             return (
               <li key={a.id} className="group flex items-center gap-3 py-2.5">
                 <span
@@ -35,6 +88,7 @@ function ActivityCalendar() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {a.title}
+                    {chip ? <span className={`chip ml-2 !text-[10px] ${chip.classes}`}>{chip.label}</span> : null}
                     {a.recurring ? <span className="ml-1.5 text-[10px] text-muted">↻ weekly</span> : null}
                   </p>
                   <p className="text-xs text-muted">

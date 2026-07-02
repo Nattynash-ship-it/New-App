@@ -208,6 +208,8 @@ export interface Kid {
   points: number;
 }
 
+export type ActivityCategory = "activity" | "appointment" | "school";
+
 export interface FamilyActivity {
   id: Id;
   kidId?: Id; // undefined = whole family
@@ -215,6 +217,8 @@ export interface FamilyActivity {
   date: ISODate;
   time?: TimeHHMM;
   recurring?: "weekly";
+  /** Doctor/dentist visits get "appointment"; school events get "school". */
+  category?: ActivityCategory;
 }
 
 export interface Chore {
@@ -269,4 +273,19 @@ export interface TimelineEntry {
   title: string;
   subtitle?: string;
   time?: TimeHHMM; // undefined = all-day; sorted last
+  /** Extra emphasis chip, e.g. "appointment" for doctor visits. */
+  badge?: string;
+}
+
+/** A dated entry in the week-ahead radar. */
+export interface RadarEntry extends TimelineEntry {
+  date: ISODate;
+}
+
+/** At-a-glance summary of one life area, shown on the Compass overview. */
+export interface DomainSummary {
+  domain: Domain;
+  headline: string;
+  detail: string;
+  href: string;
 }

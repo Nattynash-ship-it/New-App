@@ -171,7 +171,12 @@ export const useHub = create<HubState>()(
         } else if (kind === "assignment") {
           get().addAssignment({ title, dueDate: date, dueTime: time });
         } else if (kind === "family_activity") {
-          get().addActivity({ title, date, time });
+          const category = /\b(dentist|doctor|pediatric|orthodont|checkup|check-up|appointment|vaccin|physical)\b/i.test(title)
+            ? "appointment"
+            : /\b(school|recital|assembly|conference|field trip)\b/i.test(title)
+              ? "school"
+              : "activity";
+          get().addActivity({ title, date, time, category });
         } else if (kind === "meal") {
           get().planMeal(date, time && time >= "16:00" ? "dinner" : "lunch", title);
         } else {

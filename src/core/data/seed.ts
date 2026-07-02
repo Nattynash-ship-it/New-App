@@ -221,10 +221,12 @@ export function seedKids(): Kid[] {
 export function seedActivities(): FamilyActivity[] {
   const today = todayISO();
   return [
-    { id: id("act"), kidId: "kid_1", title: "Soccer practice", date: addDays(today, 1), time: "17:00", recurring: "weekly" },
-    { id: id("act"), kidId: "kid_2", title: "Swim lesson", date: addDays(today, 2), time: "16:30", recurring: "weekly" },
-    { id: id("act"), title: "Family library trip", date: addDays(today, 4), time: "10:30" },
-    { id: id("act"), kidId: "kid_1", title: "Dentist checkup", date: today, time: "15:45" },
+    { id: id("act"), kidId: "kid_1", title: "Soccer practice", date: addDays(today, 1), time: "17:00", recurring: "weekly", category: "activity" },
+    { id: id("act"), kidId: "kid_2", title: "Swim lesson", date: addDays(today, 2), time: "16:30", recurring: "weekly", category: "activity" },
+    { id: id("act"), title: "Family library trip", date: addDays(today, 4), time: "10:30", category: "activity" },
+    { id: id("act"), kidId: "kid_1", title: "Dentist checkup", date: today, time: "15:45", category: "appointment" },
+    { id: id("act"), kidId: "kid_2", title: "Pediatrician — annual visit", date: addDays(today, 5), time: "09:30", category: "appointment" },
+    { id: id("act"), kidId: "kid_1", title: "School recital", date: addDays(today, 6), time: "18:00", category: "school" },
   ];
 }
 

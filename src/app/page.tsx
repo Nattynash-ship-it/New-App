@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { MoodTrend } from "@/components/MoodTrend";
+import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
+import { WeekRadar } from "@/components/WeekRadar";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
 import { selectTimeline } from "@/core/selectors";
@@ -122,7 +124,14 @@ function Timeline() {
                 <span className={`relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full ${style.dot}`} />
                 <div className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{e.title}</p>
+                    <p className="truncate text-sm font-medium">
+                      {e.title}
+                      {e.badge === "appt" ? (
+                        <span className="chip ml-2 bg-fitness-soft !text-[10px] text-fitness-bright">
+                          ✚ appointment
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-xs text-muted">
                       <span className={style.text}>{style.label}</span>
                       {e.subtitle ? ` · ${e.subtitle}` : ""}
@@ -161,10 +170,22 @@ export default function CompassPage() {
         <h1 className="mt-1 font-display text-3xl tracking-tight">{word}, Natasha</h1>
       </header>
 
+      {/* Whole life at a glance */}
+      <OverviewStrip />
+
       <QuickAdd />
-      <CheckInCard />
-      <Timeline />
-      <MoodTrend />
+
+      {/* Today + the week ahead, side by side */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        <div className="space-y-5 lg:col-span-3">
+          <Timeline />
+          <CheckInCard />
+        </div>
+        <div className="space-y-5 lg:col-span-2">
+          <WeekRadar />
+          <MoodTrend />
+        </div>
+      </div>
     </div>
   );
 }

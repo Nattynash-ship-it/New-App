@@ -119,7 +119,7 @@ function ReverseRecipeEngine() {
       <SectionTitle
         right={
           engine ? (
-            <span className="chip bg-meals-soft text-meals">
+            <span className="chip bg-meals-soft text-meals-bright">
               {engine === "claude" ? "AI-generated" : "On-device"}
             </span>
           ) : undefined
@@ -131,10 +131,10 @@ function ReverseRecipeEngine() {
         Builds a vegan, high-volume / low-calorie meal from the {onHand.length} ingredients you have
         checked off.
       </p>
-      <button className="btn-primary mt-3 !bg-meals hover:!bg-meals/90" onClick={() => void generate()} disabled={busy || onHand.length === 0}>
+      <button className="btn-primary mt-3" onClick={() => void generate()} disabled={busy || onHand.length === 0}>
         {busy ? "Cooking up ideas…" : "Generate a meal from my pantry"}
       </button>
-      {error ? <p className="mt-2 text-xs text-fitness">{error}</p> : null}
+      {error ? <p className="mt-2 text-xs text-fitness-bright">{error}</p> : null}
 
       {recipe ? (
         <div className="mt-4 rounded-xl border border-line bg-paper p-4">

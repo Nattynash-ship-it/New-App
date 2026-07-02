@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 import type { Domain } from "@/core/types";
 
 export const DOMAIN_STYLES: Record<Domain, { text: string; soft: string; dot: string; label: string }> = {
-  compass: { text: "text-accent-dark", soft: "bg-accent-soft", dot: "bg-accent", label: "General" },
-  work: { text: "text-work", soft: "bg-work-soft", dot: "bg-work", label: "Work" },
-  school: { text: "text-school", soft: "bg-school-soft", dot: "bg-school", label: "School" },
-  meals: { text: "text-meals", soft: "bg-meals-soft", dot: "bg-meals", label: "Meals" },
-  fitness: { text: "text-fitness", soft: "bg-fitness-soft", dot: "bg-fitness", label: "Fitness" },
-  family: { text: "text-family", soft: "bg-family-soft", dot: "bg-family", label: "Family" },
+  compass: { text: "text-compass-bright", soft: "bg-compass-soft", dot: "bg-compass", label: "General" },
+  work: { text: "text-work-bright", soft: "bg-work-soft", dot: "bg-work", label: "Work" },
+  school: { text: "text-school-bright", soft: "bg-school-soft", dot: "bg-school", label: "School" },
+  meals: { text: "text-meals-bright", soft: "bg-meals-soft", dot: "bg-meals", label: "Meals" },
+  fitness: { text: "text-fitness-bright", soft: "bg-fitness-soft", dot: "bg-fitness", label: "Fitness" },
+  family: { text: "text-family-bright", soft: "bg-family-soft", dot: "bg-family", label: "Family" },
 };
 
 export function PageHeader({
@@ -86,7 +86,7 @@ export function Checkbox({
     >
       <span
         className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-          checked ? "border-accent bg-accent text-white" : "border-ink/25 bg-surface group-hover:border-accent"
+          checked ? "border-accent bg-accent text-accent-ink" : "border-ink/25 bg-surface group-hover:border-accent"
         }`}
       >
         {checked ? (

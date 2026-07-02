@@ -69,7 +69,7 @@ function CourseCard({ courseId }: { courseId: string }) {
             {course.targetDate ? ` · target ${formatShort(course.targetDate)}` : ""}
           </p>
         </div>
-        <span className="font-display text-xl text-school">{pct}%</span>
+        <span className="font-display text-xl text-school-bright">{pct}%</span>
       </div>
       <ProgressBar pct={pct} colorClass="bg-school" />
       <p className="mt-1.5 text-xs text-muted">
@@ -117,7 +117,7 @@ function CourseCard({ courseId }: { courseId: string }) {
 
 export default function SchoolPage() {
   const hydrated = useHydrated();
-  const courseIds = useHub((s) => s.courses.map((c) => c.id));
+  const courseIds = useHub((s) => s.courses).map((c) => c.id);
 
   if (!hydrated) return <Skeleton />;
 

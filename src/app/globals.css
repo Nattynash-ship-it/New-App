@@ -6,12 +6,16 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    color-scheme: dark;
   }
   body {
     @apply bg-paper text-ink font-body;
+    /* faint lime aurora at the top edge — depth without noise */
+    background-image: radial-gradient(1100px 480px at 75% -12%, rgba(200, 240, 77, 0.07), transparent 60%);
+    background-attachment: fixed;
   }
   ::selection {
-    background: #d7e7e1;
+    background: rgba(200, 240, 77, 0.35);
   }
 }
 
@@ -26,7 +30,7 @@
     @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-accent text-white hover:bg-accent-dark active:scale-[0.98];
+    @apply btn bg-accent text-accent-ink font-semibold hover:bg-accent-dark active:scale-[0.98];
   }
   .btn-ghost {
     @apply btn border border-line bg-surface text-ink hover:border-ink/30 active:scale-[0.98];

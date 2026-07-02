@@ -62,7 +62,7 @@ function RoutineCard({ routineId }: { routineId: string }) {
       </ul>
 
       {loggedToday || justLogged ? (
-        <p className="mt-3 rounded-xl bg-fitness-soft px-3 py-2 text-xs text-fitness">
+        <p className="mt-3 rounded-xl bg-fitness-soft px-3 py-2 text-xs text-fitness-bright">
           Logged for today — nice work.
         </p>
       ) : (
@@ -74,7 +74,7 @@ function RoutineCard({ routineId }: { routineId: string }) {
                 onClick={() => setEffort(e.value)}
                 className={`flex-1 rounded-lg border py-1.5 text-[11px] font-medium transition-colors ${
                   effort === e.value
-                    ? "border-fitness bg-fitness-soft text-fitness"
+                    ? "border-fitness bg-fitness-soft text-fitness-bright"
                     : "border-line text-muted hover:border-ink/25"
                 }`}
                 aria-pressed={effort === e.value}
@@ -92,7 +92,7 @@ function RoutineCard({ routineId }: { routineId: string }) {
               maxLength={120}
             />
             <button
-              className="btn-primary shrink-0 !bg-fitness !px-3 !py-1.5 text-xs hover:!bg-fitness/90"
+              className="btn-primary shrink-0 !px-3 !py-1.5 text-xs"
               disabled={effort === null}
               onClick={() => {
                 if (effort !== null) {
@@ -145,7 +145,7 @@ function History() {
 
 export default function FitnessPage() {
   const hydrated = useHydrated();
-  const routineIds = useHub((s) => s.routines.map((r) => r.id));
+  const routineIds = useHub((s) => s.routines).map((r) => r.id);
 
   if (!hydrated) return <Skeleton />;
 

@@ -36,7 +36,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
                   active
-                    ? "bg-accent-soft text-accent-dark font-medium"
+                    ? "bg-accent-soft text-accent font-medium"
                     : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                 }`}
               >
@@ -67,7 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-[10px] ${
-                  active ? "text-accent-dark font-semibold" : "text-muted"
+                  active ? "text-accent font-semibold" : "text-muted"
                 }`}
               >
                 <span className="text-lg leading-none">{item.icon}</span>

@@ -70,11 +70,14 @@ export function Checkbox({
   onChange,
   label,
   sub,
+  strike = true,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
   sub?: string;
+  /** Strike through when checked (tasks). Disable for state toggles like "on hand". */
+  strike?: boolean;
 }) {
   return (
     <button
@@ -93,7 +96,9 @@ export function Checkbox({
         ) : null}
       </span>
       <span className="min-w-0">
-        <span className={`block text-sm ${checked ? "text-muted line-through" : ""}`}>{label}</span>
+        <span className={`block text-sm ${checked && strike ? "text-muted line-through" : ""}`}>
+          {label}
+        </span>
         {sub ? <span className="block text-xs text-muted">{sub}</span> : null}
       </span>
     </button>

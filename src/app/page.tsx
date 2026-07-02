@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MoodTrend } from "@/components/MoodTrend";
 import { QuickAdd } from "@/components/QuickAdd";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
@@ -95,26 +96,6 @@ function CheckInCard() {
   );
 }
 
-function MoodStrip() {
-  const checkIns = useHub((s) => s.checkIns);
-  const recent = [...checkIns].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 7);
-  if (recent.length === 0) return null;
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted">
-      <span>Last check-ins:</span>
-      {recent.map((c) => (
-        <span
-          key={c.id}
-          title={`${c.date} ${c.period}`}
-          className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-[10px] text-accent-dark"
-        >
-          {MOODS.find((m) => m.value === c.mood)?.face}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function Timeline() {
   const state = useHub();
   const entries = selectTimeline(state, todayISO());
@@ -178,14 +159,12 @@ export default function CompassPage() {
           })}
         </p>
         <h1 className="mt-1 font-display text-3xl tracking-tight">{word}, Natasha</h1>
-        <div className="mt-2">
-          <MoodStrip />
-        </div>
       </header>
 
       <QuickAdd />
       <CheckInCard />
       <Timeline />
+      <MoodTrend />
     </div>
   );
 }

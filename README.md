@@ -9,6 +9,7 @@ one place — built to **reduce cognitive load**, not add another inbox.
 npm install
 cp .env.example .env.local   # optional — app works with zero config
 npm run dev                  # http://localhost:3000
+npm test                     # unit tests (NLP parser, dates, selectors, recipe engine)
 ```
 
 Everything works out of the box with no accounts and no API keys: state
@@ -20,10 +21,10 @@ Engine and natural-language parsing to Claude.
 
 | Route | Module | What it does |
 | --- | --- | --- |
-| `/` | **Daily Compass** | Morning/evening mood check-in (~20s), natural-language quick add, and a single aggregated timeline of today's meetings, deadlines, family activities, and meals. |
+| `/` | **Daily Compass** | Morning/evening mood check-in (~20s), natural-language quick add, a single aggregated timeline of today's meetings, deadlines, family activities, and meals, and a 14-day mood trend chart. |
 | `/work` | **Work Hub** | Professional projects with document/correspondence tracking refs, task lists, and the meeting schedule. |
 | `/school` | **School Hub** | Self-paced CS degree tracker. Courses → units → topics (e.g. the 7-unit Discrete Math course with Graph Theory), plus assignment deadlines. |
-| `/meals` | **Nutrition & Grocery** | Vegan, high-volume/low-calorie defaults. Check off pantry ingredients → the Reverse Recipe Engine generates a meal from exactly those items. Grocery lists generate from planned meals + pantry gaps and route to delivery-service webhooks (Whole Foods / Aldi placeholders). |
+| `/meals` | **Nutrition & Grocery** | Vegan, high-volume/low-calorie defaults. Check off pantry ingredients → the Reverse Recipe Engine generates a meal from exactly those items. A 7-day × 3-slot week planner grid, plus grocery lists generated from planned meals + pantry gaps, routed to delivery-service webhooks (Whole Foods / Aldi placeholders). |
 | `/fitness` | **Fitness Log** | Pre-configured Lagree Pilates, glute training (Russian deadlifts et al.), and active recovery routines. One-tap effort logging. |
 | `/family` | **Family & General Store** | Kid-tagged activity calendar and a gamified points economy — chores earn points, the General Store spends them, with a full ledger. |
 

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
-import { formatFriendly, nowISO, todayISO } from "@/core/dates";
+import { WeekPlanner } from "@/components/WeekPlanner";
+import { nowISO, todayISO } from "@/core/dates";
 import { newId, useHub, useHydrated } from "@/core/store/hub";
 import type { DeliveryService, PantryCategory, Recipe } from "@/core/types";
 
@@ -49,6 +50,7 @@ function Pantry() {
                   checked={item.onHand}
                   onChange={() => togglePantryItem(item.id)}
                   label={item.name}
+                  strike={false}
                 />
               ))}
             </div>
@@ -177,17 +179,11 @@ function ReverseRecipeEngine() {
   );
 }
 
-function WeekPlanAndGroceries() {
-  const plannedMeals = useHub((s) => s.plannedMeals);
-  const removePlannedMeal = useHub((s) => s.removePlannedMeal);
+function Groceries() {
   const groceryList = useHub((s) => s.groceryList);
   const generateGroceryList = useHub((s) => s.generateGroceryList);
   const toggleGroceryItem = useHub((s) => s.toggleGroceryItem);
   const [sendState, setSendState] = useState<string>("");
-
-  const upcoming = [...plannedMeals]
-    .filter((m) => m.date >= todayISO())
-    .sort((a, b) => a.date.localeCompare(b.date) || a.slot.localeCompare(b.slot));
 
   async function sendTo(service: DeliveryService) {
     setSendState("sending");
@@ -209,34 +205,7 @@ function WeekPlanAndGroceries() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card>
-        <SectionTitle>This week&apos;s meals</SectionTitle>
-        {upcoming.length === 0 ? (
-          <EmptyState>Nothing planned yet — generate a recipe or use quick add.</EmptyState>
-        ) : (
-          <ul className="divide-y divide-line">
-            {upcoming.map((m) => (
-              <li key={m.id} className="group flex items-center justify-between gap-3 py-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{m.title}</p>
-                  <p className="text-xs text-muted">
-                    {formatFriendly(m.date)} · {m.slot}
-                  </p>
-                </div>
-                <button
-                  onClick={() => removePlannedMeal(m.id)}
-                  className="rounded-full px-2 py-1 text-xs text-muted opacity-0 hover:bg-fitness-soft hover:text-fitness group-hover:opacity-100"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <Card>
+    <Card>
         <SectionTitle
           right={
             <button className="btn-ghost !px-3 !py-1 text-xs" onClick={generateGroceryList}>
@@ -276,8 +245,7 @@ function WeekPlanAndGroceries() {
             ) : null}
           </>
         )}
-      </Card>
-    </div>
+    </Card>
   );
 }
 
@@ -293,7 +261,8 @@ export default function MealsPage() {
         subtitle="Vegan, high-volume defaults. Check what you have — the engine does the rest."
       />
       <ReverseRecipeEngine />
-      <WeekPlanAndGroceries />
+      <WeekPlanner />
+      <Groceries />
       <Pantry />
     </div>
   );

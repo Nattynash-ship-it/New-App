@@ -11,7 +11,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { nowISO, todayISO } from "../dates";
+import { addDays, nowISO, todayISO } from "../dates";
 import {
   seedActivities,
   seedAssignments,
@@ -23,6 +23,7 @@ import {
   seedPlannedMeals,
   seedRewards,
   seedRoutines,
+  seedStudyBlocks,
   seedWorkProjects,
 } from "../data/seed";
 import type {
@@ -31,7 +32,10 @@ import type {
   CheckInPeriod,
   Chore,
   Course,
+  DegreePlan,
+  DeliveryService,
   FamilyActivity,
+  FitnessGoal,
   GroceryItem,
   Kid,
   MealSlot,
@@ -46,6 +50,7 @@ import type {
   Routine,
   ScheduledEvent,
   StoreReward,
+  StudyBlock,
   WorkoutLog,
   WorkProject,
 } from "../types";
@@ -68,6 +73,8 @@ export interface HubState {
   // School
   courses: Course[];
   assignments: Assignment[];
+  studyBlocks: StudyBlock[];
+  degreePlan: DegreePlan;
   // Meals
   pantry: PantryItem[];
   recipes: Recipe[];
@@ -76,6 +83,12 @@ export interface HubState {
   // Fitness
   routines: Routine[];
   workoutLogs: WorkoutLog[];
+  fitnessGoals: FitnessGoal[];
+  weeklySessionTarget: number;
+  // Meals
+  preferredStore: DeliveryService;
+  // Work planning
+  focus: { date: string; taskIds: string[] };
   // Family
   kids: Kid[];
   activities: FamilyActivity[];
@@ -93,11 +106,20 @@ export interface HubState {
   addWorkTask: (projectId: string, title: string) => void;
   addMeeting: (m: Omit<Meeting, "id">) => void;
   removeMeeting: (id: string) => void;
+  addMilestone: (projectId: string, title: string, targetDate?: string) => void;
+  toggleMilestone: (projectId: string, milestoneId: string) => void;
+  /** Sunsama-style daily ritual: pick up to 3 tasks to focus on today. */
+  toggleFocusTask: (taskId: string) => void;
 
   // --- School actions ---
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleAssignment: (id: string) => void;
   addAssignment: (a: Omit<Assignment, "id" | "done">) => void;
+  addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
+  removeStudyBlock: (id: string) => void;
+  updateDegreePlan: (patch: Partial<DegreePlan>) => void;
+  /** Spaced repetition: stamp a completed topic as freshly reviewed. */
+  reviewTopic: (courseId: string, unitId: string, topicId: string) => void;
 
   // --- Meals actions ---
   togglePantryItem: (id: string) => void;
@@ -111,6 +133,11 @@ export interface HubState {
 
   // --- Fitness actions ---
   logWorkout: (routineId: string, effort: WorkoutLog["effort"], note: string) => void;
+  setFitnessGoals: (goals: FitnessGoal[]) => void;
+  setWeeklySessionTarget: (n: number) => void;
+
+  // --- Meals settings ---
+  setPreferredStore: (s: DeliveryService) => void;
 
   // --- Family actions ---
   addActivity: (a: Omit<FamilyActivity, "id">) => void;
@@ -129,12 +156,23 @@ function initialState() {
     meetings: seedMeetings(),
     courses,
     assignments: seedAssignments(courses),
+    studyBlocks: seedStudyBlocks(courses),
+    degreePlan: {
+      programName: "B.S. Computer Science",
+      totalCredits: 120,
+      completedCredits: 58,
+      targetGraduation: addDays(todayISO(), 700),
+    } as DegreePlan,
     pantry: seedPantry(),
     recipes: [] as Recipe[],
     plannedMeals: seedPlannedMeals(),
     groceryList: [] as GroceryItem[],
     routines: seedRoutines(),
     workoutLogs: [] as WorkoutLog[],
+    fitnessGoals: ["sculpt", "strength"] as FitnessGoal[],
+    weeklySessionTarget: 4,
+    preferredStore: "whole_foods" as DeliveryService,
+    focus: { date: todayISO(), taskIds: [] as string[] },
     kids: seedKids(),
     activities: seedActivities(),
     chores: seedChores(),
@@ -219,6 +257,44 @@ export const useHub = create<HubState>()(
         })),
       addMeeting: (m) => set((s) => ({ meetings: [...s.meetings, { ...m, id: newId("mtg") }] })),
       removeMeeting: (id) => set((s) => ({ meetings: s.meetings.filter((m) => m.id !== id) })),
+      addMilestone: (projectId, title, targetDate) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id !== projectId
+              ? p
+              : {
+                  ...p,
+                  milestones: [
+                    ...p.milestones,
+                    { id: newId("ms"), title, targetDate, done: false },
+                  ],
+                },
+          ),
+        })),
+      toggleMilestone: (projectId, milestoneId) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id !== projectId
+              ? p
+              : {
+                  ...p,
+                  milestones: p.milestones.map((m) =>
+                    m.id === milestoneId ? { ...m, done: !m.done } : m,
+                  ),
+                },
+          ),
+        })),
+      toggleFocusTask: (taskId) =>
+        set((s) => {
+          const today = todayISO();
+          const current = s.focus.date === today ? s.focus.taskIds : [];
+          const next = current.includes(taskId)
+            ? current.filter((id) => id !== taskId)
+            : current.length >= 3
+              ? current
+              : [...current, taskId];
+          return { focus: { date: today, taskIds: next } };
+        }),
 
       // --- School ---
       toggleTopic: (courseId, unitId, topicId) =>
@@ -253,6 +329,31 @@ export const useHub = create<HubState>()(
         })),
       addAssignment: (a) =>
         set((s) => ({ assignments: [...s.assignments, { ...a, id: newId("asg"), done: false }] })),
+      addStudyBlock: (b) =>
+        set((s) => ({ studyBlocks: [...s.studyBlocks, { ...b, id: newId("sb") }] })),
+      removeStudyBlock: (id) =>
+        set((s) => ({ studyBlocks: s.studyBlocks.filter((b) => b.id !== id) })),
+      updateDegreePlan: (patch) => set((s) => ({ degreePlan: { ...s.degreePlan, ...patch } })),
+      reviewTopic: (courseId, unitId, topicId) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId
+              ? c
+              : {
+                  ...c,
+                  units: c.units.map((u) =>
+                    u.id !== unitId
+                      ? u
+                      : {
+                          ...u,
+                          topics: u.topics.map((t) =>
+                            t.id === topicId ? { ...t, lastReviewedAt: nowISO() } : t,
+                          ),
+                        },
+                  ),
+                },
+          ),
+        })),
 
       // --- Meals ---
       togglePantryItem: (id) =>
@@ -326,6 +427,9 @@ export const useHub = create<HubState>()(
             ...s.workoutLogs,
           ],
         })),
+      setFitnessGoals: (goals) => set({ fitnessGoals: goals }),
+      setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
+      setPreferredStore: (preferredStore) => set({ preferredStore }),
 
       // --- Family ---
       addActivity: (a) => set((s) => ({ activities: [...s.activities, { ...a, id: newId("act") }] })),

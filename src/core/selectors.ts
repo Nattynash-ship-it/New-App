@@ -1,6 +1,7 @@
-import { addDays, daysUntil, formatTime, todayISO } from "./dates";
+import { addDays, daysUntil, formatTime, fromISODate, todayISO } from "./dates";
+import { RECIPE_LIBRARY, STAPLES, type LibraryRecipe } from "./data/recipeLibrary";
 import type { HubState } from "./store/hub";
-import type { DomainSummary, ISODate, RadarEntry, TimelineEntry } from "./types";
+import type { CourseTopic, DomainSummary, ISODate, RadarEntry, TimelineEntry } from "./types";
 
 /**
  * Smart aggregation for the Daily Compass: merges meetings, academic
@@ -55,6 +56,19 @@ export function selectTimeline(s: HubState, date: ISODate): TimelineEntry[] {
 
   for (const ev of s.events.filter((e) => e.date === date)) {
     entries.push({ id: ev.id, domain: ev.domain, title: ev.title, time: ev.time });
+  }
+
+  // Recurring study blocks land on their weekday
+  const weekday = fromISODate(date).getDay();
+  for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {
+    const course = s.courses.find((c) => c.id === block.courseId);
+    entries.push({
+      id: block.id,
+      domain: "school",
+      title: `Study · ${course?.name ?? "Focus session"}`,
+      subtitle: `${block.durationMin} min block`,
+      time: block.time,
+    });
   }
 
   return entries.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
@@ -217,4 +231,147 @@ export function courseProgress(course: { units: { topics: { completed: boolean }
     }
   }
   return { done, total, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
+}
+
+// ---------------------------------------------------------------------------
+// School: graduation tracker + spaced-repetition review queue
+// ---------------------------------------------------------------------------
+
+export interface GraduationStats {
+  programName: string;
+  completed: number;
+  inProgress: number;
+  total: number;
+  pct: number;
+  targetGraduation?: ISODate;
+}
+
+export function graduationStats(s: HubState): GraduationStats {
+  const { programName, totalCredits, completedCredits, targetGraduation } = s.degreePlan;
+  const inProgress = s.courses.reduce((n, c) => n + c.credits, 0);
+  return {
+    programName,
+    completed: completedCredits,
+    inProgress,
+    total: totalCredits,
+    pct: totalCredits === 0 ? 0 : Math.round((completedCredits / totalCredits) * 100),
+    targetGraduation,
+  };
+}
+
+export interface ReviewItem {
+  courseId: string;
+  unitId: string;
+  topicId: string;
+  topicName: string;
+  courseCode: string;
+  daysSince: number;
+}
+
+/**
+ * Spaced-repetition queue: completed topics come due for a quick review at
+ * expanding intervals (3/7/14/30 days since last touch). Evidence-backed
+ * active recall, kept deliberately lightweight.
+ */
+export function selectReviewQueue(s: HubState, limit = 5): ReviewItem[] {
+  const now = Date.now();
+  const items: ReviewItem[] = [];
+  for (const course of s.courses) {
+    for (const unit of course.units) {
+      for (const topic of unit.topics) {
+        if (!topic.completed) continue;
+        const last = topic.lastReviewedAt ?? topic.completedAt;
+        if (!last) continue;
+        const daysSince = Math.floor((now - new Date(last).getTime()) / 86_400_000);
+        if (daysSince >= 3 && daysSince <= 60) {
+          items.push({
+            courseId: course.id,
+            unitId: unit.id,
+            topicId: topic.id,
+            topicName: topic.name,
+            courseCode: course.code,
+            daysSince,
+          });
+        }
+      }
+    }
+  }
+  return items.sort((a, b) => b.daysSince - a.daysSince).slice(0, limit);
+}
+
+export function topicIsReviewable(t: CourseTopic): boolean {
+  return t.completed && Boolean(t.completedAt ?? t.lastReviewedAt);
+}
+
+// ---------------------------------------------------------------------------
+// Fitness: weekly target + streak
+// ---------------------------------------------------------------------------
+
+export interface FitnessWeek {
+  sessionsThisWeek: number;
+  target: number;
+  /** Consecutive prior weeks (before this one) that hit the target. */
+  weekStreak: number;
+}
+
+function startOfWeek(date: ISODate): ISODate {
+  const d = fromISODate(date);
+  const diff = (d.getDay() + 6) % 7; // Monday-based
+  return addDays(date, -diff);
+}
+
+export function fitnessWeek(s: HubState): FitnessWeek {
+  const target = s.weeklySessionTarget;
+  const thisWeekStart = startOfWeek(todayISO());
+  const countWeek = (weekStart: ISODate) => {
+    const weekEnd = addDays(weekStart, 6);
+    return s.workoutLogs.filter((l) => l.date >= weekStart && l.date <= weekEnd).length;
+  };
+
+  let weekStreak = 0;
+  for (let i = 1; i <= 12; i++) {
+    if (countWeek(addDays(thisWeekStart, -7 * i)) >= target) weekStreak += 1;
+    else break;
+  }
+
+  return { sessionsThisWeek: countWeek(thisWeekStart), target, weekStreak };
+}
+
+// ---------------------------------------------------------------------------
+// Meals: SuperCook-style "cook with what you have"
+// ---------------------------------------------------------------------------
+
+export interface RecipeMatch {
+  recipe: LibraryRecipe;
+  missing: string[];
+  ready: boolean;
+}
+
+function normalize(name: string): string {
+  return name.toLowerCase().trim().replace(/s$/, "");
+}
+
+/**
+ * Matches the built-in recipe library against what's actually available:
+ * pantry items marked on-hand plus everything on the grocery list (it's
+ * incoming). Returns ready-now first, then near-misses (≤2 missing).
+ */
+export function matchRecipes(s: HubState): RecipeMatch[] {
+  const available = new Set<string>([
+    ...STAPLES.map(normalize),
+    ...s.pantry.filter((p) => p.onHand).map((p) => normalize(p.name)),
+    ...s.groceryList.map((g) => normalize(g.name)),
+  ]);
+
+  const results: RecipeMatch[] = [];
+  for (const recipe of RECIPE_LIBRARY) {
+    const missing = recipe.ingredients.filter((ing) => !available.has(normalize(ing)));
+    if (missing.length <= 2) {
+      results.push({ recipe, missing, ready: missing.length === 0 });
+    }
+  }
+
+  return results.sort(
+    (a, b) => a.missing.length - b.missing.length || a.recipe.calories - b.recipe.calories,
+  );
 }

@@ -10,10 +10,11 @@ const COL_W = 20; // 14px bar + 6px gap
 const BAR_W = 14;
 const PLOT_H = 64;
 const CHART_W = DAYS * COL_W - 6;
-// Signature lime — single series on the dark surface (contrast validated).
-const BAR_COLOR = "#C8F04D";
-const GRID_COLOR = "#28313A";
-const LABEL_COLOR = "#8E99A1";
+// Theme-aware chart colors via CSS variables (contrast validated per theme).
+const BAR_COLOR = "rgb(var(--accent))";
+const GRID_COLOR = "var(--line)";
+const LABEL_COLOR = "rgb(var(--muted))";
+const DOT_COLOR = "rgb(var(--ink))";
 
 const MOOD_LABEL: Record<number, string> = {
   1: "Heavy",
@@ -90,7 +91,7 @@ export function MoodTrend() {
         onMouseLeave={() => setActive(null)}
       >
         {/* recessive baseline */}
-        <line x1="0" y1={PLOT_H + 0.5} x2={CHART_W} y2={PLOT_H + 0.5} stroke={GRID_COLOR} strokeWidth="1" />
+        <line x1="0" y1={PLOT_H + 0.5} x2={CHART_W} y2={PLOT_H + 0.5} style={{ stroke: GRID_COLOR }} strokeWidth="1" />
 
         {points.map((p, i) => {
           const x = i * COL_W;
@@ -100,12 +101,12 @@ export function MoodTrend() {
               {p.mood !== null ? (
                 <path
                   d={barPath(x, Math.max(6, (p.mood / 5) * PLOT_H))}
-                  fill={BAR_COLOR}
+                  style={{ fill: BAR_COLOR }}
                   opacity={active === null || isActive ? 1 : 0.45}
                 />
               ) : (
                 // no check-in that day — faint placeholder at the baseline
-                <circle cx={x + BAR_W / 2} cy={PLOT_H - 3} r="1.5" fill="#EDF2EE" opacity="0.18" />
+                <circle cx={x + BAR_W / 2} cy={PLOT_H - 3} r="1.5" style={{ fill: DOT_COLOR }} opacity="0.18" />
               )}
               {/* full-column hit target for hover */}
               <rect
@@ -128,7 +129,7 @@ export function MoodTrend() {
                   y={PLOT_H + 11}
                   textAnchor={i === 0 ? "start" : i === DAYS - 1 ? "end" : "middle"}
                   fontSize="6.5"
-                  fill={LABEL_COLOR}
+                  style={{ fill: LABEL_COLOR }}
                 >
                   {i === DAYS - 1 ? "Today" : formatShort(p.date)}
                 </text>

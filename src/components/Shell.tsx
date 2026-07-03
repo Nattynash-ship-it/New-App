@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 const NAV = [
   { href: "/", label: "Compass", icon: "◈" },
@@ -46,13 +47,21 @@ export function Shell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <p className="mt-auto px-3 text-[11px] leading-relaxed text-muted/70">
-          Designed to lower cognitive load — not add to it.
-        </p>
+        <div className="mt-auto space-y-3 px-3">
+          <ThemeSwitcher />
+          <p className="text-[11px] leading-relaxed text-muted/70">
+            Designed to lower cognitive load — not add to it.
+          </p>
+        </div>
       </aside>
 
       {/* Content */}
       <main className="flex-1 pb-24 md:pb-12">
+        {/* Mobile top bar: wordmark + theme switcher */}
+        <div className="flex items-center justify-between border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur md:hidden">
+          <span className="font-display text-base tracking-tight">Compass</span>
+          <ThemeSwitcher compact />
+        </div>
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 md:px-8 md:pt-10">{children}</div>
       </main>
 

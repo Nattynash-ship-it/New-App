@@ -18,6 +18,7 @@ import type {
   PlannedMeal,
   Routine,
   StoreReward,
+  StudyBlock,
   WorkProject,
 } from "../types";
 
@@ -33,6 +34,11 @@ export function seedWorkProjects(): WorkProject[] {
       status: "active",
       trackingRefs: ["DOC-2026-0142", "DOC-2026-0187"],
       notes: "Migrating legacy records into the new tracking system.",
+      milestones: [
+        { id: id("ms"), title: "Legacy audit complete", targetDate: addDays(todayISO(), 10), done: true },
+        { id: id("ms"), title: "Batch migration finished", targetDate: addDays(todayISO(), 24), done: false },
+        { id: id("ms"), title: "New retention policy live", targetDate: addDays(todayISO(), 45), done: false },
+      ],
       tasks: [
         { id: id("task"), title: "Audit Q2 intake log", done: true },
         { id: id("task"), title: "Reconcile missing scans (batch 14)", done: false },
@@ -46,6 +52,11 @@ export function seedWorkProjects(): WorkProject[] {
       status: "waiting",
       trackingRefs: ["INTL-88-A"],
       notes: "Awaiting counterpart response on memo v3.",
+      milestones: [
+        { id: id("ms"), title: "Memo v3 delivered", done: true },
+        { id: id("ms"), title: "Counterpart response received", targetDate: addDays(todayISO(), 14), done: false },
+        { id: id("ms"), title: "Joint briefing scheduled", targetDate: addDays(todayISO(), 30), done: false },
+      ],
       tasks: [
         { id: id("task"), title: "Send memo v3 to liaison office", done: true },
         { id: id("task"), title: "Prepare briefing notes for follow-up", done: false, dueDate: addDays(todayISO(), 9) },
@@ -57,9 +68,33 @@ export function seedWorkProjects(): WorkProject[] {
 export function seedMeetings(): Meeting[] {
   const today = todayISO();
   return [
-    { id: id("mtg"), title: "Policy review sync", date: today, time: "10:00", durationMin: 30 },
+    {
+      id: id("mtg"),
+      title: "Policy review sync",
+      date: today,
+      time: "10:00",
+      durationMin: 30,
+      link: "https://zoom.us/j/000000000",
+      agenda: "Memo v3 feedback · next steps with liaison office",
+    },
     { id: id("mtg"), title: "Records team standup", date: today, time: "14:30", durationMin: 15 },
-    { id: id("mtg"), title: "Liaison office follow-up", date: addDays(today, 2), time: "11:00", durationMin: 45 },
+    {
+      id: id("mtg"),
+      title: "Liaison office follow-up",
+      date: addDays(today, 2),
+      time: "11:00",
+      durationMin: 45,
+      link: "https://meet.google.com/xxx-xxxx-xxx",
+    },
+  ];
+}
+
+export function seedStudyBlocks(courses: Course[]): StudyBlock[] {
+  const [discrete, dsa] = courses;
+  return [
+    { id: id("sb"), courseId: discrete?.id, dayOfWeek: 1, time: "20:00", durationMin: 60 },
+    { id: id("sb"), courseId: discrete?.id, dayOfWeek: 3, time: "20:00", durationMin: 60 },
+    { id: id("sb"), courseId: dsa?.id, dayOfWeek: 6, time: "09:00", durationMin: 90 },
   ];
 }
 
@@ -73,8 +108,10 @@ const discreteMathTopics = [
   ["Discrete Probability", "Sample Spaces", "Conditional Probability", "Expected Value"],
 ] as const;
 
+const daysAgoISO = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+
 export function seedCourses(): Course[] {
-  let done = 11; // partially through the course
+  let done = 11; // partially through the course; older topics come due for review
   return [
     {
       id: id("course"),
@@ -85,11 +122,16 @@ export function seedCourses(): Course[] {
       units: discreteMathTopics.map(([unitName, ...topics], i) => ({
         id: id("unit"),
         name: `Unit ${i + 1} · ${unitName}`,
-        topics: topics.map((t) => ({
-          id: id("topic"),
-          name: t,
-          completed: done-- > 0,
-        })),
+        topics: topics.map((t) => {
+          const isDone = done-- > 0;
+          return {
+            id: id("topic"),
+            name: t,
+            completed: isDone,
+            // stagger ages so the spaced-review queue has real content
+            completedAt: isDone ? daysAgoISO(4 + done * 2) : undefined,
+          };
+        }),
       })),
     },
     {
@@ -103,8 +145,8 @@ export function seedCourses(): Course[] {
           id: id("unit"),
           name: "Unit 1 · Foundations",
           topics: [
-            { id: id("topic"), name: "Asymptotic Analysis", completed: true },
-            { id: id("topic"), name: "Arrays & Linked Lists", completed: true },
+            { id: id("topic"), name: "Asymptotic Analysis", completed: true, completedAt: daysAgoISO(12) },
+            { id: id("topic"), name: "Arrays & Linked Lists", completed: true, completedAt: daysAgoISO(6) },
             { id: id("topic"), name: "Stacks & Queues", completed: false },
           ],
         },

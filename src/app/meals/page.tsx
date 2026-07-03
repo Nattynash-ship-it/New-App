@@ -4,8 +4,81 @@ import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
+import { matchRecipes } from "@/core/selectors";
 import { newId, useHub, useHydrated } from "@/core/store/hub";
 import type { DeliveryService, PantryCategory, Recipe } from "@/core/types";
+
+const STORE_LABEL: Record<DeliveryService, string> = {
+  whole_foods: "Whole Foods",
+  aldi: "Aldi",
+};
+
+function CookFromKitchen() {
+  const state = useHub();
+  const planMeal = useHub((s) => s.planMeal);
+  const matches = matchRecipes(state);
+  const ready = matches.filter((m) => m.ready);
+  const almost = matches.filter((m) => !m.ready);
+  const [planned, setPlanned] = useState<string | null>(null);
+
+  return (
+    <Card className="relative overflow-hidden">
+      <span className="absolute inset-x-0 top-0 h-[3px] bg-meals" aria-hidden />
+      <SectionTitle
+        right={
+          <span className="text-xs text-muted">
+            {ready.length} ready · {almost.length} almost
+          </span>
+        }
+      >
+        What you can cook right now
+      </SectionTitle>
+      <p className="mb-3 text-xs text-muted">
+        Matched against your pantry and everything on the grocery list — so nothing goes to waste.
+      </p>
+      {matches.length === 0 ? (
+        <EmptyState>Check off more pantry items to unlock recipe matches.</EmptyState>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {matches.slice(0, 8).map(({ recipe, missing, ready: isReady }) => (
+            <div key={recipe.id} className="flex flex-col rounded-xl border border-line bg-paper p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[13px] font-semibold leading-snug">{recipe.title}</p>
+                <span
+                  className={`chip shrink-0 !text-[10px] ${
+                    isReady ? "bg-meals-soft text-meals-bright" : "border border-line text-muted"
+                  }`}
+                >
+                  {isReady ? "ready now" : `missing ${missing.length}`}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted">{recipe.description}</p>
+              <p className="mt-1.5 text-[11px] text-muted">
+                <span className="font-semibold text-ink">{recipe.calories} cal</span> / serving ·{" "}
+                {recipe.timeMin} min
+              </p>
+              {!isReady ? (
+                <p className="mt-1 text-[11px] text-school-bright">
+                  needs: {missing.join(", ")}
+                </p>
+              ) : null}
+              <button
+                className="btn-ghost mt-2 self-start !px-2.5 !py-1 text-[11px]"
+                onClick={() => {
+                  planMeal(todayISO(), "dinner", recipe.title);
+                  setPlanned(recipe.id);
+                  setTimeout(() => setPlanned(null), 2500);
+                }}
+              >
+                {planned === recipe.id ? "Planned ✓" : "Plan for dinner"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 const CATEGORY_ORDER: PantryCategory[] = ["produce", "protein", "grains", "pantry", "frozen", "spices"];
 const CATEGORY_LABEL: Record<PantryCategory, string> = {
@@ -183,7 +256,22 @@ function Groceries() {
   const groceryList = useHub((s) => s.groceryList);
   const generateGroceryList = useHub((s) => s.generateGroceryList);
   const toggleGroceryItem = useHub((s) => s.toggleGroceryItem);
+  const preferredStore = useHub((s) => s.preferredStore);
+  const setPreferredStore = useHub((s) => s.setPreferredStore);
   const [sendState, setSendState] = useState<string>("");
+
+  async function copyList() {
+    const text = groceryList
+      .filter((g) => !g.checked)
+      .map((g) => `- ${g.name}${g.quantity !== "1" ? ` (${g.quantity})` : ""}`)
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setSendState("List copied — paste it into any store app.");
+    } catch {
+      setSendState("Couldn't access the clipboard.");
+    }
+  }
 
   async function sendTo(service: DeliveryService) {
     setSendState("sending");
@@ -233,11 +321,23 @@ function Groceries() {
               ))}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void sendTo("whole_foods")}>
-                Send to Whole Foods
+              <label className="flex items-center gap-1.5 text-xs text-muted">
+                My store
+                <select
+                  value={preferredStore}
+                  onChange={(e) => setPreferredStore(e.target.value as DeliveryService)}
+                  className="input !w-auto !py-1.5 text-xs"
+                >
+                  {(Object.keys(STORE_LABEL) as DeliveryService[]).map((s) => (
+                    <option key={s} value={s}>{STORE_LABEL[s]}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => void sendTo(preferredStore)}>
+                Send to {STORE_LABEL[preferredStore]}
               </button>
-              <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void sendTo("aldi")}>
-                Send to Aldi
+              <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void copyList()}>
+                Copy list
               </button>
             </div>
             {sendState && sendState !== "sending" ? (
@@ -260,6 +360,7 @@ export default function MealsPage() {
         title="Meals & groceries"
         subtitle="Vegan, high-volume defaults. Check what you have — the engine does the rest."
       />
+      <CookFromKitchen />
       <ReverseRecipeEngine />
       <WeekPlanner />
       <Groceries />

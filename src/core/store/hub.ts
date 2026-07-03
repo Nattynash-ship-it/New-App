@@ -21,6 +21,7 @@ import {
   seedMeetings,
   seedPantry,
   seedPlannedMeals,
+  seedHabits,
   seedRewards,
   seedRoutines,
   seedStudyBlocks,
@@ -37,6 +38,7 @@ import type {
   FamilyActivity,
   FitnessGoal,
   GroceryItem,
+  Habit,
   Kid,
   MealSlot,
   Meeting,
@@ -51,6 +53,7 @@ import type {
   ScheduledEvent,
   StoreReward,
   StudyBlock,
+  WaterLog,
   WorkoutLog,
   WorkProject,
 } from "../types";
@@ -67,6 +70,8 @@ export interface Profile {
   name: string;
   /** Set true once the user has completed first-run setup. */
   onboarded: boolean;
+  /** Role tags shown as a chip, e.g. ["Mom", "Student", "Professional"]. */
+  roles: string[];
 }
 
 export interface HubState {
@@ -93,6 +98,10 @@ export interface HubState {
   workoutLogs: WorkoutLog[];
   fitnessGoals: FitnessGoal[];
   weeklySessionTarget: number;
+  // Wellness
+  habits: Habit[];
+  water: WaterLog;
+  waterGoal: number;
   // Meals
   preferredStore: DeliveryService;
   // Work planning
@@ -106,6 +115,7 @@ export interface HubState {
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
+  setRoles: (roles: string[]) => void;
   completeOnboarding: (name: string) => void;
   /** Serialize the whole hub to a JSON string for backup. */
   exportData: () => string;
@@ -173,6 +183,13 @@ export interface HubState {
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setWeeklySessionTarget: (n: number) => void;
 
+  // --- Wellness actions ---
+  toggleHabitToday: (id: string) => void;
+  addHabit: (name: string, icon: string) => void;
+  removeHabit: (id: string) => void;
+  logWater: (delta: number) => void;
+  setWaterGoal: (n: number) => void;
+
   // --- Meals settings ---
   setPreferredStore: (s: DeliveryService) => void;
 
@@ -193,7 +210,7 @@ export interface HubState {
 function initialState() {
   const courses = seedCourses();
   return {
-    profile: { name: "friend", onboarded: false } as Profile,
+    profile: { name: "friend", onboarded: false, roles: ["Mom", "Student", "Professional"] } as Profile,
     checkIns: [] as CheckIn[],
     events: [] as ScheduledEvent[],
     projects: seedWorkProjects(),
@@ -215,6 +232,9 @@ function initialState() {
     workoutLogs: [] as WorkoutLog[],
     fitnessGoals: ["sculpt", "strength"] as FitnessGoal[],
     weeklySessionTarget: 4,
+    habits: seedHabits(),
+    water: {} as WaterLog,
+    waterGoal: 8,
     preferredStore: "whole_foods" as DeliveryService,
     focus: { date: todayISO(), taskIds: [] as string[] },
     kids: seedKids(),
@@ -233,16 +253,20 @@ export const useHub = create<HubState>()(
       // --- Profile / settings ---
       setProfileName: (name) =>
         set((s) => ({ profile: { ...s.profile, name: name.trim() || s.profile.name } })),
+      setRoles: (roles) =>
+        set((s) => ({
+          profile: { ...s.profile, roles: roles.map((r) => r.trim()).filter(Boolean).slice(0, 5) },
+        })),
       completeOnboarding: (name) =>
-        set(() => ({ profile: { name: name.trim() || "friend", onboarded: true } })),
+        set((s) => ({ profile: { ...s.profile, name: name.trim() || "friend", onboarded: true } })),
       exportData: () => {
         const s = get();
         // Strip the action functions — keep only the data slices.
         const {
           profile, checkIns, events, projects, meetings, courses, assignments,
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
-          routines, workoutLogs, fitnessGoals, weeklySessionTarget, preferredStore,
-          focus, kids, activities, chores, rewards, ledger,
+          routines, workoutLogs, fitnessGoals, weeklySessionTarget, habits, water,
+          waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
         } = s;
         return JSON.stringify(
           {
@@ -251,8 +275,8 @@ export const useHub = create<HubState>()(
             data: {
               profile, checkIns, events, projects, meetings, courses, assignments,
               studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
-              routines, workoutLogs, fitnessGoals, weeklySessionTarget, preferredStore,
-              focus, kids, activities, chores, rewards, ledger,
+              routines, workoutLogs, fitnessGoals, weeklySessionTarget, habits, water,
+              waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
             },
           },
           null,
@@ -644,6 +668,37 @@ export const useHub = create<HubState>()(
         })),
       setFitnessGoals: (goals) => set({ fitnessGoals: goals }),
       setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
+
+      // --- Wellness ---
+      toggleHabitToday: (id) =>
+        set((s) => {
+          const today = todayISO();
+          return {
+            habits: s.habits.map((h) =>
+              h.id !== id
+                ? h
+                : {
+                    ...h,
+                    history: h.history.includes(today)
+                      ? h.history.filter((d) => d !== today)
+                      : [...h.history, today],
+                  },
+            ),
+          };
+        }),
+      addHabit: (name, icon) =>
+        set((s) => ({
+          habits: [...s.habits, { id: newId("hab"), name, icon: icon || "✦", history: [] }],
+        })),
+      removeHabit: (id) => set((s) => ({ habits: s.habits.filter((h) => h.id !== id) })),
+      logWater: (delta) =>
+        set((s) => {
+          const today = todayISO();
+          const next = Math.max(0, (s.water[today] ?? 0) + delta);
+          return { water: { ...s.water, [today]: next } };
+        }),
+      setWaterGoal: (n) => set({ waterGoal: Math.min(20, Math.max(1, n)) }),
+
       setPreferredStore: (preferredStore) => set({ preferredStore }),
 
       // --- Family ---

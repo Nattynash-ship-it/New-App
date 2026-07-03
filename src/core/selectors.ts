@@ -304,6 +304,49 @@ export function topicIsReviewable(t: CourseTopic): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Wellness: habit streaks, water, encouragement
+// ---------------------------------------------------------------------------
+
+/** Current consecutive-day streak ending today (or yesterday, if today's
+ *  not done yet — the streak is still alive). */
+export function habitStreak(history: ISODate[]): number {
+  const set = new Set(history);
+  let cursor = todayISO();
+  if (!set.has(cursor)) cursor = addDays(cursor, -1);
+  let streak = 0;
+  while (set.has(cursor)) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
+export function habitDoneToday(history: ISODate[]): boolean {
+  return history.includes(todayISO());
+}
+
+export function waterToday(s: HubState): number {
+  return s.water[todayISO()] ?? 0;
+}
+
+const ENCOURAGEMENTS = [
+  "You've got this, one step at a time.",
+  "Progress, not perfection — every small step counts.",
+  "Small steps, steady sail.",
+  "One thing at a time is enough.",
+  "You're doing better than you think.",
+  "Be kind to yourself today.",
+];
+
+/** Deterministic per-day encouragement (stable through the day, rotates daily). */
+export function encouragementForToday(): string {
+  const iso = todayISO();
+  let hash = 0;
+  for (let i = 0; i < iso.length; i++) hash = (hash * 31 + iso.charCodeAt(i)) >>> 0;
+  return ENCOURAGEMENTS[hash % ENCOURAGEMENTS.length]!;
+}
+
+// ---------------------------------------------------------------------------
 // Fitness: weekly target + streak
 // ---------------------------------------------------------------------------
 

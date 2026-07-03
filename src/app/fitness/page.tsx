@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Skeleton } from "@/components/ui";
+import { HabitStreaks } from "@/components/HabitStreaks";
+import { WaterCard } from "@/components/WaterCard";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
 import { fitnessWeek } from "@/core/selectors";
@@ -306,8 +308,19 @@ export default function FitnessPage() {
       <PageHeader
         eyebrow="Fitness & Wellness"
         title="Your training"
-        subtitle="Pick goals once — the plan, targets, and streaks follow automatically."
+        subtitle="Pick goals once — the plan, targets, streaks, and habits follow automatically."
       />
+
+      {/* Everyday wellness — habits & hydration */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <HabitStreaks manage />
+        </div>
+        <div className="lg:col-span-2">
+          <WaterCard />
+        </div>
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-2">
         <GoalsCard />
         <WeekPlanCard />

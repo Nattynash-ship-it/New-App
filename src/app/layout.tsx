@@ -33,7 +33,7 @@ const themeInit = `(function(){try{var t=localStorage.getItem("hub-theme");if(t)
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="midnight" suppressHydrationWarning>
+    <html lang="en" data-theme="bloom" suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before first paint to avoid a flash */}
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

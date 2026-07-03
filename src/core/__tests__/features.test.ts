@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { addDays, todayISO } from "../dates";
 import { recommendPlan } from "../fitness/plan";
-import { graduationStats, matchRecipes } from "../selectors";
+import { encouragementForToday, graduationStats, habitStreak, matchRecipes } from "../selectors";
 import type { HubState } from "../store/hub";
 import type { PantryItem } from "../types";
 
@@ -73,6 +74,38 @@ describe("recommendPlan (goal-based programming)", () => {
 
   it("falls back to a balanced split with no goals", () => {
     expect(recommendPlan([]).length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("habitStreak", () => {
+  const recent = (n: number) => Array.from({ length: n }, (_, i) => addDays(todayISO(), -i));
+
+  it("counts consecutive days including today", () => {
+    expect(habitStreak(recent(5))).toBe(5);
+  });
+
+  it("keeps the streak alive when today isn't done yet (ends yesterday)", () => {
+    const yesterdayBack = Array.from({ length: 3 }, (_, i) => addDays(todayISO(), -(i + 1)));
+    expect(habitStreak(yesterdayBack)).toBe(3);
+  });
+
+  it("breaks on a gap", () => {
+    // today + a 2-day-old entry (gap yesterday) → streak is just today
+    expect(habitStreak([todayISO(), addDays(todayISO(), -2)])).toBe(1);
+  });
+
+  it("is zero with no history or only-stale history", () => {
+    expect(habitStreak([])).toBe(0);
+    expect(habitStreak([addDays(todayISO(), -5)])).toBe(0);
+  });
+});
+
+describe("encouragementForToday", () => {
+  it("returns a stable non-empty string for the day", () => {
+    const a = encouragementForToday();
+    const b = encouragementForToday();
+    expect(a).toBe(b);
+    expect(a.length).toBeGreaterThan(0);
   });
 });
 

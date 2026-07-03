@@ -33,22 +33,22 @@ export function recommendPlan(goals: FitnessGoal[]): PlanLine[] {
   for (const goal of goals) {
     switch (goal) {
       case "strength":
-        add("routine_glute", 2, "drives strength");
+        add("routine_strength", 2, "drives strength");
         add("routine_recovery", 1, "supports recovery between lifts");
         break;
       case "sculpt":
-        add("routine_lagree", 2, "time under tension");
-        add("routine_glute", 1, "shapes the posterior chain");
+        add("routine_strength", 2, "time under tension");
+        add("routine_conditioning", 1, "keeps definition sharp");
         break;
       case "conditioning":
-        add("routine_lagree", 2, "slow-twitch endurance burn");
+        add("routine_conditioning", 2, "raises the aerobic base");
         add("routine_recovery", 1, "active calorie floor");
         break;
       case "mobility":
         add("routine_recovery", 2, "mobility & circulation");
         break;
       case "habit":
-        add("routine_lagree", 1, "anchor session");
+        add("routine_conditioning", 1, "anchor session");
         add("routine_recovery", 1, "easy win to keep the streak");
         break;
     }
@@ -56,8 +56,8 @@ export function recommendPlan(goals: FitnessGoal[]): PlanLine[] {
 
   // Sensible default when no goals picked yet
   if (sessions.size === 0) {
-    add("routine_lagree", 1, "balanced starting point");
-    add("routine_glute", 1, "balanced starting point");
+    add("routine_strength", 1, "balanced starting point");
+    add("routine_conditioning", 1, "balanced starting point");
     add("routine_recovery", 1, "balanced starting point");
   }
 

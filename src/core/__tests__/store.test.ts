@@ -118,3 +118,46 @@ describe("wellness", () => {
     expect(useHub.getState().water[todayISO()]).toBe(0);
   });
 });
+
+describe("fitness — equipment & library", () => {
+  it("edits the equipment inventory", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().setEquipment(["dumbbells", "kettlebell"]);
+    expect(useHub.getState().equipment).toEqual(["dumbbells", "kettlebell"]);
+  });
+
+  it("adds a full library workout as a routine in one step", async () => {
+    const { useHub } = await import("../store/hub");
+    const before = useHub.getState().routines.length;
+    useHub.getState().addRoutineWithExercises("Rower Intervals", "Cardio", [
+      { name: "Warm-up", target: "3 min" },
+      { name: "Intervals", target: "8 × 250m" },
+    ]);
+    const routine = useHub.getState().routines.find((r) => r.name === "Rower Intervals");
+    expect(useHub.getState().routines.length).toBe(before + 1);
+    expect(routine?.exercises).toHaveLength(2);
+    expect(routine?.exercises[0]?.id).toMatch(/^ex_/); // ids were assigned
+  });
+});
+
+describe("attachments", () => {
+  it("adds and removes file metadata scoped to an owner", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addAttachment({
+      id: "att_1",
+      ownerType: "course",
+      ownerId: "course_x",
+      name: "syllabus.pdf",
+      mime: "application/pdf",
+      size: 1234,
+      addedAt: new Date(0).toISOString(),
+    });
+    const forCourse = useHub
+      .getState()
+      .attachments.filter((a) => a.ownerType === "course" && a.ownerId === "course_x");
+    expect(forCourse).toHaveLength(1);
+    expect(forCourse[0]?.name).toBe("syllabus.pdf");
+    useHub.getState().removeAttachment("att_1");
+    expect(useHub.getState().attachments.some((a) => a.id === "att_1")).toBe(false);
+  });
+});

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { Attachments } from "@/components/Attachments";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
 import type { ProjectStatus } from "@/core/types";
@@ -325,6 +326,8 @@ function ProjectCard({ projectId }: { projectId: string }) {
           Add
         </button>
       </form>
+
+      <Attachments ownerType="project" ownerId={project.id} label="Documents & correspondence" />
     </Card>
   );
 }

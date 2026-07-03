@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Skeleton } from "@/components/ui";
+import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Skeleton } from "@/components/ui";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
 import { fitnessWeek } from "@/core/selectors";
@@ -127,6 +127,9 @@ function RoutineCard({ routineId }: { routineId: string }) {
   const routine = useHub((s) => s.routines.find((r) => r.id === routineId));
   const logs = useHub((s) => s.workoutLogs);
   const logWorkout = useHub((s) => s.logWorkout);
+  const removeRoutine = useHub((s) => s.removeRoutine);
+  const addExercise = useHub((s) => s.addExercise);
+  const removeExercise = useHub((s) => s.removeExercise);
   const [effort, setEffort] = useState<WorkoutLog["effort"] | null>(null);
   const [note, setNote] = useState("");
   const [justLogged, setJustLogged] = useState(false);
@@ -137,18 +140,43 @@ function RoutineCard({ routineId }: { routineId: string }) {
 
   return (
     <Card>
-      <div className="mb-2">
-        <h3 className="text-sm font-semibold">{routine.name}</h3>
-        <p className="text-xs text-muted">{routine.focus}</p>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold">{routine.name}</h3>
+          <p className="text-xs text-muted">{routine.focus}</p>
+        </div>
+        <button
+          onClick={() => removeRoutine(routine.id)}
+          aria-label={`Delete routine ${routine.name}`}
+          className="rounded-full px-1.5 text-sm text-muted opacity-40 transition-opacity hover:bg-fitness-soft hover:text-fitness-bright hover:opacity-100"
+        >
+          ×
+        </button>
       </div>
       <ul className="space-y-1 text-xs">
         {routine.exercises.map((ex) => (
-          <li key={ex.id} className="flex items-baseline justify-between gap-3 rounded-lg bg-paper px-2.5 py-1.5">
+          <li key={ex.id} className="group flex items-baseline justify-between gap-3 rounded-lg bg-paper px-2.5 py-1.5">
             <span>{ex.name}</span>
-            <span className="shrink-0 text-muted">{ex.target}</span>
+            <span className="flex shrink-0 items-center gap-1">
+              <span className="text-muted">{ex.target}</span>
+              <button
+                onClick={() => removeExercise(routine.id, ex.id)}
+                aria-label={`Remove ${ex.name}`}
+                className="rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+              >
+                ×
+              </button>
+            </span>
           </li>
         ))}
       </ul>
+      <InlineAdd
+        placeholder='Add exercise ("Hip Thrust — 4 × 12")'
+        onAdd={(value) => {
+          const [name, target] = value.split(/\s*[—-]\s*/, 2);
+          addExercise(routine.id, (name ?? value).trim(), (target ?? "").trim());
+        }}
+      />
 
       {loggedToday || justLogged ? (
         <p className="mt-3 rounded-xl bg-fitness-soft px-3 py-2 text-xs text-fitness-bright">
@@ -209,6 +237,7 @@ function RoutineCard({ routineId }: { routineId: string }) {
 function History() {
   const logs = useHub((s) => s.workoutLogs);
   const routines = useHub((s) => s.routines);
+  const removeWorkoutLog = useHub((s) => s.removeWorkoutLog);
   const recent = logs.slice(0, 6);
 
   return (
@@ -219,16 +248,50 @@ function History() {
       ) : (
         <ul className="divide-y divide-line">
           {recent.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <li key={l.id} className="group flex items-center justify-between gap-3 py-2 text-sm">
               <span>{routines.find((r) => r.id === l.routineId)?.name ?? "Workout"}</span>
-              <span className="text-xs text-muted">
+              <span className="flex items-center gap-2 text-xs text-muted">
                 {formatFriendly(l.date)} · effort {l.effort}/5
+                <button
+                  onClick={() => removeWorkoutLog(l.id)}
+                  aria-label="Delete log entry"
+                  className="rounded-full px-1 opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                >
+                  ×
+                </button>
               </span>
             </li>
           ))}
         </ul>
       )}
     </Card>
+  );
+}
+
+function AddRoutine() {
+  const addRoutine = useHub((s) => s.addRoutine);
+  const [name, setName] = useState("");
+  const [focus, setFocus] = useState("");
+
+  return (
+    <form
+      className="card flex flex-wrap items-center gap-2 border-dashed p-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (name.trim()) {
+          addRoutine(name.trim(), focus.trim() || "Custom routine");
+          setName("");
+          setFocus("");
+        }
+      }}
+    >
+      <span className="text-sm text-muted">New routine</span>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Routine name" className="input min-w-[150px] flex-1 !py-1.5 text-xs" />
+      <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="Focus (e.g. Upper body)" className="input min-w-[150px] flex-1 !py-1.5 text-xs" />
+      <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!name.trim()}>
+        Create
+      </button>
+    </form>
   );
 }
 
@@ -254,6 +317,7 @@ export default function FitnessPage() {
           <RoutineCard key={id} routineId={id} />
         ))}
       </div>
+      <AddRoutine />
       <History />
     </div>
   );

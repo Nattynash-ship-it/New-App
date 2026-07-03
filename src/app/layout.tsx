@@ -3,9 +3,9 @@ import "./globals.css";
 import { Shell } from "@/components/Shell";
 
 export const metadata: Metadata = {
-  title: "Compass — Life Management Hub",
+  title: "Vela — Your life, under sail",
   description:
-    "One calm place for work, school, meals, fitness, and family — designed to reduce cognitive load.",
+    "Work, school, meals, fitness, and family in one calm place — Vela keeps the day on course so you don't have to hold it in your head.",
 };
 
 export const viewport: Viewport = {

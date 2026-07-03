@@ -100,21 +100,32 @@ export interface HubState {
   addCheckIn: (period: CheckInPeriod, mood: Mood, note: string, prompt: string) => void;
   /** Route a parsed natural-language intent into the right module. */
   addFromIntent: (intent: ParsedIntent) => void;
+  /** Remove any removable timeline entry (meeting, event, meal, activity) by id. */
+  removeTimelineItem: (id: string) => void;
 
   // --- Work actions ---
+  addProject: (name: string, category: string) => void;
+  removeProject: (id: string) => void;
   toggleWorkTask: (projectId: string, taskId: string) => void;
   addWorkTask: (projectId: string, title: string) => void;
+  removeWorkTask: (projectId: string, taskId: string) => void;
   addMeeting: (m: Omit<Meeting, "id">) => void;
   removeMeeting: (id: string) => void;
   addMilestone: (projectId: string, title: string, targetDate?: string) => void;
   toggleMilestone: (projectId: string, milestoneId: string) => void;
+  removeMilestone: (projectId: string, milestoneId: string) => void;
   /** Sunsama-style daily ritual: pick up to 3 tasks to focus on today. */
   toggleFocusTask: (taskId: string) => void;
 
   // --- School actions ---
+  addCourse: (code: string, name: string, credits: number) => void;
+  removeCourse: (id: string) => void;
+  addUnit: (courseId: string, name: string) => void;
+  addTopic: (courseId: string, unitId: string, name: string) => void;
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleAssignment: (id: string) => void;
   addAssignment: (a: Omit<Assignment, "id" | "done">) => void;
+  removeAssignment: (id: string) => void;
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -124,6 +135,9 @@ export interface HubState {
   // --- Meals actions ---
   togglePantryItem: (id: string) => void;
   addPantryItem: (name: string, category: PantryCategory) => void;
+  removePantryItem: (id: string) => void;
+  addGroceryItem: (name: string) => void;
+  removeGroceryItem: (id: string) => void;
   saveRecipe: (r: Recipe) => void;
   planMeal: (date: string, slot: MealSlot, title: string, recipeId?: string) => void;
   removePlannedMeal: (id: string) => void;
@@ -133,6 +147,11 @@ export interface HubState {
 
   // --- Fitness actions ---
   logWorkout: (routineId: string, effort: WorkoutLog["effort"], note: string) => void;
+  removeWorkoutLog: (id: string) => void;
+  addRoutine: (name: string, focus: string) => void;
+  removeRoutine: (id: string) => void;
+  addExercise: (routineId: string, name: string, target: string) => void;
+  removeExercise: (routineId: string, exerciseId: string) => void;
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setWeeklySessionTarget: (n: number) => void;
 
@@ -143,6 +162,12 @@ export interface HubState {
   addActivity: (a: Omit<FamilyActivity, "id">) => void;
   removeActivity: (id: string) => void;
   setActivityPrepNote: (id: string, note: string) => void;
+  addKid: (name: string) => void;
+  removeKid: (id: string) => void;
+  addChore: (title: string, points: number) => void;
+  removeChore: (id: string) => void;
+  addReward: (title: string, cost: number) => void;
+  removeReward: (id: string) => void;
   completeChore: (choreId: string, kidId: string) => void;
   redeemReward: (rewardId: string, kidId: string) => void;
 }
@@ -235,7 +260,51 @@ export const useHub = create<HubState>()(
         }
       },
 
+      removeTimelineItem: (id) =>
+        set((s) => ({
+          meetings: s.meetings.filter((m) => m.id !== id),
+          events: s.events.filter((e) => e.id !== id),
+          plannedMeals: s.plannedMeals.filter((m) => m.id !== id),
+          activities: s.activities.filter((a) => a.id !== id),
+        })),
+
       // --- Work ---
+      addProject: (name, category) =>
+        set((s) => ({
+          projects: [
+            ...s.projects,
+            {
+              id: newId("proj"),
+              name,
+              category,
+              status: "active" as const,
+              tasks: [],
+              milestones: [],
+              trackingRefs: [],
+              notes: "",
+            },
+          ],
+        })),
+      removeProject: (id) =>
+        set((s) => ({
+          projects: s.projects.filter((p) => p.id !== id),
+          meetings: s.meetings.map((m) => (m.projectId === id ? { ...m, projectId: undefined } : m)),
+        })),
+      removeWorkTask: (projectId, taskId) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id !== projectId ? p : { ...p, tasks: p.tasks.filter((t) => t.id !== taskId) },
+          ),
+          focus: { ...s.focus, taskIds: s.focus.taskIds.filter((t) => t !== taskId) },
+        })),
+      removeMilestone: (projectId, milestoneId) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id !== projectId
+              ? p
+              : { ...p, milestones: p.milestones.filter((m) => m.id !== milestoneId) },
+          ),
+        })),
       toggleWorkTask: (projectId, taskId) =>
         set((s) => ({
           projects: s.projects.map((p) =>
@@ -297,6 +366,51 @@ export const useHub = create<HubState>()(
         }),
 
       // --- School ---
+      addCourse: (code, name, credits) =>
+        set((s) => ({
+          courses: [
+            ...s.courses,
+            {
+              id: newId("course"),
+              code,
+              name,
+              credits,
+              units: [{ id: newId("unit"), name: "Unit 1", topics: [] }],
+            },
+          ],
+        })),
+      removeCourse: (id) =>
+        set((s) => ({
+          courses: s.courses.filter((c) => c.id !== id),
+          assignments: s.assignments.filter((a) => a.courseId !== id),
+          studyBlocks: s.studyBlocks.filter((b) => b.courseId !== id),
+        })),
+      addUnit: (courseId, name) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId
+              ? c
+              : { ...c, units: [...c.units, { id: newId("unit"), name, topics: [] }] },
+          ),
+        })),
+      addTopic: (courseId, unitId, name) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId
+              ? c
+              : {
+                  ...c,
+                  units: c.units.map((u) =>
+                    u.id !== unitId
+                      ? u
+                      : {
+                          ...u,
+                          topics: [...u.topics, { id: newId("topic"), name, completed: false }],
+                        },
+                  ),
+                },
+          ),
+        })),
       toggleTopic: (courseId, unitId, topicId) =>
         set((s) => ({
           courses: s.courses.map((c) =>
@@ -329,6 +443,8 @@ export const useHub = create<HubState>()(
         })),
       addAssignment: (a) =>
         set((s) => ({ assignments: [...s.assignments, { ...a, id: newId("asg"), done: false }] })),
+      removeAssignment: (id) =>
+        set((s) => ({ assignments: s.assignments.filter((a) => a.id !== id) })),
       addStudyBlock: (b) =>
         set((s) => ({ studyBlocks: [...s.studyBlocks, { ...b, id: newId("sb") }] })),
       removeStudyBlock: (id) =>
@@ -364,6 +480,17 @@ export const useHub = create<HubState>()(
         set((s) => ({
           pantry: [...s.pantry, { id: newId("pan"), name, category, onHand: true }],
         })),
+      removePantryItem: (id) =>
+        set((s) => ({ pantry: s.pantry.filter((p) => p.id !== id) })),
+      addGroceryItem: (name) =>
+        set((s) => ({
+          groceryList: [
+            ...s.groceryList,
+            { id: newId("gro"), name, quantity: "1", category: "pantry" as const, checked: false },
+          ],
+        })),
+      removeGroceryItem: (id) =>
+        set((s) => ({ groceryList: s.groceryList.filter((g) => g.id !== id) })),
       saveRecipe: (r) => set((s) => ({ recipes: [r, ...s.recipes].slice(0, 30) })),
       planMeal: (date, slot, title, recipeId) =>
         set((s) => ({
@@ -427,6 +554,33 @@ export const useHub = create<HubState>()(
             ...s.workoutLogs,
           ],
         })),
+      removeWorkoutLog: (id) =>
+        set((s) => ({ workoutLogs: s.workoutLogs.filter((l) => l.id !== id) })),
+      addRoutine: (name, focus) =>
+        set((s) => ({
+          routines: [...s.routines, { id: newId("routine"), name, focus, exercises: [] }],
+        })),
+      removeRoutine: (id) =>
+        set((s) => ({
+          routines: s.routines.filter((r) => r.id !== id),
+          workoutLogs: s.workoutLogs.filter((l) => l.routineId !== id),
+        })),
+      addExercise: (routineId, name, target) =>
+        set((s) => ({
+          routines: s.routines.map((r) =>
+            r.id !== routineId
+              ? r
+              : { ...r, exercises: [...r.exercises, { id: newId("ex"), name, target }] },
+          ),
+        })),
+      removeExercise: (routineId, exerciseId) =>
+        set((s) => ({
+          routines: s.routines.map((r) =>
+            r.id !== routineId
+              ? r
+              : { ...r, exercises: r.exercises.filter((e) => e.id !== exerciseId) },
+          ),
+        })),
       setFitnessGoals: (goals) => set({ fitnessGoals: goals }),
       setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
       setPreferredStore: (preferredStore) => set({ preferredStore }),
@@ -440,6 +594,34 @@ export const useHub = create<HubState>()(
             a.id === id ? { ...a, prepNote: note.trim() || undefined } : a,
           ),
         })),
+      addKid: (name) =>
+        set((s) => {
+          const palette = ["#8A5FD6", "#4E74E6", "#C9702C", "#167A42", "#E25C82"];
+          return {
+            kids: [
+              ...s.kids,
+              {
+                id: newId("kid"),
+                name,
+                color: palette[s.kids.length % palette.length] ?? "#8A5FD6",
+                points: 0,
+              },
+            ],
+          };
+        }),
+      removeKid: (id) =>
+        set((s) => ({
+          kids: s.kids.filter((k) => k.id !== id),
+          activities: s.activities.filter((a) => a.kidId !== id),
+          chores: s.chores.filter((c) => c.kidId !== id),
+          ledger: s.ledger.filter((tx) => tx.kidId !== id),
+        })),
+      addChore: (title, points) =>
+        set((s) => ({ chores: [...s.chores, { id: newId("chore"), title, points }] })),
+      removeChore: (id) => set((s) => ({ chores: s.chores.filter((c) => c.id !== id) })),
+      addReward: (title, cost) =>
+        set((s) => ({ rewards: [...s.rewards, { id: newId("rw"), title, cost }] })),
+      removeReward: (id) => set((s) => ({ rewards: s.rewards.filter((r) => r.id !== id) })),
       completeChore: (choreId, kidId) => {
         const chore = get().chores.find((c) => c.id === choreId);
         if (!chore) return;

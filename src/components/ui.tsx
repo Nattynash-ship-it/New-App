@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { Domain } from "@/core/types";
 
 export const DOMAIN_STYLES: Record<Domain, { text: string; soft: string; dot: string; label: string }> = {
@@ -71,6 +71,7 @@ export function Checkbox({
   label,
   sub,
   strike = true,
+  onRemove,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -78,30 +79,76 @@ export function Checkbox({
   sub?: string;
   /** Strike through when checked (tasks). Disable for state toggles like "on hand". */
   strike?: boolean;
+  /** When provided, a delete button appears on hover. */
+  onRemove?: () => void;
 }) {
   return (
-    <button
-      onClick={onChange}
-      className="group flex w-full items-start gap-3 rounded-lg px-1.5 py-1.5 text-left hover:bg-ink/[0.03]"
-    >
-      <span
-        className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-          checked ? "border-accent bg-accent text-accent-ink" : "border-ink/25 bg-surface group-hover:border-accent"
-        }`}
-      >
-        {checked ? (
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-        ) : null}
-      </span>
-      <span className="min-w-0">
-        <span className={`block text-sm ${checked && strike ? "text-muted line-through" : ""}`}>
-          {label}
+    <div className="group flex w-full items-start gap-1 rounded-lg px-1.5 py-1.5 hover:bg-ink/[0.03]">
+      <button onClick={onChange} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+        <span
+          className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+            checked ? "border-accent bg-accent text-accent-ink" : "border-ink/25 bg-surface group-hover:border-accent"
+          }`}
+        >
+          {checked ? (
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="animate-pop">
+              <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          ) : null}
         </span>
-        {sub ? <span className="block text-xs text-muted">{sub}</span> : null}
-      </span>
-    </button>
+        <span className="min-w-0">
+          <span className={`block text-sm ${checked && strike ? "text-muted line-through" : ""}`}>
+            {label}
+          </span>
+          {sub ? <span className="block text-xs text-muted">{sub}</span> : null}
+        </span>
+      </button>
+      {onRemove ? (
+        <button
+          onClick={onRemove}
+          aria-label={`Delete ${label}`}
+          className="mt-0.5 shrink-0 rounded-full px-1.5 text-sm leading-5 text-muted opacity-0 transition-opacity hover:bg-fitness-soft hover:text-fitness-bright group-hover:opacity-100"
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact inline add form used across all modules. */
+export function InlineAdd({
+  placeholder,
+  onAdd,
+  extra,
+}: {
+  placeholder: string;
+  onAdd: (value: string) => void;
+  extra?: ReactNode;
+}) {
+  const [value, setValue] = useState("");
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (value.trim()) {
+          onAdd(value.trim());
+          setValue("");
+        }
+      }}
+    >
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="input min-w-[140px] flex-1 !py-1.5 text-xs"
+      />
+      {extra}
+      <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!value.trim()}>
+        Add
+      </button>
+    </form>
   );
 }
 

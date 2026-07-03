@@ -101,7 +101,16 @@ function CheckInCard() {
 
 function Timeline() {
   const state = useHub();
+  const removeTimelineItem = useHub((s) => s.removeTimelineItem);
   const entries = selectTimeline(state, todayISO());
+  // Assignments and study blocks are managed on their own pages; everything
+  // else on the timeline can be removed right here.
+  const removable = new Set([
+    ...state.meetings.map((m) => m.id),
+    ...state.events.map((e) => e.id),
+    ...state.plannedMeals.map((m) => m.id),
+    ...state.activities.map((a) => a.id),
+  ]);
 
   return (
     <Card>
@@ -118,7 +127,7 @@ function Timeline() {
           {entries.map((e, i) => {
             const style = DOMAIN_STYLES[e.domain];
             return (
-              <li key={e.id} className="relative flex gap-4 pb-4 last:pb-0">
+              <li key={e.id} className="group relative flex gap-4 pb-4 last:pb-0">
                 {i < entries.length - 1 ? (
                   <span className="absolute left-[5px] top-4 h-full w-px bg-line" aria-hidden />
                 ) : null}
@@ -138,8 +147,17 @@ function Timeline() {
                       {e.subtitle ? ` · ${e.subtitle}` : ""}
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums text-muted">
+                  <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted">
                     {e.time ? formatTime(e.time) : "All day"}
+                    {removable.has(e.id) ? (
+                      <button
+                        onClick={() => removeTimelineItem(e.id)}
+                        aria-label={`Remove ${e.title}`}
+                        className="rounded-full px-1 opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    ) : null}
                   </span>
                 </div>
               </li>
@@ -161,7 +179,7 @@ export default function CompassPage() {
     <div className="space-y-5">
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-          Daily Compass ·{" "}
+          <span className="text-accent">✦</span> Vela ·{" "}
           {new Date().toLocaleDateString(undefined, {
             weekday: "long",
             month: "long",

@@ -98,6 +98,58 @@
   --selection: rgba(94, 224, 216, 0.3);
 }
 
+/* ---------------------------------------------------------------------------
+ * Motion — subtle, purposeful, and disabled for reduced-motion users.
+ * ------------------------------------------------------------------------- */
+
+@keyframes vela-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes vela-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+
+@keyframes vela-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes vela-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-page {
+    animation: vela-page-in 0.3s ease-out both;
+  }
+  .card {
+    animation: vela-rise 0.4s cubic-bezier(0.22, 0.9, 0.35, 1) both;
+  }
+  .animate-pop {
+    animation: vela-pop 0.22s ease-out both;
+  }
+  .animate-slide-in {
+    animation: vela-slide-in 0.25s ease-out both;
+  }
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -115,7 +167,7 @@
 
 @layer components {
   .card {
-    @apply bg-surface border border-line rounded-card shadow-card;
+    @apply bg-surface border border-line rounded-card shadow-card transition-shadow duration-200;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;

@@ -1,6 +1,6 @@
-# Compass — Life Management Hub
+# Vela — Life Management Hub
 
-A calm, premium web app that pulls work, school, meals, fitness, and family into
+Vela is a calm, premium web app that pulls work, school, meals, fitness, and family into
 one place — built to **reduce cognitive load**, not add another inbox.
 
 ## Quick start

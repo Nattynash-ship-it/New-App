@@ -172,6 +172,7 @@ function Timeline() {
 export default function CompassPage() {
   const hydrated = useHydrated();
   const { word } = greeting();
+  const name = useHub((s) => s.profile.name);
 
   if (!hydrated) return <Skeleton />;
 
@@ -186,7 +187,9 @@ export default function CompassPage() {
             day: "numeric",
           })}
         </p>
-        <h1 className="mt-1 font-display text-3xl tracking-tight">{word}, Natasha</h1>
+        <h1 className="mt-1 font-display text-3xl tracking-tight">
+          {word}, {name}
+        </h1>
       </header>
 
       {/* Whole life at a glance */}

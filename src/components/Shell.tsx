@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { Onboarding } from "./Onboarding";
 
 const NAV = [
   { href: "/", label: "Today", icon: "✦" },
@@ -19,6 +20,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh md:flex">
+      <Onboarding />
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:border-line md:bg-surface/60 md:px-4 md:py-8 md:sticky md:top-0 md:h-dvh">
         <Link href="/" className="group px-3">
@@ -54,6 +56,14 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mt-auto space-y-3 px-3">
           <ThemeSwitcher />
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 rounded-xl px-0 py-1 text-sm transition-colors ${
+              pathname.startsWith("/settings") ? "text-accent font-medium" : "text-muted hover:text-ink"
+            }`}
+          >
+            <span className="text-base leading-none">⚙</span> Settings
+          </Link>
           <p className="text-[11px] leading-relaxed text-muted/70">
             Vela keeps the whole day on course — so you don&apos;t have to hold it in your head.
           </p>
@@ -67,7 +77,12 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="font-display text-base tracking-tight">
             Vela <span className="text-accent">✦</span>
           </span>
-          <ThemeSwitcher compact />
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher compact />
+            <Link href="/settings" aria-label="Settings" className="text-lg text-muted">
+              ⚙
+            </Link>
+          </div>
         </div>
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 md:px-8 md:pt-10">{children}</div>
       </main>

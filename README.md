@@ -17,6 +17,12 @@ persists on-device, and the AI features fall back to deterministic on-device
 engines. Add `ANTHROPIC_API_KEY` to `.env.local` to upgrade the Reverse Recipe
 Engine and natural-language parsing to Claude.
 
+**Installable (PWA):** Vela ships a web manifest, app icons, and an offline
+service worker — once deployed over HTTPS it installs to a phone home screen
+and launches full-screen like a native app. First launch runs a lightweight
+onboarding (your name + theme); everything else is editable from **Settings**
+(`/settings`), including a JSON backup export/import and a reset-to-fresh.
+
 ## The modules
 
 | Route | Module | What it does |

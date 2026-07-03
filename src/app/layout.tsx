@@ -14,9 +14,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const themeInit = `(function(){try{var t=localStorage.getItem("hub-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="midnight" suppressHydrationWarning>
+      <head>
+        {/* Apply the saved theme before first paint to avoid a flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
       <body>
         <Shell>{children}</Shell>
       </body>

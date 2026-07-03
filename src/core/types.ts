@@ -62,6 +62,14 @@ export interface WorkTask {
   dueDate?: ISODate;
 }
 
+/** Project planning: a dated milestone on the project roadmap. */
+export interface Milestone {
+  id: Id;
+  title: string;
+  targetDate?: ISODate;
+  done: boolean;
+}
+
 export interface WorkProject {
   id: Id;
   name: string;
@@ -69,6 +77,7 @@ export interface WorkProject {
   category: string;
   status: ProjectStatus;
   tasks: WorkTask[];
+  milestones: Milestone[];
   /** Correspondence / document reference numbers being tracked. */
   trackingRefs: string[];
   notes: string;
@@ -82,6 +91,9 @@ export interface Meeting {
   durationMin: number;
   location?: string;
   projectId?: Id;
+  /** Video-call URL (Zoom/Meet/Teams) — renders a one-tap Join button. */
+  link?: string;
+  agenda?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -93,6 +105,27 @@ export interface CourseTopic {
   name: string; // e.g. "Graph Theory"
   completed: boolean;
   completedAt?: ISODateTime;
+  /** Spaced-repetition: when this topic was last reviewed. */
+  lastReviewedAt?: ISODateTime;
+}
+
+/** Recurring weekly study block — evidence-backed time blocking. */
+export interface StudyBlock {
+  id: Id;
+  courseId?: Id;
+  /** 0 = Sunday … 6 = Saturday */
+  dayOfWeek: number;
+  time: TimeHHMM;
+  durationMin: number;
+}
+
+/** Graduation tracker for the self-paced degree. */
+export interface DegreePlan {
+  programName: string;
+  totalCredits: number;
+  /** Credits from courses already passed (before the ones tracked here). */
+  completedCredits: number;
+  targetGraduation?: ISODate;
 }
 
 export interface CourseUnit {
@@ -174,6 +207,8 @@ export type DeliveryService = "whole_foods" | "aldi";
 // ---------------------------------------------------------------------------
 // Fitness & Wellness
 // ---------------------------------------------------------------------------
+
+export type FitnessGoal = "strength" | "sculpt" | "conditioning" | "mobility" | "habit";
 
 export interface RoutineExercise {
   id: Id;

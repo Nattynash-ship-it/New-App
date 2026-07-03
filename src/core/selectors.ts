@@ -82,6 +82,7 @@ export function selectUpcoming(s: HubState, days = 7): RadarEntry[] {
       subtitle: kid ? kid.name : "Family",
       time: act.time,
       badge: act.category === "appointment" ? "appt" : act.category === "school" ? "school" : undefined,
+      note: act.prepNote,
     });
   }
 

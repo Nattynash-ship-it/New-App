@@ -219,6 +219,8 @@ export interface FamilyActivity {
   recurring?: "weekly";
   /** Doctor/dentist visits get "appointment"; school events get "school". */
   category?: ActivityCategory;
+  /** Prep note, e.g. "Bring insurance card + vaccination record". */
+  prepNote?: string;
 }
 
 export interface Chore {
@@ -280,6 +282,8 @@ export interface TimelineEntry {
 /** A dated entry in the week-ahead radar. */
 export interface RadarEntry extends TimelineEntry {
   date: ISODate;
+  /** Prep note carried from the underlying activity, if any. */
+  note?: string;
 }
 
 /** At-a-glance summary of one life area, shown on the Compass overview. */

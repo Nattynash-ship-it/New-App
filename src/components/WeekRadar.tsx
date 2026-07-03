@@ -78,6 +78,11 @@ export function WeekRadar() {
                             {e.subtitle ?? style.label}
                             {e.time ? ` · ${formatTime(e.time)}` : ""}
                           </p>
+                          {e.note ? (
+                            <p className="mt-0.5 truncate text-[11px] italic text-accent/80">
+                              ↳ {e.note}
+                            </p>
+                          ) : null}
                         </div>
                         {e.badge ? (
                           <span className={`chip shrink-0 !text-[10px] ${BADGE_STYLE[e.badge] ?? ""}`}>

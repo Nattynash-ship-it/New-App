@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MoodTrend } from "@/components/MoodTrend";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
+import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
 import { WeekRadar } from "@/components/WeekRadar";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
@@ -174,6 +175,9 @@ export default function CompassPage() {
       <OverviewStrip />
 
       <QuickAdd />
+
+      {/* Nothing sneaks up overnight */}
+      <TomorrowHeadsUp />
 
       {/* Today + the week ahead, side by side */}
       <div className="grid gap-5 lg:grid-cols-5">

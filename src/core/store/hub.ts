@@ -115,6 +115,7 @@ export interface HubState {
   // --- Family actions ---
   addActivity: (a: Omit<FamilyActivity, "id">) => void;
   removeActivity: (id: string) => void;
+  setActivityPrepNote: (id: string, note: string) => void;
   completeChore: (choreId: string, kidId: string) => void;
   redeemReward: (rewardId: string, kidId: string) => void;
 }
@@ -329,6 +330,12 @@ export const useHub = create<HubState>()(
       // --- Family ---
       addActivity: (a) => set((s) => ({ activities: [...s.activities, { ...a, id: newId("act") }] })),
       removeActivity: (id) => set((s) => ({ activities: s.activities.filter((a) => a.id !== id) })),
+      setActivityPrepNote: (id, note) =>
+        set((s) => ({
+          activities: s.activities.map((a) =>
+            a.id === id ? { ...a, prepNote: note.trim() || undefined } : a,
+          ),
+        })),
       completeChore: (choreId, kidId) => {
         const chore = get().chores.find((c) => c.id === choreId);
         if (!chore) return;

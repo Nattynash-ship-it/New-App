@@ -63,7 +63,15 @@ export function newId(prefix: string): string {
   return `${prefix}_${rand}`;
 }
 
+export interface Profile {
+  name: string;
+  /** Set true once the user has completed first-run setup. */
+  onboarded: boolean;
+}
+
 export interface HubState {
+  // Identity
+  profile: Profile;
   // Daily Compass
   checkIns: CheckIn[];
   events: ScheduledEvent[];
@@ -95,6 +103,16 @@ export interface HubState {
   chores: Chore[];
   rewards: StoreReward[];
   ledger: PointTransaction[];
+
+  // --- Profile / settings actions ---
+  setProfileName: (name: string) => void;
+  completeOnboarding: (name: string) => void;
+  /** Serialize the whole hub to a JSON string for backup. */
+  exportData: () => string;
+  /** Replace the hub from a previously exported JSON string. Returns success. */
+  importData: (json: string) => boolean;
+  /** Wipe everything back to fresh seed data (keeps you onboarded). */
+  resetToSeed: () => void;
 
   // --- Compass actions ---
   addCheckIn: (period: CheckInPeriod, mood: Mood, note: string, prompt: string) => void;
@@ -175,6 +193,7 @@ export interface HubState {
 function initialState() {
   const courses = seedCourses();
   return {
+    profile: { name: "friend", onboarded: false } as Profile,
     checkIns: [] as CheckIn[],
     events: [] as ScheduledEvent[],
     projects: seedWorkProjects(),
@@ -210,6 +229,48 @@ export const useHub = create<HubState>()(
   persist(
     (set, get) => ({
       ...initialState(),
+
+      // --- Profile / settings ---
+      setProfileName: (name) =>
+        set((s) => ({ profile: { ...s.profile, name: name.trim() || s.profile.name } })),
+      completeOnboarding: (name) =>
+        set(() => ({ profile: { name: name.trim() || "friend", onboarded: true } })),
+      exportData: () => {
+        const s = get();
+        // Strip the action functions — keep only the data slices.
+        const {
+          profile, checkIns, events, projects, meetings, courses, assignments,
+          studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
+          routines, workoutLogs, fitnessGoals, weeklySessionTarget, preferredStore,
+          focus, kids, activities, chores, rewards, ledger,
+        } = s;
+        return JSON.stringify(
+          {
+            _vela: 1,
+            exportedAt: nowISO(),
+            data: {
+              profile, checkIns, events, projects, meetings, courses, assignments,
+              studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
+              routines, workoutLogs, fitnessGoals, weeklySessionTarget, preferredStore,
+              focus, kids, activities, chores, rewards, ledger,
+            },
+          },
+          null,
+          2,
+        );
+      },
+      importData: (json) => {
+        try {
+          const parsed = JSON.parse(json) as { _vela?: number; data?: Partial<HubState> };
+          if (!parsed.data || typeof parsed.data !== "object") return false;
+          set(() => parsed.data as Partial<HubState>);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      resetToSeed: () =>
+        set((s) => ({ ...initialState(), profile: s.profile })),
 
       // --- Compass ---
       addCheckIn: (period, mood, note, prompt) =>

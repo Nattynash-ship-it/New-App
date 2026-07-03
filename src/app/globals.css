@@ -98,6 +98,52 @@
   --selection: rgba(94, 224, 216, 0.3);
 }
 
+/* Bloom — warm, soft "wellness" palette: cream, terracotta coral, sage. */
+[data-theme="bloom"] {
+  color-scheme: light;
+  --paper: 247 241 231;
+  --surface: 255 253 249;
+  --ink: 42 35 32;
+  --muted: 138 127 118;
+  --line: rgba(60, 45, 35, 0.1);
+  --accent: 207 106 76;
+  --accent-dark: 184 92 62;
+  --accent-ink: 255 255 255;
+  --work-bright: 55 84 190;
+  --school-bright: 158 84 26;
+  --meals-bright: 24 118 78;
+  --fitness-bright: 190 55 92;
+  --family-bright: 108 64 187;
+  --compass-bright: 106 122 26;
+  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(207, 106, 76, 0.07), transparent 60%);
+  --shadow-card: 0 1px 2px rgba(120, 80, 55, 0.06), 0 6px 20px rgba(120, 80, 55, 0.08);
+  --shadow-lift: 0 2px 6px rgba(120, 80, 55, 0.09), 0 14px 36px rgba(120, 80, 55, 0.14);
+  --selection: rgba(207, 106, 76, 0.2);
+}
+
+/* Ember — cozy warm dark: espresso surfaces, coral glow. */
+[data-theme="ember"] {
+  color-scheme: dark;
+  --paper: 23 17 14;
+  --surface: 32 24 18;
+  --ink: 240 233 226;
+  --muted: 165 150 138;
+  --line: rgba(255, 240, 225, 0.09);
+  --accent: 232 146 124;
+  --accent-dark: 210 124 102;
+  --accent-ink: 42 23 18;
+  --work-bright: 158 182 247;
+  --school-bright: 236 164 104;
+  --meals-bright: 100 206 148;
+  --fitness-bright: 244 158 182;
+  --family-bright: 194 168 238;
+  --compass-bright: 198 224 130;
+  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(232, 146, 124, 0.09), transparent 60%);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
+  --selection: rgba(232, 146, 124, 0.3);
+}
+
 /* ---------------------------------------------------------------------------
  * Motion — subtle, purposeful, and disabled for reduced-motion users.
  * ------------------------------------------------------------------------- */

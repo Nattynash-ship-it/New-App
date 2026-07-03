@@ -12,6 +12,7 @@ import type {
   Chore,
   Course,
   FamilyActivity,
+  Habit,
   Kid,
   Meeting,
   PantryItem,
@@ -250,6 +251,20 @@ export function seedRoutines(): Routine[] {
         { id: id("ex"), name: "Foam Roll — quads/glutes", target: "8 min" },
       ],
     },
+  ];
+}
+
+/** Recent consecutive days (including today) as ISO dates, for streak seeds. */
+function recentDays(count: number): string[] {
+  return Array.from({ length: count }, (_, i) => addDays(todayISO(), -i));
+}
+
+export function seedHabits(): Habit[] {
+  return [
+    { id: id("hab"), name: "Meditate", icon: "🧘", history: recentDays(12) },
+    { id: id("hab"), name: "Read", icon: "📖", history: recentDays(8) },
+    { id: id("hab"), name: "Workout", icon: "👟", history: recentDays(15) },
+    { id: id("hab"), name: "No sugar", icon: "🌱", history: recentDays(10) },
   ];
 }
 

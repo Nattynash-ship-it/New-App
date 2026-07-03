@@ -232,6 +232,19 @@ export interface WorkoutLog {
   note: string;
 }
 
+/** Daily habit with one-tap check-ins and streak history. */
+export interface Habit {
+  id: Id;
+  name: string;
+  /** Emoji glyph shown in the streak ring. */
+  icon: string;
+  /** ISO dates the habit was completed. Streak is derived from this. */
+  history: ISODate[];
+}
+
+/** Cups of water logged per day, keyed by ISO date. */
+export type WaterLog = Record<ISODate, number>;
+
 // ---------------------------------------------------------------------------
 // Family & Gamified Economy
 // ---------------------------------------------------------------------------

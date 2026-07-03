@@ -14,11 +14,13 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ThemeMeta[] = [
-  { id: "midnight", label: "Midnight", bg: "#0B0F13", accent: "#C8F04D", mode: "dark" },
+  { id: "bloom", label: "Bloom", bg: "#F7F1E7", accent: "#CF6A4C", mode: "light" },
   { id: "daylight", label: "Daylight", bg: "#F7F8FA", accent: "#4056D8", mode: "light" },
   { id: "meadow", label: "Meadow", bg: "#F3F6F1", accent: "#1F7A4E", mode: "light" },
+  { id: "midnight", label: "Midnight", bg: "#0B0F13", accent: "#C8F04D", mode: "dark" },
+  { id: "ember", label: "Ember", bg: "#17110E", accent: "#E8927C", mode: "dark" },
   { id: "aurora", label: "Aurora", bg: "#0D1020", accent: "#5EE0D8", mode: "dark" },
 ];
 
-export const DEFAULT_THEME = "midnight";
+export const DEFAULT_THEME = "bloom";
 export const THEME_STORAGE_KEY = "hub-theme";

@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { HabitStreaks } from "@/components/HabitStreaks";
 import { MoodTrend } from "@/components/MoodTrend";
+import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
+import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
-import { selectTimeline } from "@/core/selectors";
+import { encouragementForToday, selectTimeline } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
 import type { CheckInPeriod, Mood } from "@/core/types";
 
@@ -187,15 +190,27 @@ export default function CompassPage() {
             day: "numeric",
           })}
         </p>
-        <h1 className="mt-1 font-display text-3xl tracking-tight">
-          {word}, {name}
+        <h1 className="mt-1 flex items-center gap-2 font-display text-3xl tracking-tight">
+          {word}, {name} <span className="text-accent">♥</span>
         </h1>
+        <p className="mt-1 text-sm text-muted">{encouragementForToday()}</p>
+        <RoleChip />
       </header>
 
       {/* Whole life at a glance */}
       <OverviewStrip />
 
       <QuickAdd />
+
+      {/* Wellness at a glance — habits + hydration */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <HabitStreaks />
+        </div>
+        <div className="lg:col-span-2">
+          <WaterCard />
+        </div>
+      </div>
 
       {/* Nothing sneaks up overnight */}
       <TomorrowHeadsUp />
@@ -211,6 +226,53 @@ export default function CompassPage() {
           <MoodTrend />
         </div>
       </div>
+
+      <MotivationBanner />
     </div>
+  );
+}
+
+function RoleChip() {
+  const roles = useHub((s) => s.profile.roles);
+  const setRoles = useHub((s) => s.setRoles);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(roles.join(", "));
+
+  if (editing) {
+    return (
+      <form
+        className="mt-2 inline-flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setRoles(draft.split(",").map((r) => r.trim()).filter(Boolean));
+          setEditing(false);
+        }}
+      >
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Mom, Student, Professional"
+          className="input !w-64 !py-1 text-xs"
+        />
+        <button type="submit" className="btn-ghost !px-2.5 !py-1 text-xs">
+          Save
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        setDraft(roles.join(", "));
+        setEditing(true);
+      }}
+      className="mt-2 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted transition-colors hover:border-accent"
+    >
+      <span className="text-accent">◔</span>
+      {roles.length ? roles.join(" · ") : "Add your roles"}
+      <span className="opacity-60">✎</span>
+    </button>
   );
 }

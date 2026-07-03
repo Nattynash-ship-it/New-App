@@ -25,7 +25,8 @@ describe("profile + data management", () => {
   it("completes onboarding with a name", async () => {
     const { useHub } = await import("../store/hub");
     useHub.getState().completeOnboarding("Alex");
-    expect(useHub.getState().profile).toEqual({ name: "Alex", onboarded: true });
+    expect(useHub.getState().profile.name).toBe("Alex");
+    expect(useHub.getState().profile.onboarded).toBe(true);
   });
 
   it("round-trips through export → import", async () => {
@@ -58,5 +59,43 @@ describe("profile + data management", () => {
     expect(useHub.getState().profile.name).toBe("Keeper");
     expect(useHub.getState().pantry.some((p) => p.name === "Ephemeral")).toBe(false);
     expect(useHub.getState().courses.length).toBeGreaterThan(0); // fresh seed present
+  });
+
+  it("edits role tags", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().setRoles([" Mom ", "Student", "", "Runner"]);
+    expect(useHub.getState().profile.roles).toEqual(["Mom", "Student", "Runner"]);
+  });
+});
+
+describe("wellness", () => {
+  it("toggles a habit for today and back", async () => {
+    const { useHub } = await import("../store/hub");
+    const habit = useHub.getState().habits[0]!;
+    const before = habit.history.length;
+    useHub.getState().toggleHabitToday(habit.id);
+    const after = useHub.getState().habits.find((h) => h.id === habit.id)!;
+    // seed history includes today, so first toggle removes it
+    expect(after.history.length).toBe(before - 1);
+    useHub.getState().toggleHabitToday(habit.id);
+    expect(useHub.getState().habits.find((h) => h.id === habit.id)!.history.length).toBe(before);
+  });
+
+  it("adds and removes a custom habit", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addHabit("Stretch", "🤸");
+    const added = useHub.getState().habits.find((h) => h.name === "Stretch");
+    expect(added?.icon).toBe("🤸");
+    useHub.getState().removeHabit(added!.id);
+    expect(useHub.getState().habits.some((h) => h.name === "Stretch")).toBe(false);
+  });
+
+  it("logs water without going negative", async () => {
+    const { useHub } = await import("../store/hub");
+    const { todayISO } = await import("../dates");
+    useHub.getState().logWater(3);
+    expect(useHub.getState().water[todayISO()]).toBe(3);
+    useHub.getState().logWater(-10);
+    expect(useHub.getState().water[todayISO()]).toBe(0);
   });
 });

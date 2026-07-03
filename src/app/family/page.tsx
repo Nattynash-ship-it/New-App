@@ -23,7 +23,16 @@ function ActivityCalendar() {
   const activities = useHub((s) => s.activities);
   const kids = useHub((s) => s.kids);
   const removeActivity = useHub((s) => s.removeActivity);
+  const setActivityPrepNote = useHub((s) => s.setActivityPrepNote);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+
+  function saveNote(id: string) {
+    setActivityPrepNote(id, noteDraft);
+    setEditingNoteId(null);
+    setNoteDraft("");
+  }
 
   const upcoming = [...activities]
     .filter((a) => a.date >= todayISO())
@@ -95,6 +104,45 @@ function ActivityCalendar() {
                     {kid?.name ?? "Whole family"} · {formatFriendly(a.date)}
                     {a.time ? ` · ${formatTime(a.time)}` : ""}
                   </p>
+                  {editingNoteId === a.id ? (
+                    <input
+                      autoFocus
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      onBlur={() => saveNote(a.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveNote(a.id);
+                        if (e.key === "Escape") {
+                          setEditingNoteId(null);
+                          setNoteDraft("");
+                        }
+                      }}
+                      placeholder="Prep note — what to bring or remember"
+                      maxLength={120}
+                      className="mt-1 w-full max-w-sm rounded-lg border border-accent/50 bg-surface px-2 py-1 text-xs outline-none"
+                    />
+                  ) : a.prepNote ? (
+                    <button
+                      onClick={() => {
+                        setEditingNoteId(a.id);
+                        setNoteDraft(a.prepNote ?? "");
+                      }}
+                      className="mt-0.5 block truncate text-left text-xs italic text-accent/80 hover:text-accent"
+                      title="Edit prep note"
+                    >
+                      ↳ {a.prepNote}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setEditingNoteId(a.id);
+                        setNoteDraft("");
+                      }}
+                      className="mt-0.5 text-xs text-muted/60 opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+                    >
+                      + prep note
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => removeActivity(a.id)}

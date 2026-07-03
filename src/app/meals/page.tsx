@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
 import { matchRecipes } from "@/core/selectors";
@@ -94,6 +94,7 @@ function Pantry() {
   const pantry = useHub((s) => s.pantry);
   const togglePantryItem = useHub((s) => s.togglePantryItem);
   const addPantryItem = useHub((s) => s.addPantryItem);
+  const removePantryItem = useHub((s) => s.removePantryItem);
   const [newItem, setNewItem] = useState("");
 
   const grouped = useMemo(() => {
@@ -122,6 +123,7 @@ function Pantry() {
                   key={item.id}
                   checked={item.onHand}
                   onChange={() => togglePantryItem(item.id)}
+                  onRemove={() => removePantryItem(item.id)}
                   label={item.name}
                   strike={false}
                 />
@@ -256,6 +258,8 @@ function Groceries() {
   const groceryList = useHub((s) => s.groceryList);
   const generateGroceryList = useHub((s) => s.generateGroceryList);
   const toggleGroceryItem = useHub((s) => s.toggleGroceryItem);
+  const addGroceryItem = useHub((s) => s.addGroceryItem);
+  const removeGroceryItem = useHub((s) => s.removeGroceryItem);
   const preferredStore = useHub((s) => s.preferredStore);
   const setPreferredStore = useHub((s) => s.setPreferredStore);
   const [sendState, setSendState] = useState<string>("");
@@ -315,11 +319,13 @@ function Groceries() {
                   key={g.id}
                   checked={g.checked}
                   onChange={() => toggleGroceryItem(g.id)}
+                  onRemove={() => removeGroceryItem(g.id)}
                   label={g.name}
                   sub={g.quantity !== "1" ? g.quantity : undefined}
                 />
               ))}
             </div>
+            <InlineAdd placeholder="Add grocery item" onAdd={(name) => addGroceryItem(name)} />
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-1.5 text-xs text-muted">
                 My store

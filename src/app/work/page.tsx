@@ -80,6 +80,12 @@ function MeetingList() {
   const meetings = useHub((s) => s.meetings);
   const projects = useHub((s) => s.projects);
   const removeMeeting = useHub((s) => s.removeMeeting);
+  const addMeeting = useHub((s) => s.addMeeting);
+  const [showAdd, setShowAdd] = useState(false);
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(todayISO());
+  const [time, setTime] = useState("09:00");
+  const [link, setLink] = useState("");
   const upcoming = [...meetings]
     .filter((m) => m.date >= todayISO())
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
@@ -87,9 +93,44 @@ function MeetingList() {
 
   return (
     <Card>
-      <SectionTitle>Meeting schedule</SectionTitle>
+      <SectionTitle
+        right={
+          <button className="btn-ghost !px-3 !py-1 text-xs" onClick={() => setShowAdd(!showAdd)}>
+            {showAdd ? "Close" : "+ Meeting"}
+          </button>
+        }
+      >
+        Meeting schedule
+      </SectionTitle>
+      {showAdd ? (
+        <form
+          className="animate-slide-in mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-paper p-2.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!title.trim()) return;
+            addMeeting({
+              title: title.trim(),
+              date,
+              time,
+              durationMin: 30,
+              link: link.trim() || undefined,
+            });
+            setTitle("");
+            setLink("");
+            setShowAdd(false);
+          }}
+        >
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Meeting title" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Date" />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Time" />
+          <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Video link (optional)" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
+          <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!title.trim()}>
+            Add
+          </button>
+        </form>
+      ) : null}
       {upcoming.length === 0 ? (
-        <EmptyState>No upcoming meetings. Use quick add on the Compass.</EmptyState>
+        <EmptyState>No upcoming meetings — add one above or use quick add on Today.</EmptyState>
       ) : (
         <ul className="divide-y divide-line">
           {upcoming.map((m) => {
@@ -144,8 +185,13 @@ function ProjectCard({ projectId }: { projectId: string }) {
   const project = useHub((s) => s.projects.find((p) => p.id === projectId));
   const toggleWorkTask = useHub((s) => s.toggleWorkTask);
   const addWorkTask = useHub((s) => s.addWorkTask);
+  const removeWorkTask = useHub((s) => s.removeWorkTask);
   const toggleMilestone = useHub((s) => s.toggleMilestone);
+  const removeMilestone = useHub((s) => s.removeMilestone);
+  const addMilestone = useHub((s) => s.addMilestone);
+  const removeProject = useHub((s) => s.removeProject);
   const [newTask, setNewTask] = useState("");
+  const [newMilestone, setNewMilestone] = useState("");
 
   if (!project) return null;
   const open = project.tasks.filter((t) => !t.done).length;
@@ -157,7 +203,16 @@ function ProjectCard({ projectId }: { projectId: string }) {
           <h3 className="text-sm font-semibold">{project.name}</h3>
           <p className="text-xs text-muted">{project.category}</p>
         </div>
-        <span className={`chip ${STATUS_STYLE[project.status]}`}>{project.status}</span>
+        <span className="flex items-center gap-1.5">
+          <span className={`chip ${STATUS_STYLE[project.status]}`}>{project.status}</span>
+          <button
+            onClick={() => removeProject(project.id)}
+            aria-label={`Delete project ${project.name}`}
+            className="rounded-full px-1.5 text-sm text-muted opacity-40 transition-opacity hover:bg-fitness-soft hover:text-fitness-bright hover:opacity-100"
+          >
+            ×
+          </button>
+        </span>
       </div>
       {project.trackingRefs.length > 0 ? (
         <p className="mb-2 flex flex-wrap gap-1.5">
@@ -171,14 +226,14 @@ function ProjectCard({ projectId }: { projectId: string }) {
       {project.notes ? <p className="mb-2 text-xs text-muted">{project.notes}</p> : null}
 
       {/* Roadmap: dated milestones */}
-      {project.milestones?.length ? (
-        <div className="mb-2 rounded-xl border border-line p-2.5">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Milestones
-          </p>
+      <div className="mb-2 rounded-xl border border-line p-2.5">
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+          Milestones
+        </p>
+        {project.milestones?.length ? (
           <ol className="space-y-1">
             {project.milestones.map((ms) => (
-              <li key={ms.id} className="flex items-center gap-2 text-xs">
+              <li key={ms.id} className="group/ms flex items-center gap-2 text-xs">
                 <button
                   onClick={() => toggleMilestone(project.id, ms.id)}
                   aria-pressed={ms.done}
@@ -187,20 +242,51 @@ function ProjectCard({ projectId }: { projectId: string }) {
                   }`}
                   aria-label={`Toggle milestone ${ms.title}`}
                 >
-                  {ms.done ? <span className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+                  {ms.done ? <span className="animate-pop h-1.5 w-1.5 rounded-full bg-white" /> : null}
                 </button>
                 <span className={ms.done ? "text-muted line-through" : ""}>{ms.title}</span>
-                {ms.targetDate ? (
-                  <span className="ml-auto shrink-0 text-[10px] text-muted">
-                    {formatShort(ms.targetDate)}
-                    {!ms.done && daysUntil(ms.targetDate) <= 5 ? " · soon" : ""}
-                  </span>
-                ) : null}
+                <span className="ml-auto flex shrink-0 items-center gap-1">
+                  {ms.targetDate ? (
+                    <span className="text-[10px] text-muted">
+                      {formatShort(ms.targetDate)}
+                      {!ms.done && daysUntil(ms.targetDate) <= 5 ? " · soon" : ""}
+                    </span>
+                  ) : null}
+                  <button
+                    onClick={() => removeMilestone(project.id, ms.id)}
+                    aria-label={`Delete milestone ${ms.title}`}
+                    className="rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover/ms:opacity-100"
+                  >
+                    ×
+                  </button>
+                </span>
               </li>
             ))}
           </ol>
-        </div>
-      ) : null}
+        ) : (
+          <p className="text-xs text-muted">No milestones yet — sketch the roadmap below.</p>
+        )}
+        <form
+          className="mt-2 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (newMilestone.trim()) {
+              addMilestone(project.id, newMilestone.trim());
+              setNewMilestone("");
+            }
+          }}
+        >
+          <input
+            value={newMilestone}
+            onChange={(e) => setNewMilestone(e.target.value)}
+            placeholder="Add milestone"
+            className="input !py-1 text-xs"
+          />
+          <button type="submit" className="btn-ghost shrink-0 !px-2.5 !py-1 text-xs" disabled={!newMilestone.trim()}>
+            Add
+          </button>
+        </form>
+      </div>
 
       <div className="mt-2 space-y-0.5">
         {project.tasks.map((t) => (
@@ -208,6 +294,7 @@ function ProjectCard({ projectId }: { projectId: string }) {
             key={t.id}
             checked={t.done}
             onChange={() => toggleWorkTask(project.id, t.id)}
+            onRemove={() => removeWorkTask(project.id, t.id)}
             label={t.title}
             sub={
               t.dueDate && !t.done
@@ -242,6 +329,33 @@ function ProjectCard({ projectId }: { projectId: string }) {
   );
 }
 
+function AddProject() {
+  const addProject = useHub((s) => s.addProject);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+
+  return (
+    <form
+      className="card flex flex-wrap items-center gap-2 border-dashed p-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (name.trim()) {
+          addProject(name.trim(), category.trim() || "General");
+          setName("");
+          setCategory("");
+        }
+      }}
+    >
+      <span className="text-sm text-muted">New project</span>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" className="input min-w-[160px] flex-1 !py-1.5 text-xs" />
+      <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (optional)" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
+      <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!name.trim()}>
+        Create
+      </button>
+    </form>
+  );
+}
+
 export default function WorkPage() {
   const hydrated = useHydrated();
   const projectIds = useHub((s) => s.projects).map((p) => p.id);
@@ -264,6 +378,7 @@ export default function WorkPage() {
           <ProjectCard key={id} projectId={id} />
         ))}
       </div>
+      <AddProject />
     </div>
   );
 }

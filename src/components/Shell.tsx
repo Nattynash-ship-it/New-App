@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 const NAV = [
-  { href: "/", label: "Compass", icon: "◈" },
+  { href: "/", label: "Today", icon: "✦" },
   { href: "/work", label: "Work", icon: "▤" },
   { href: "/school", label: "School", icon: "✎" },
   { href: "/meals", label: "Meals", icon: "❋" },
@@ -21,10 +21,15 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh md:flex">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:border-line md:bg-surface/60 md:px-4 md:py-8 md:sticky md:top-0 md:h-dvh">
-        <Link href="/" className="px-3">
-          <span className="font-display text-xl tracking-tight">Compass</span>
-          <span className="block text-[11px] uppercase tracking-[0.18em] text-muted mt-0.5">
-            Life Hub
+        <Link href="/" className="group px-3">
+          <span className="flex items-baseline gap-1.5">
+            <span className="font-display text-2xl tracking-tight">Vela</span>
+            <span className="text-accent transition-transform duration-300 group-hover:rotate-45" aria-hidden>
+              ✦
+            </span>
+          </span>
+          <span className="mt-0.5 block text-[11px] uppercase tracking-[0.18em] text-muted">
+            Your life, under sail
           </span>
         </Link>
         <nav className="mt-8 space-y-1">
@@ -50,7 +55,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mt-auto space-y-3 px-3">
           <ThemeSwitcher />
           <p className="text-[11px] leading-relaxed text-muted/70">
-            Designed to lower cognitive load — not add to it.
+            Vela keeps the whole day on course — so you don&apos;t have to hold it in your head.
           </p>
         </div>
       </aside>
@@ -59,7 +64,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="flex-1 pb-24 md:pb-12">
         {/* Mobile top bar: wordmark + theme switcher */}
         <div className="flex items-center justify-between border-b border-line bg-surface/80 px-4 py-2.5 backdrop-blur md:hidden">
-          <span className="font-display text-base tracking-tight">Compass</span>
+          <span className="font-display text-base tracking-tight">
+            Vela <span className="text-accent">✦</span>
+          </span>
           <ThemeSwitcher compact />
         </div>
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 md:px-8 md:pt-10">{children}</div>

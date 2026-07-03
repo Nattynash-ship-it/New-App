@@ -68,6 +68,25 @@ describe("profile + data management", () => {
   });
 });
 
+describe("persist merge (older stored blobs)", () => {
+  it("backfills fields added after a slice was first persisted", async () => {
+    const { useHub } = await import("../store/hub");
+    // Simulate localStorage written by an older build: a profile that predates
+    // the `roles` field, and no wellness slices at all.
+    const persistedState = { profile: { name: "Legacy User", onboarded: true } };
+    // @ts-expect-error merge is defined in the persist options
+    const merged = useHub.persist.getOptions().merge(persistedState, useHub.getState());
+    expect(merged.profile.name).toBe("Legacy User");
+    expect(merged.profile.onboarded).toBe(true);
+    // The crashing field — must be defined, never undefined.
+    expect(Array.isArray(merged.profile.roles)).toBe(true);
+    // Wellness slices added later are backfilled from seed/defaults.
+    expect(Array.isArray(merged.habits)).toBe(true);
+    expect(typeof merged.water).toBe("object");
+    expect(typeof merged.waterGoal).toBe("number");
+  });
+});
+
 describe("wellness", () => {
   it("toggles a habit for today and back", async () => {
     const { useHub } = await import("../store/hub");

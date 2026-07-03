@@ -768,6 +768,30 @@ export const useHub = create<HubState>()(
     {
       name: "life-hub-v1",
       storage: createJSONStorage(() => localStorage),
+      /**
+       * Zustand's default rehydrate does a *shallow* top-level merge, so a
+       * persisted `profile` created before a field existed (e.g. `roles`) would
+       * silently override the initialised profile and drop the new field —
+       * crashing any code that reads it. Deep-merge each object slice over the
+       * fresh initial state so newly-added fields always have a default.
+       */
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<HubState>;
+        return {
+          ...current,
+          ...p,
+          profile: { ...current.profile, ...(p.profile ?? {}) },
+          degreePlan: { ...current.degreePlan, ...(p.degreePlan ?? {}) },
+          focus: { ...current.focus, ...(p.focus ?? {}) },
+          // Slices added after the first release — fall back to seed/default
+          // when an older persisted blob doesn't carry them.
+          habits: p.habits ?? current.habits,
+          water: p.water ?? current.water,
+          waterGoal: p.waterGoal ?? current.waterGoal,
+          fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
+          weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
+        };
+      },
     },
   ),
 );

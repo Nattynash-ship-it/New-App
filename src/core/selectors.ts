@@ -347,6 +347,28 @@ export function encouragementForToday(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Kids' weekly meals — calorie totals
+// ---------------------------------------------------------------------------
+
+export interface KidWeekCalories {
+  /** Calories per weekday, index 0 = Monday … 6 = Sunday. */
+  perDay: number[];
+  total: number;
+  /** Average over the days that actually have any meals planned. */
+  avgPlannedDay: number;
+}
+
+export function kidWeekCalories(s: HubState, kidId: string): KidWeekCalories {
+  const perDay = Array.from({ length: 7 }, () => 0);
+  for (const m of s.kidMeals) {
+    if (m.kidId === kidId && m.day >= 0 && m.day < 7) perDay[m.day]! += m.calories;
+  }
+  const total = perDay.reduce((n, c) => n + c, 0);
+  const plannedDays = perDay.filter((c) => c > 0).length;
+  return { perDay, total, avgPlannedDay: plannedDays ? Math.round(total / plannedDays) : 0 };
+}
+
+// ---------------------------------------------------------------------------
 // Energy-aware daily plan — "here's today, scaled to how you feel"
 // ---------------------------------------------------------------------------
 

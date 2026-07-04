@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { KidMeals } from "@/components/KidMeals";
 import { addDays, formatFriendly, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
 import type { ActivityCategory } from "@/core/types";
@@ -409,6 +410,7 @@ export default function FamilyPage() {
         subtitle="Every kid's activities in one calendar, and a points economy that runs itself."
       />
       <ActivityCalendar />
+      <KidMeals />
       <GeneralStore />
     </div>
   );

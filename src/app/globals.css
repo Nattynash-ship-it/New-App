@@ -57,29 +57,6 @@
   --selection: rgba(200, 240, 77, 0.35);
 }
 
-/* Velvet — deep plum/wine with a warm rose accent. */
-[data-theme="velvet"] {
-  color-scheme: dark;
-  --paper: 26 15 23;
-  --surface: 40 24 37;
-  --ink: 244 232 240;
-  --muted: 178 156 170;
-  --line: rgba(255, 232, 245, 0.09);
-  --accent: 233 122 168;
-  --accent-dark: 212 104 148;
-  --accent-ink: 40 14 28;
-  --work-bright: 168 172 244;
-  --school-bright: 236 168 108;
-  --meals-bright: 104 206 148;
-  --fitness-bright: 244 150 178;
-  --family-bright: 206 168 240;
-  --compass-bright: 234 160 190;
-  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(233, 122, 168, 0.1), transparent 60%);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.42);
-  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
-  --selection: rgba(233, 122, 168, 0.3);
-}
-
 [data-theme="daylight"] {
   color-scheme: light;
   --paper: 247 248 250;
@@ -102,49 +79,53 @@
   --selection: rgba(64, 86, 216, 0.2);
 }
 
-[data-theme="aurora"] {
-  color-scheme: dark;
-  --paper: 13 16 32;
-  --surface: 23 27 48;
-  --ink: 235 240 248;
-  --muted: 141 150 170;
-  --line: rgba(255, 255, 255, 0.09);
-  --accent: 94 224 216;
-  --accent-dark: 74 200 192;
-  --accent-ink: 6 32 30;
-  --work-bright: 152 177 247;
-  --school-bright: 234 157 94;
-  --meals-bright: 87 204 139;
-  --fitness-bright: 243 149 176;
-  --family-bright: 187 160 236;
-  --compass-bright: 176 226 130;
-  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(94, 224, 216, 0.08), transparent 60%);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
-  --selection: rgba(94, 224, 216, 0.3);
+/* Cartoon — bright, playful, high-energy light theme with bold ink outlines
+ * and chunky offset shadows (see the scoped rules below). */
+[data-theme="cartoon"] {
+  color-scheme: light;
+  --paper: 255 247 234;
+  --surface: 255 255 255;
+  --ink: 34 30 58;
+  --muted: 122 116 150;
+  --line: rgba(34, 30, 58, 0.9);
+  --accent: 255 94 120;
+  --accent-dark: 232 74 100;
+  --accent-ink: 255 255 255;
+  --work-bright: 42 96 232;
+  --school-bright: 205 110 20;
+  --meals-bright: 18 150 92;
+  --fitness-bright: 224 46 110;
+  --family-bright: 138 74 224;
+  --compass-bright: 226 82 108;
+  --page-glow: radial-gradient(900px 420px at 12% -10%, rgba(255, 214, 92, 0.4), transparent 55%),
+    radial-gradient(820px 420px at 100% 0%, rgba(126, 208, 255, 0.34), transparent 55%);
+  --shadow-card: 4px 4px 0 rgba(34, 30, 58, 0.9);
+  --shadow-lift: 6px 6px 0 rgba(34, 30, 58, 0.9);
+  --selection: rgba(255, 94, 120, 0.28);
 }
 
-/* Ember — cozy warm dark: espresso surfaces, coral glow. */
-[data-theme="ember"] {
-  color-scheme: dark;
-  --paper: 23 17 14;
-  --surface: 32 24 18;
-  --ink: 240 233 226;
-  --muted: 165 150 138;
-  --line: rgba(255, 240, 225, 0.09);
-  --accent: 232 146 124;
-  --accent-dark: 210 124 102;
-  --accent-ink: 42 23 18;
-  --work-bright: 158 182 247;
-  --school-bright: 236 164 104;
-  --meals-bright: 100 206 148;
-  --fitness-bright: 244 158 182;
-  --family-bright: 194 168 238;
-  --compass-bright: 198 224 130;
-  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(232, 146, 124, 0.09), transparent 60%);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
-  --selection: rgba(232, 146, 124, 0.3);
+/* Glass — frosted glassmorphism over a soft aurora gradient (scoped rules
+ * below add the blur + translucency). */
+[data-theme="glass"] {
+  color-scheme: light;
+  --paper: 233 237 248;
+  --surface: 255 255 255;
+  --ink: 28 32 52;
+  --muted: 92 100 128;
+  --line: rgba(255, 255, 255, 0.55);
+  --accent: 120 108 246;
+  --accent-dark: 100 88 226;
+  --accent-ink: 255 255 255;
+  --work-bright: 60 88 214;
+  --school-bright: 168 96 30;
+  --meals-bright: 20 132 84;
+  --fitness-bright: 208 60 108;
+  --family-bright: 122 78 216;
+  --compass-bright: 96 104 210;
+  --page-glow: none;
+  --shadow-card: 0 2px 8px rgba(40, 50, 90, 0.08), 0 12px 40px rgba(40, 50, 90, 0.12);
+  --shadow-lift: 0 4px 12px rgba(40, 50, 90, 0.12), 0 18px 50px rgba(40, 50, 90, 0.18);
+  --selection: rgba(120, 108, 246, 0.24);
 }
 
 /* ---------------------------------------------------------------------------
@@ -292,4 +273,51 @@
     background-clip: text;
     color: transparent;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Theme-specific personality — Glass (frosted) and Cartoon (bold outlines).
+ * These live outside @layer components so they reliably win over .card.
+ * ------------------------------------------------------------------------- */
+
+/* Glass — a soft aurora gradient behind frosted, translucent cards. */
+[data-theme="glass"] body {
+  background-image:
+    radial-gradient(58% 48% at 12% 6%, rgba(124, 138, 255, 0.4), transparent 60%),
+    radial-gradient(54% 46% at 92% 10%, rgba(255, 140, 200, 0.34), transparent 60%),
+    radial-gradient(60% 55% at 50% 108%, rgba(96, 220, 214, 0.32), transparent 60%);
+  background-attachment: fixed;
+}
+[data-theme="glass"] .card,
+[data-theme="glass"] .hero-surface {
+  background-color: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+[data-theme="glass"] .btn-ghost,
+[data-theme="glass"] .input {
+  background-color: rgba(255, 255, 255, 0.45);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Cartoon — bold ink outlines, chunky offset shadows, extra-round corners. */
+[data-theme="cartoon"] .card {
+  border-width: 2px;
+  border-radius: 1.4rem;
+}
+[data-theme="cartoon"] .btn-primary,
+[data-theme="cartoon"] .btn-ghost {
+  border: 2px solid rgb(var(--ink));
+  box-shadow: 3px 3px 0 rgb(var(--ink));
+  font-weight: 700;
+}
+[data-theme="cartoon"] .btn-primary:active,
+[data-theme="cartoon"] .btn-ghost:active {
+  box-shadow: 1px 1px 0 rgb(var(--ink));
+  transform: translate(2px, 2px);
+}
+[data-theme="cartoon"] .chip {
+  border: 1.5px solid rgb(var(--ink) / 0.9);
 }

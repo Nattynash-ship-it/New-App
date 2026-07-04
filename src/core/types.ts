@@ -293,6 +293,17 @@ export interface Chore {
   kidId?: Id; // undefined = anyone can claim
 }
 
+/** A kid's planned meal for a weekday slot (weekly template, not date-bound). */
+export interface KidMeal {
+  id: Id;
+  kidId: Id;
+  /** 0 = Monday … 6 = Sunday. */
+  day: number;
+  slot: MealSlot;
+  title: string;
+  calories: number;
+}
+
 export interface StoreReward {
   id: Id;
   title: string;

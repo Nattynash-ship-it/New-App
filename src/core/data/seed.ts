@@ -15,6 +15,7 @@ import type {
   FamilyActivity,
   Habit,
   Kid,
+  KidMeal,
   Meeting,
   Note,
   PantryItem,
@@ -324,6 +325,20 @@ export function seedChores(): Chore[] {
     { id: id("chore"), title: "Reading — 20 minutes", points: 15 },
     { id: id("chore"), title: "Math practice — one worksheet", points: 20 },
     { id: id("chore"), title: "Help with dinner prep", points: 10 },
+  ];
+}
+
+export function seedKidMeals(): KidMeal[] {
+  // A couple of days pre-filled for Maya (kid_1) and Eli (kid_2) so the weekly
+  // planner isn't empty on day one.
+  return [
+    { id: id("km"), kidId: "kid_1", day: 0, slot: "breakfast", title: "Oatmeal + berries", calories: 320 },
+    { id: id("km"), kidId: "kid_1", day: 0, slot: "lunch", title: "Turkey wrap + apple", calories: 450 },
+    { id: id("km"), kidId: "kid_1", day: 0, slot: "dinner", title: "Pasta + veggies", calories: 560 },
+    { id: id("km"), kidId: "kid_1", day: 1, slot: "breakfast", title: "Scrambled eggs + toast", calories: 340 },
+    { id: id("km"), kidId: "kid_2", day: 0, slot: "breakfast", title: "Yogurt + granola", calories: 300 },
+    { id: id("km"), kidId: "kid_2", day: 0, slot: "lunch", title: "PB&J + carrots", calories: 420 },
+    { id: id("km"), kidId: "kid_2", day: 0, slot: "dinner", title: "Chicken + rice", calories: 540 },
   ];
 }
 

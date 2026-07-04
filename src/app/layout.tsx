@@ -23,19 +23,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0E0F1B",
+  themeColor: "#E4EAF8",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-// Apply the saved theme before first paint, migrating anyone still on a
-// removed theme (e.g. the old cream "bloom") to the current default.
-const themeInit = `(function(){try{var v=["nocturne","midnight","aurora","ember","velvet","daylight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="nocturne";if(t)localStorage.setItem("hub-theme","nocturne")}}catch(e){}})()`;
+// Apply the saved theme before first paint, migrating anyone on a removed
+// theme (bloom/meadow/aurora/ember/velvet) to the current default.
+const themeInit = `(function(){try{var v=["glass","cartoon","daylight","nocturne","midnight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="glass";if(t)localStorage.setItem("hub-theme","glass")}}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="nocturne" suppressHydrationWarning>
+    <html lang="en" data-theme="glass" suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before first paint to avoid a flash */}
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

@@ -140,6 +140,38 @@ describe("fitness — equipment & library", () => {
   });
 });
 
+describe("kids' weekly meals", () => {
+  it("upserts a meal cell and totals calories for the week", async () => {
+    const { useHub } = await import("../store/hub");
+    const { kidWeekCalories } = await import("../selectors");
+    const kid = useHub.getState().kids[0]!;
+
+    useHub.getState().setKidMeal(kid.id, 2, "lunch", "Bento box", 480);
+    let cell = useHub
+      .getState()
+      .kidMeals.find((m) => m.kidId === kid.id && m.day === 2 && m.slot === "lunch");
+    expect(cell?.calories).toBe(480);
+
+    // upsert replaces the same cell rather than duplicating
+    useHub.getState().setKidMeal(kid.id, 2, "lunch", "Bigger bento", 620);
+    const cells = useHub
+      .getState()
+      .kidMeals.filter((m) => m.kidId === kid.id && m.day === 2 && m.slot === "lunch");
+    expect(cells).toHaveLength(1);
+    expect(cells[0]?.title).toBe("Bigger bento");
+
+    const week = kidWeekCalories(useHub.getState(), kid.id);
+    expect(week.total).toBeGreaterThanOrEqual(620);
+
+    // empty title clears the cell
+    useHub.getState().setKidMeal(kid.id, 2, "lunch", "  ", 0);
+    cell = useHub
+      .getState()
+      .kidMeals.find((m) => m.kidId === kid.id && m.day === 2 && m.slot === "lunch");
+    expect(cell).toBeUndefined();
+  });
+});
+
 describe("notes & journal", () => {
   it("adds, edits, pins, and removes a note", async () => {
     const { useHub } = await import("../store/hub");

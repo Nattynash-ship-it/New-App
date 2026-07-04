@@ -20,6 +20,7 @@ import {
   seedKids,
   seedMeetings,
   seedEquipment,
+  seedKidMeals,
   seedNotes,
   seedPantry,
   seedPlannedMeals,
@@ -47,6 +48,7 @@ import type {
   GroceryItem,
   Habit,
   Kid,
+  KidMeal,
   MealSlot,
   Meeting,
   Mood,
@@ -128,6 +130,8 @@ export interface HubState {
   chores: Chore[];
   rewards: StoreReward[];
   ledger: PointTransaction[];
+  /** Weekly meal template per kid (breakfast/lunch/dinner + calories). */
+  kidMeals: KidMeal[];
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -241,6 +245,8 @@ export interface HubState {
   removeReward: (id: string) => void;
   completeChore: (choreId: string, kidId: string) => void;
   redeemReward: (rewardId: string, kidId: string) => void;
+  /** Upsert a kid's meal for a weekday slot; an empty title clears the cell. */
+  setKidMeal: (kidId: string, day: number, slot: MealSlot, title: string, calories: number) => void;
 }
 
 function initialState() {
@@ -282,6 +288,7 @@ function initialState() {
     chores: seedChores(),
     rewards: seedRewards(),
     ledger: [] as PointTransaction[],
+    kidMeals: seedKidMeals(),
   };
 }
 
@@ -307,7 +314,7 @@ export const useHub = create<HubState>()(
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
           routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
           attachments, notes, habits, water,
-          waterGoal, energyLog, preferredStore, focus, kids, activities, chores, rewards, ledger,
+          waterGoal, energyLog, preferredStore, focus, kids, activities, chores, rewards, ledger, kidMeals,
         } = s;
         return JSON.stringify(
           {
@@ -828,6 +835,7 @@ export const useHub = create<HubState>()(
           activities: s.activities.filter((a) => a.kidId !== id),
           chores: s.chores.filter((c) => c.kidId !== id),
           ledger: s.ledger.filter((tx) => tx.kidId !== id),
+          kidMeals: s.kidMeals.filter((m) => m.kidId !== id),
         })),
       addChore: (title, points) =>
         set((s) => ({ chores: [...s.chores, { id: newId("chore"), title, points }] })),
@@ -861,6 +869,27 @@ export const useHub = create<HubState>()(
           ],
         }));
       },
+      setKidMeal: (kidId, day, slot, title, calories) =>
+        set((s) => {
+          const others = s.kidMeals.filter(
+            (m) => !(m.kidId === kidId && m.day === day && m.slot === slot),
+          );
+          const clean = title.trim();
+          if (!clean) return { kidMeals: others };
+          return {
+            kidMeals: [
+              ...others,
+              {
+                id: newId("km"),
+                kidId,
+                day,
+                slot,
+                title: clean,
+                calories: Math.max(0, Math.round(calories) || 0),
+              },
+            ],
+          };
+        }),
     }),
     {
       name: "life-hub-v1",
@@ -891,6 +920,7 @@ export const useHub = create<HubState>()(
           equipment: p.equipment ?? current.equipment,
           attachments: p.attachments ?? current.attachments,
           notes: p.notes ?? current.notes,
+          kidMeals: p.kidMeals ?? current.kidMeals,
         };
       },
     },

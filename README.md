@@ -32,7 +32,7 @@ onboarding (your name + theme); everything else is editable from **Settings**
 | `/school` | **School Hub** | Self-paced CS degree tracker. Courses → units → topics (e.g. the 7-unit Discrete Math course with Graph Theory), plus assignment deadlines. Attach syllabi, notes, and PDFs to any course or unit. |
 | `/meals` | **Nutrition & Grocery** | Vegan, high-volume/low-calorie defaults. Check off pantry ingredients → the Reverse Recipe Engine generates a meal from exactly those items. A 7-day × 3-slot week planner grid, plus grocery lists generated from planned meals + pantry gaps, routed to delivery-service webhooks (Whole Foods / Aldi placeholders). |
 | `/fitness` | **Fitness & Wellness** | Goal-based training plan and an at-home workout library filtered to the equipment you own (rower, bike, dumbbells, kettlebells, ropes, medicine ball, bands) — tap any workout into your routines. Streaks, one-tap effort logging, a habit tracker (streak rings), and daily water intake. |
-| `/family` | **Family & General Store** | Kid-tagged activity calendar and a gamified points economy — chores earn points, the General Store spends them, with a full ledger. |
+| `/family` | **Family & General Store** | Kid-tagged activity calendar, a per-kid weekly breakfast/lunch/dinner meal planner with calorie totals, and a gamified points economy — chores earn points, the General Store spends them, with a full ledger. |
 
 ## Zero-friction UX
 

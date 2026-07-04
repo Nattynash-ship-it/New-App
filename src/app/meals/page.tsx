@@ -258,7 +258,6 @@ function ReverseRecipeEngine() {
 function Groceries() {
   const groceryList = useHub((s) => s.groceryList);
   const generateGroceryList = useHub((s) => s.generateGroceryList);
-  const toggleGroceryItem = useHub((s) => s.toggleGroceryItem);
   const addGroceryItem = useHub((s) => s.addGroceryItem);
   const removeGroceryItem = useHub((s) => s.removeGroceryItem);
   const preferredStore = useHub((s) => s.preferredStore);
@@ -324,10 +323,11 @@ function Groceries() {
                 <Checkbox
                   key={g.id}
                   checked={g.checked}
-                  onChange={() => toggleGroceryItem(g.id)}
+                  onChange={() => removeGroceryItem(g.id)}
                   onRemove={() => removeGroceryItem(g.id)}
                   label={g.name}
                   sub={g.quantity !== "1" ? g.quantity : undefined}
+                  vanish
                 />
               ))}
             </div>

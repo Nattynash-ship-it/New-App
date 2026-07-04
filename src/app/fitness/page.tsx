@@ -5,6 +5,7 @@ import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Ske
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
+import { Attachments } from "@/components/Attachments";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
 import { fitnessWeek } from "@/core/selectors";
@@ -298,6 +299,30 @@ function AddRoutine() {
   );
 }
 
+function TrainingPlans() {
+  return (
+    <Card>
+      <SectionTitle right={<span className="text-xs text-muted">tap to open</span>}>
+        Training plans
+      </SectionTitle>
+      <a
+        href="/plans/8-week-glute-sculpt-tracker.pdf"
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-3 rounded-xl border border-line bg-paper px-3 py-2.5 transition-colors hover:border-accent"
+      >
+        <span className="text-xl" aria-hidden>📄</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium">8-Week Glute &amp; Sculpt Tracker</span>
+          <span className="block text-xs text-muted">7-page PDF · progressive glute + sculpt program</span>
+        </span>
+        <span className="shrink-0 text-xs font-medium text-accent">Open →</span>
+      </a>
+      <Attachments ownerType="general" ownerId="fitness" label="My plans & PDFs" />
+    </Card>
+  );
+}
+
 export default function FitnessPage() {
   const hydrated = useHydrated();
   const routineIds = useHub((s) => s.routines).map((r) => r.id);
@@ -326,6 +351,9 @@ export default function FitnessPage() {
         <GoalsCard />
         <WeekPlanCard />
       </div>
+
+      {/* Training plans — the 8-week glute tracker + your own uploads */}
+      <TrainingPlans />
 
       {/* At-home workout library — pick from full routines built for your gear */}
       <EquipmentCard />

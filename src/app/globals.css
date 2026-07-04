@@ -176,6 +176,20 @@
   }
 }
 
+@keyframes vela-vanish {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(12px) scale(0.98);
+  }
+}
+
 @keyframes vela-drift {
   0%,
   100% {
@@ -210,6 +224,9 @@
   }
   .animate-slide-in {
     animation: vela-slide-in 0.25s ease-out both;
+  }
+  .animate-vanish {
+    animation: vela-vanish 0.42s ease-in forwards;
   }
   .animate-float {
     animation: vela-float 8s ease-in-out infinite;

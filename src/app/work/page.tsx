@@ -47,6 +47,7 @@ function TopThree() {
                   onChange={() => toggleWorkTask(t.projectId, t.id)}
                   label={t.title}
                   sub={t.projectName}
+                  vanish
                 />
               </div>
               <button
@@ -291,20 +292,23 @@ function ProjectCard({ projectId }: { projectId: string }) {
       </div>
 
       <div className="mt-2 space-y-0.5">
-        {project.tasks.map((t) => (
-          <Checkbox
-            key={t.id}
-            checked={t.done}
-            onChange={() => toggleWorkTask(project.id, t.id)}
-            onRemove={() => removeWorkTask(project.id, t.id)}
-            label={t.title}
-            sub={
-              t.dueDate && !t.done
-                ? `Due ${formatShort(t.dueDate)}${daysUntil(t.dueDate) <= 2 ? " · soon" : ""}`
-                : undefined
-            }
-          />
-        ))}
+        {project.tasks
+          .filter((t) => !t.done)
+          .map((t) => (
+            <Checkbox
+              key={t.id}
+              checked={t.done}
+              onChange={() => toggleWorkTask(project.id, t.id)}
+              onRemove={() => removeWorkTask(project.id, t.id)}
+              label={t.title}
+              sub={
+                t.dueDate
+                  ? `Due ${formatShort(t.dueDate)}${daysUntil(t.dueDate) <= 2 ? " · soon" : ""}`
+                  : undefined
+              }
+              vanish
+            />
+          ))}
       </div>
 
       <form

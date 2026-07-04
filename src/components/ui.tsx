@@ -72,6 +72,7 @@ export function Checkbox({
   sub,
   strike = true,
   onRemove,
+  vanish = false,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -81,23 +82,42 @@ export function Checkbox({
   strike?: boolean;
   /** When provided, a delete button appears on hover. */
   onRemove?: () => void;
+  /** When true, checking an item plays a brief strike-out then fires onChange —
+   *  so "done" items scratch off and slide away instead of lingering. */
+  vanish?: boolean;
 }) {
+  const [leaving, setLeaving] = useState(false);
+  const isChecked = checked || leaving;
+
+  function handleToggle() {
+    if (vanish && !checked && !leaving) {
+      setLeaving(true);
+      window.setTimeout(onChange, 410);
+      return;
+    }
+    onChange();
+  }
+
   return (
-    <div className="group flex w-full items-start gap-1 rounded-lg px-1.5 py-1.5 hover:bg-ink/[0.03]">
-      <button onClick={onChange} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+    <div
+      className={`group flex w-full items-start gap-1 rounded-lg px-1.5 py-1.5 hover:bg-ink/[0.03] ${
+        leaving ? "animate-vanish pointer-events-none" : ""
+      }`}
+    >
+      <button onClick={handleToggle} className="flex min-w-0 flex-1 items-start gap-3 text-left">
         <span
           className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-            checked ? "border-accent bg-accent text-accent-ink" : "border-ink/25 bg-surface group-hover:border-accent"
+            isChecked ? "border-accent bg-accent text-accent-ink" : "border-ink/25 bg-surface group-hover:border-accent"
           }`}
         >
-          {checked ? (
+          {isChecked ? (
             <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="animate-pop">
               <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           ) : null}
         </span>
         <span className="min-w-0">
-          <span className={`block text-sm ${checked && strike ? "text-muted line-through" : ""}`}>
+          <span className={`block text-sm ${isChecked && strike ? "text-muted line-through" : ""}`}>
             {label}
           </span>
           {sub ? <span className="block text-xs text-muted">{sub}</span> : null}

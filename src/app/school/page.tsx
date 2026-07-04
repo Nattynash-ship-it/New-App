@@ -212,22 +212,30 @@ function AssignmentList() {
   const [dueDate, setDueDate] = useState(formatDateInput(3));
   const [courseId, setCourseId] = useState("");
 
-  const sorted = [...assignments].sort(
-    (a, b) => Number(a.done) - Number(b.done) || a.dueDate.localeCompare(b.dueDate),
-  );
+  const open = [...assignments]
+    .filter((a) => !a.done)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  const doneCount = assignments.length - open.length;
 
   return (
     <Card>
-      <SectionTitle>Assignment deadlines</SectionTitle>
-      {sorted.length === 0 ? (
-        <EmptyState>No assignments tracked — add one below or try “essay due Friday” on Today.</EmptyState>
+      <SectionTitle
+        right={doneCount > 0 ? <span className="text-xs text-muted">{doneCount} done</span> : undefined}
+      >
+        Assignment deadlines
+      </SectionTitle>
+      {open.length === 0 ? (
+        <EmptyState>
+          {doneCount > 0
+            ? "All caught up — every assignment is done. ✦"
+            : "No assignments tracked — add one below or try “essay due Friday” on Today."}
+        </EmptyState>
       ) : (
         <div className="space-y-0.5">
-          {sorted.map((a) => {
+          {open.map((a) => {
             const course = courses.find((c) => c.id === a.courseId);
             const d = daysUntil(a.dueDate);
-            const urgency =
-              a.done ? "" : d < 0 ? " · overdue" : d === 0 ? " · today" : d <= 2 ? ` · in ${d}d` : "";
+            const urgency = d < 0 ? " · overdue" : d === 0 ? " · today" : d <= 2 ? ` · in ${d}d` : "";
             return (
               <Checkbox
                 key={a.id}
@@ -236,6 +244,7 @@ function AssignmentList() {
                 onRemove={() => removeAssignment(a.id)}
                 label={a.title}
                 sub={`${course ? `${course.code} · ` : ""}${formatFriendly(a.dueDate)}${urgency}`}
+                vanish
               />
             );
           })}

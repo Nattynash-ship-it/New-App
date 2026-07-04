@@ -16,6 +16,7 @@ import type {
   Habit,
   Kid,
   Meeting,
+  Note,
   PantryItem,
   PlannedMeal,
   Routine,
@@ -258,6 +259,28 @@ export function seedRoutines(): Routine[] {
 /** Default home-gym equipment — editable in Fitness → My equipment. */
 export function seedEquipment(): Equipment[] {
   return ["rower", "bike", "dumbbells", "kettlebell", "jump_rope", "medicine_ball", "bands", "bodyweight"];
+}
+
+export function seedNotes(): Note[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: id("note"),
+      title: "Weekly reset checklist",
+      body: "Sun: meal plan + grocery order · laundry · tidy backpacks\nWipe fridge · water plants · check the week's calendar together",
+      pinned: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: id("note"),
+      title: "Household info",
+      body: "WiFi: Vela-Home / (add password)\nPediatrician: Dr. Reyes — (add phone)\nEmergency contact: (add)",
+      pinned: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
 }
 
 /** Recent consecutive days (including today) as ISO dates, for streak seeds. */

@@ -20,6 +20,7 @@ import {
   seedKids,
   seedMeetings,
   seedEquipment,
+  seedNotes,
   seedPantry,
   seedPlannedMeals,
   seedHabits,
@@ -47,6 +48,7 @@ import type {
   MealSlot,
   Meeting,
   Mood,
+  Note,
   PantryCategory,
   PantryItem,
   ParsedIntent,
@@ -106,6 +108,8 @@ export interface HubState {
   equipment: Equipment[];
   // Attachments (files uploaded to any section)
   attachments: Attachment[];
+  // Notes & journal
+  notes: Note[];
   // Wellness
   habits: Habit[];
   water: WaterLog;
@@ -203,6 +207,12 @@ export interface HubState {
   addAttachment: (att: Attachment) => void;
   removeAttachment: (id: string) => void;
 
+  // --- Notes & journal ---
+  addNote: (title: string, body: string) => void;
+  updateNote: (id: string, patch: { title?: string; body?: string }) => void;
+  removeNote: (id: string) => void;
+  togglePinNote: (id: string) => void;
+
   // --- Wellness actions ---
   toggleHabitToday: (id: string) => void;
   addHabit: (name: string, icon: string) => void;
@@ -254,6 +264,7 @@ function initialState() {
     weeklySessionTarget: 4,
     equipment: seedEquipment(),
     attachments: [] as Attachment[],
+    notes: seedNotes(),
     habits: seedHabits(),
     water: {} as WaterLog,
     waterGoal: 8,
@@ -288,7 +299,7 @@ export const useHub = create<HubState>()(
           profile, checkIns, events, projects, meetings, courses, assignments,
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
           routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
-          attachments, habits, water,
+          attachments, notes, habits, water,
           waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
         } = s;
         return JSON.stringify(
@@ -712,6 +723,40 @@ export const useHub = create<HubState>()(
       removeAttachment: (id) =>
         set((s) => ({ attachments: s.attachments.filter((a) => a.id !== id) })),
 
+      // --- Notes & journal ---
+      addNote: (title, body) =>
+        set((s) => ({
+          notes: [
+            {
+              id: newId("note"),
+              title: title.trim() || "Untitled note",
+              body: body.trim(),
+              pinned: false,
+              createdAt: nowISO(),
+              updatedAt: nowISO(),
+            },
+            ...s.notes,
+          ],
+        })),
+      updateNote: (id, patch) =>
+        set((s) => ({
+          notes: s.notes.map((n) =>
+            n.id === id
+              ? {
+                  ...n,
+                  ...(patch.title !== undefined ? { title: patch.title } : {}),
+                  ...(patch.body !== undefined ? { body: patch.body } : {}),
+                  updatedAt: nowISO(),
+                }
+              : n,
+          ),
+        })),
+      removeNote: (id) => set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
+      togglePinNote: (id) =>
+        set((s) => ({
+          notes: s.notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)),
+        })),
+
       // --- Wellness ---
       toggleHabitToday: (id) =>
         set((s) => {
@@ -835,6 +880,7 @@ export const useHub = create<HubState>()(
           weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
           equipment: p.equipment ?? current.equipment,
           attachments: p.attachments ?? current.attachments,
+          notes: p.notes ?? current.notes,
         };
       },
     },

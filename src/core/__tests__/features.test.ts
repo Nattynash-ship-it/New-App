@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, todayISO } from "../dates";
 import { recommendPlan } from "../fitness/plan";
-import { encouragementForToday, graduationStats, habitStreak, matchRecipes } from "../selectors";
+import { encouragementForToday, graduationStats, habitStreak, matchRecipes, weeklyBalance } from "../selectors";
 import type { HubState } from "../store/hub";
 import type { PantryItem } from "../types";
 
@@ -106,6 +106,53 @@ describe("encouragementForToday", () => {
     const b = encouragementForToday();
     expect(a).toBe(b);
     expect(a.length).toBeGreaterThan(0);
+  });
+});
+
+describe("weeklyBalance", () => {
+  const base = {
+    ledger: [],
+    activities: [],
+    courses: [],
+    assignments: [],
+    meetings: [],
+    focus: { date: todayISO(), taskIds: [] as string[] },
+    projects: [],
+    workoutLogs: [],
+    weeklySessionTarget: 4,
+    habits: [],
+    checkIns: [],
+  };
+
+  it("scores health from workouts and surfaces the quietest area", () => {
+    const state = {
+      ...base,
+      workoutLogs: [
+        { id: "l1", routineId: "r", date: todayISO(), effort: 3, note: "" },
+        { id: "l2", routineId: "r", date: addDays(todayISO(), -1), effort: 3, note: "" },
+      ],
+    } as unknown as HubState;
+    const b = weeklyBalance(state);
+    expect(b.areas).toHaveLength(5);
+    expect(b.areas.find((a) => a.key === "health")!.score).toBeGreaterThan(0);
+    expect(b.quietest.score).toBe(0); // every other area is empty this week
+  });
+
+  it("gives a full mind score when checked in every day", () => {
+    const days = Array.from({ length: 7 }, (_, i) => addDays(todayISO(), -i));
+    const state = {
+      ...base,
+      checkIns: days.map((d, i) => ({
+        id: `c${i}`,
+        date: d,
+        period: "morning",
+        mood: 4,
+        note: "",
+        prompt: "",
+        createdAt: d,
+      })),
+    } as unknown as HubState;
+    expect(weeklyBalance(state).areas.find((a) => a.key === "mind")!.score).toBe(100);
   });
 });
 

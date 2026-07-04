@@ -258,6 +258,7 @@ function ReverseRecipeEngine() {
 function Groceries() {
   const groceryList = useHub((s) => s.groceryList);
   const generateGroceryList = useHub((s) => s.generateGroceryList);
+  const clearGroceryList = useHub((s) => s.clearGroceryList);
   const addGroceryItem = useHub((s) => s.addGroceryItem);
   const removeGroceryItem = useHub((s) => s.removeGroceryItem);
   const preferredStore = useHub((s) => s.preferredStore);
@@ -350,6 +351,12 @@ function Groceries() {
               </button>
               <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void copyList()}>
                 Copy list
+              </button>
+              <button
+                className="btn-ghost !px-3 !py-1.5 text-xs !text-fitness-bright hover:!border-fitness"
+                onClick={clearGroceryList}
+              >
+                Clear
               </button>
             </div>
             {sendState && sendState !== "sending" ? (

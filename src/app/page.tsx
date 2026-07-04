@@ -11,6 +11,7 @@ import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
 import { SmartCapture } from "@/components/SmartCapture";
 import { TimeBlockCalendar } from "@/components/TimeBlockCalendar";
+import { TodoList } from "@/components/TodoList";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
 import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
@@ -29,7 +30,7 @@ const MOODS: Array<{ value: Mood; face: string; label: string }> = [
 ];
 
 function CheckInCard() {
-  const { period } = dayGreeting();
+  const { period, phase } = dayGreeting();
   const checkIns = useHub((s) => s.checkIns);
   const addCheckIn = useHub((s) => s.addCheckIn);
   const existing = checkIns.find((c) => c.date === todayISO() && c.period === period);
@@ -37,15 +38,16 @@ function CheckInCard() {
   const [mood, setMood] = useState<Mood | null>(null);
   const [note, setNote] = useState("");
 
+  // Label reflects the real time of day (phase), the check-in slot (period)
+  // still groups afternoon with morning.
+  const label = phase === "evening" ? "Evening" : phase === "afternoon" ? "Afternoon" : "Morning";
   const promptText =
     period === "morning" ? "One intention for today" : "One good thing about today";
 
   if (existing) {
     return (
       <Card>
-        <SectionTitle>
-          {period === "morning" ? "Morning check-in" : "Evening check-in"} · done
-        </SectionTitle>
+        <SectionTitle>{label} check-in · done</SectionTitle>
         <p className="text-sm text-muted">
           Mood {MOODS.find((m) => m.value === existing.mood)?.label.toLowerCase()}
           {existing.note ? ` — “${existing.note}”` : ""}. See you{" "}
@@ -58,7 +60,7 @@ function CheckInCard() {
   return (
     <Card>
       <SectionTitle>
-        {period === "morning" ? "Morning check-in" : "Evening check-in"}
+        {label} check-in
         <span className="ml-2 font-normal text-muted">~20 seconds</span>
       </SectionTitle>
       <div className="flex gap-2">
@@ -186,6 +188,9 @@ export default function CompassPage() {
       <EnergyPlan />
 
       <QuickAdd />
+
+      {/* General to-do list with urgency levels */}
+      <TodoList />
 
       {/* One glance: is any part of life being dropped? */}
       <LifeBalance />

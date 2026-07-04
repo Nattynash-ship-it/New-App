@@ -140,6 +140,25 @@ describe("fitness — equipment & library", () => {
   });
 });
 
+describe("notes & journal", () => {
+  it("adds, edits, pins, and removes a note", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addNote("Field trip", "Bring $5 and a bag lunch");
+    const note = useHub.getState().notes.find((n) => n.title === "Field trip");
+    expect(note?.body).toBe("Bring $5 and a bag lunch");
+    expect(note?.pinned).toBe(false);
+
+    useHub.getState().updateNote(note!.id, { body: "Bring $5, bag lunch, and a jacket" });
+    expect(useHub.getState().notes.find((n) => n.id === note!.id)?.body).toContain("jacket");
+
+    useHub.getState().togglePinNote(note!.id);
+    expect(useHub.getState().notes.find((n) => n.id === note!.id)?.pinned).toBe(true);
+
+    useHub.getState().removeNote(note!.id);
+    expect(useHub.getState().notes.some((n) => n.id === note!.id)).toBe(false);
+  });
+});
+
 describe("attachments", () => {
   it("adds and removes file metadata scoped to an owner", async () => {
     const { useHub } = await import("../store/hub");

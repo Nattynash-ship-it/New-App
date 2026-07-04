@@ -327,6 +327,20 @@ export interface Attachment {
 }
 
 // ---------------------------------------------------------------------------
+// Notes & Journal
+// ---------------------------------------------------------------------------
+
+/** A free-form note or journal entry — the household's shared brain. */
+export interface Note {
+  id: Id;
+  title: string;
+  body: string;
+  pinned: boolean;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+// ---------------------------------------------------------------------------
 // Natural-language quick add
 // ---------------------------------------------------------------------------
 

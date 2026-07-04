@@ -178,6 +178,47 @@ describe("groceries from planned meals", () => {
       expect(names).toContain(ing.toLowerCase());
     }
   });
+
+  it("restores a removed grocery item without duplicating it", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.setState({ groceryList: [] });
+    useHub.getState().addGroceryItem("Oat milk");
+    const item = useHub.getState().groceryList[0]!;
+
+    useHub.getState().removeGroceryItem(item.id);
+    expect(useHub.getState().groceryList).toHaveLength(0);
+
+    useHub.getState().restoreGroceryItem(item);
+    expect(useHub.getState().groceryList.map((g) => g.name)).toEqual(["Oat milk"]);
+    // Restoring again is a no-op (idempotent) — no duplicate id.
+    useHub.getState().restoreGroceryItem(item);
+    expect(useHub.getState().groceryList).toHaveLength(1);
+  });
+});
+
+describe("undo channel", () => {
+  it("pushes, runs, and dismisses an undoable action", async () => {
+    const { useUndo } = await import("../store/undo");
+    let restored = false;
+
+    useUndo.getState().push("Done: Thing", () => {
+      restored = true;
+    });
+    expect(useUndo.getState().toast?.message).toBe("Done: Thing");
+
+    useUndo.getState().run();
+    expect(restored).toBe(true);
+    expect(useUndo.getState().toast).toBeNull();
+
+    // Dismiss should clear without running the undo.
+    let ran = false;
+    useUndo.getState().push("Removed: X", () => {
+      ran = true;
+    });
+    useUndo.getState().dismiss();
+    expect(ran).toBe(false);
+    expect(useUndo.getState().toast).toBeNull();
+  });
 });
 
 describe("data export round-trips every slice", () => {

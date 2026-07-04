@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Shell } from "@/components/Shell";
 import { RegisterSW } from "@/components/RegisterSW";
+import { UndoToast } from "@/components/UndoToast";
 
 export const metadata: Metadata = {
   title: "Vela — Your life, under sail",
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <RegisterSW />
         <Shell>{children}</Shell>
+        <UndoToast />
       </body>
     </html>
   );

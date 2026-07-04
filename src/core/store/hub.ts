@@ -206,6 +206,7 @@ export interface HubState {
   removePantryItem: (id: string) => void;
   addGroceryItem: (name: string) => void;
   removeGroceryItem: (id: string) => void;
+  restoreGroceryItem: (item: GroceryItem) => void;
   saveRecipe: (r: Recipe) => void;
   planMeal: (date: string, slot: MealSlot, title: string, recipeId?: string) => void;
   removePlannedMeal: (id: string) => void;
@@ -641,6 +642,12 @@ export const useHub = create<HubState>()(
         })),
       removeGroceryItem: (id) =>
         set((s) => ({ groceryList: s.groceryList.filter((g) => g.id !== id) })),
+      restoreGroceryItem: (item) =>
+        set((s) =>
+          s.groceryList.some((g) => g.id === item.id)
+            ? s
+            : { groceryList: [...s.groceryList, item] },
+        ),
       saveRecipe: (r) => set((s) => ({ recipes: [r, ...s.recipes].slice(0, 30) })),
       planMeal: (date, slot, title, recipeId) =>
         set((s) => ({

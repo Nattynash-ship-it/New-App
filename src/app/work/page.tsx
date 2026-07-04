@@ -7,6 +7,7 @@ import { MicButton } from "@/components/MicButton";
 import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { ProjectStatus } from "@/core/types";
 
 const STATUS_STYLE: Record<ProjectStatus, string> = {
@@ -21,6 +22,7 @@ function TopThree() {
   const focus = useHub((s) => s.focus);
   const toggleFocusTask = useHub((s) => s.toggleFocusTask);
   const toggleWorkTask = useHub((s) => s.toggleWorkTask);
+  const pushUndo = useUndo((s) => s.push);
 
   const focusIds = focus.date === todayISO() ? focus.taskIds : [];
   const allOpen = projects.flatMap((p) =>
@@ -45,7 +47,10 @@ function TopThree() {
               <div className="flex-1">
                 <Checkbox
                   checked={t.done}
-                  onChange={() => toggleWorkTask(t.projectId, t.id)}
+                  onChange={() => {
+                    toggleWorkTask(t.projectId, t.id);
+                    pushUndo(`Done: ${t.title}`, () => toggleWorkTask(t.projectId, t.id));
+                  }}
                   label={t.title}
                   sub={t.projectName}
                   vanish
@@ -189,6 +194,7 @@ function MeetingList() {
 function ProjectCard({ projectId }: { projectId: string }) {
   const project = useHub((s) => s.projects.find((p) => p.id === projectId));
   const toggleWorkTask = useHub((s) => s.toggleWorkTask);
+  const pushUndo = useUndo((s) => s.push);
   const addWorkTask = useHub((s) => s.addWorkTask);
   const removeWorkTask = useHub((s) => s.removeWorkTask);
   const toggleMilestone = useHub((s) => s.toggleMilestone);
@@ -301,7 +307,10 @@ function ProjectCard({ projectId }: { projectId: string }) {
             <Checkbox
               key={t.id}
               checked={t.done}
-              onChange={() => toggleWorkTask(project.id, t.id)}
+              onChange={() => {
+                toggleWorkTask(project.id, t.id);
+                pushUndo(`Done: ${t.title}`, () => toggleWorkTask(project.id, t.id));
+              }}
               onRemove={() => removeWorkTask(project.id, t.id)}
               label={t.title}
               sub={

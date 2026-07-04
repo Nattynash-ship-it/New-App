@@ -18,6 +18,7 @@ import { SmartCapture } from "@/components/SmartCapture";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -210,6 +211,7 @@ function AssignmentList() {
   const toggleAssignment = useHub((s) => s.toggleAssignment);
   const removeAssignment = useHub((s) => s.removeAssignment);
   const addAssignment = useHub((s) => s.addAssignment);
+  const pushUndo = useUndo((s) => s.push);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState(formatDateInput(3));
   const [courseId, setCourseId] = useState("");
@@ -242,7 +244,10 @@ function AssignmentList() {
               <Checkbox
                 key={a.id}
                 checked={a.done}
-                onChange={() => toggleAssignment(a.id)}
+                onChange={() => {
+                  toggleAssignment(a.id);
+                  pushUndo(`Done: ${a.title}`, () => toggleAssignment(a.id));
+                }}
                 onRemove={() => removeAssignment(a.id)}
                 label={a.title}
                 sub={`${course ? `${course.code} · ` : ""}${formatFriendly(a.dueDate)}${urgency}`}

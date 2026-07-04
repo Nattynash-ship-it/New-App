@@ -6,6 +6,7 @@ import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
 import { matchRecipes, recipeVideoUrl } from "@/core/selectors";
 import { newId, useHub, useHydrated } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { DeliveryService, PantryCategory, Recipe } from "@/core/types";
 
 const STORE_LABEL: Record<DeliveryService, string> = {
@@ -291,6 +292,8 @@ function Groceries() {
   const clearGroceryList = useHub((s) => s.clearGroceryList);
   const addGroceryItem = useHub((s) => s.addGroceryItem);
   const removeGroceryItem = useHub((s) => s.removeGroceryItem);
+  const restoreGroceryItem = useHub((s) => s.restoreGroceryItem);
+  const pushUndo = useUndo((s) => s.push);
   const preferredStore = useHub((s) => s.preferredStore);
   const setPreferredStore = useHub((s) => s.setPreferredStore);
   const groceryConnections = useHub((s) => s.groceryConnections);
@@ -361,8 +364,14 @@ function Groceries() {
                 <Checkbox
                   key={g.id}
                   checked={g.checked}
-                  onChange={() => removeGroceryItem(g.id)}
-                  onRemove={() => removeGroceryItem(g.id)}
+                  onChange={() => {
+                    removeGroceryItem(g.id);
+                    pushUndo(`Checked off ${g.name}`, () => restoreGroceryItem(g));
+                  }}
+                  onRemove={() => {
+                    removeGroceryItem(g.id);
+                    pushUndo(`Removed ${g.name}`, () => restoreGroceryItem(g));
+                  }}
                   label={g.name}
                   sub={g.quantity !== "1" ? g.quantity : undefined}
                   vanish

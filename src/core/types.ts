@@ -345,6 +345,21 @@ export interface Attachment {
 }
 
 // ---------------------------------------------------------------------------
+// General to-do list
+// ---------------------------------------------------------------------------
+
+export type Urgency = "high" | "medium" | "low";
+
+/** A free-standing to-do item with an urgency level (not tied to a module). */
+export interface Todo {
+  id: Id;
+  title: string;
+  urgency: Urgency;
+  done: boolean;
+  createdAt: ISODateTime;
+}
+
+// ---------------------------------------------------------------------------
 // Notes & Journal
 // ---------------------------------------------------------------------------
 

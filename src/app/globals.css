@@ -407,3 +407,17 @@
 [data-theme="cartoon"] .chip {
   border: 1.5px solid rgb(var(--ink) / 0.85);
 }
+
+/* ---------------------------------------------------------------------------
+ * Touch reveal — devices without a hover-capable pointer never trigger
+ * :group-hover, so delete/edit controls gated behind `group-hover:opacity-100`
+ * or `group-hover:flex` would be unreachable on a phone. Reveal them there.
+ * ------------------------------------------------------------------------- */
+@media (hover: none) {
+  [class*="group-hover"][class*="opacity-100"] {
+    opacity: 1 !important;
+  }
+  [class*="group-hover"][class*=":flex"] {
+    display: flex !important;
+  }
+}

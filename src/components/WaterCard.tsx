@@ -9,6 +9,7 @@ export function WaterCard() {
   const cups = useHub(waterToday);
   const goal = useHub((s) => s.waterGoal);
   const logWater = useHub((s) => s.logWater);
+  const setWaterGoal = useHub((s) => s.setWaterGoal);
 
   return (
     <Card>
@@ -28,7 +29,23 @@ export function WaterCard() {
       </SectionTitle>
       <div className="flex items-baseline gap-1.5">
         <span className="font-display text-3xl">{cups}</span>
-        <span className="text-sm text-muted">/ {goal} cups today</span>
+        <span className="flex items-center gap-1 text-sm text-muted">
+          / {goal} cups today
+          <button
+            className="ml-1 rounded px-1 leading-none hover:text-ink"
+            onClick={() => setWaterGoal(goal - 1)}
+            aria-label="Lower daily goal"
+          >
+            −
+          </button>
+          <button
+            className="rounded px-1 leading-none hover:text-ink"
+            onClick={() => setWaterGoal(goal + 1)}
+            aria-label="Raise daily goal"
+          >
+            +
+          </button>
+        </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {Array.from({ length: goal }, (_, i) => (

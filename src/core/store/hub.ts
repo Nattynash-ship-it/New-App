@@ -22,6 +22,7 @@ import {
   seedEquipment,
   seedKidMeals,
   seedNotes,
+  seedTodos,
   seedPantry,
   seedPlannedMeals,
   seedHabits,
@@ -65,10 +66,23 @@ import type {
   ScheduledEvent,
   StoreReward,
   StudyBlock,
+  Todo,
+  Urgency,
   WaterLog,
   WorkoutLog,
   WorkProject,
 } from "../types";
+
+/** Canonical list of persisted data slices (no action fns). Export/import walk
+ *  this so a newly-added slice can never be silently dropped from a backup. */
+export const DATA_KEYS = [
+  "profile", "checkIns", "events", "projects", "meetings", "courses", "assignments",
+  "studyBlocks", "degreePlan", "pantry", "recipes", "plannedMeals", "groceryList",
+  "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
+  "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
+  "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
+  "rewards", "ledger", "kidMeals",
+] as const;
 
 export function newId(prefix: string): string {
   const rand =
@@ -115,6 +129,8 @@ export interface HubState {
   attachments: Attachment[];
   // Notes & journal
   notes: Note[];
+  // General to-do list
+  todos: Todo[];
   // Wellness
   habits: Habit[];
   water: WaterLog;
@@ -224,6 +240,12 @@ export interface HubState {
   removeNote: (id: string) => void;
   togglePinNote: (id: string) => void;
 
+  // --- General to-do list ---
+  addTodo: (title: string, urgency: Urgency) => void;
+  toggleTodo: (id: string) => void;
+  removeTodo: (id: string) => void;
+  setTodoUrgency: (id: string, urgency: Urgency) => void;
+
   // --- Wellness actions ---
   toggleHabitToday: (id: string) => void;
   addHabit: (name: string, icon: string) => void;
@@ -282,6 +304,7 @@ function initialState() {
     equipment: seedEquipment(),
     attachments: [] as Attachment[],
     notes: seedNotes(),
+    todos: seedTodos(),
     habits: seedHabits(),
     water: {} as WaterLog,
     waterGoal: 8,
@@ -314,34 +337,21 @@ export const useHub = create<HubState>()(
         set((s) => ({ profile: { ...s.profile, name: name.trim() || "friend", onboarded: true } })),
       exportData: () => {
         const s = get();
-        // Strip the action functions — keep only the data slices.
-        const {
-          profile, checkIns, events, projects, meetings, courses, assignments,
-          studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
-          routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
-          attachments, notes, habits, water,
-          waterGoal, energyLog, preferredStore, groceryConnections, focus, kids, activities, chores, rewards, ledger, kidMeals,
-        } = s;
-        return JSON.stringify(
-          {
-            _vela: 1,
-            exportedAt: nowISO(),
-            data: {
-              profile, checkIns, events, projects, meetings, courses, assignments,
-              studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
-              routines, workoutLogs, fitnessGoals, weeklySessionTarget, habits, water,
-              waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
-            },
-          },
-          null,
-          2,
-        );
+        // Walk the canonical key list so every data slice is always included.
+        const data: Record<string, unknown> = {};
+        for (const k of DATA_KEYS) data[k] = s[k];
+        return JSON.stringify({ _vela: 1, exportedAt: nowISO(), data }, null, 2);
       },
       importData: (json) => {
         try {
-          const parsed = JSON.parse(json) as { _vela?: number; data?: Partial<HubState> };
-          if (!parsed.data || typeof parsed.data !== "object") return false;
-          set(() => parsed.data as Partial<HubState>);
+          const parsed = JSON.parse(json) as { _vela?: number; data?: Record<string, unknown> };
+          if (parsed._vela !== 1 || !parsed.data || typeof parsed.data !== "object") return false;
+          // Only accept known slices (ignore anything foreign).
+          const picked: Record<string, unknown> = {};
+          for (const k of DATA_KEYS) if (k in parsed.data) picked[k] = parsed.data[k];
+          // Reset any slice missing from the backup to fresh defaults, then
+          // apply the backup. Shallow-merge (not replace) so actions survive.
+          set(() => ({ ...initialState(), ...picked }) as Partial<HubState>);
           return true;
         } catch {
           return false;
@@ -777,6 +787,20 @@ export const useHub = create<HubState>()(
           notes: s.notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)),
         })),
 
+      // --- General to-do list ---
+      addTodo: (title, urgency) =>
+        set((s) => ({
+          todos: [
+            { id: newId("todo"), title: title.trim(), urgency, done: false, createdAt: nowISO() },
+            ...s.todos,
+          ],
+        })),
+      toggleTodo: (id) =>
+        set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })),
+      removeTodo: (id) => set((s) => ({ todos: s.todos.filter((t) => t.id !== id) })),
+      setTodoUrgency: (id, urgency) =>
+        set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, urgency } : t)) })),
+
       // --- Wellness ---
       toggleHabitToday: (id) =>
         set((s) => {
@@ -934,6 +958,7 @@ export const useHub = create<HubState>()(
           equipment: p.equipment ?? current.equipment,
           attachments: p.attachments ?? current.attachments,
           notes: p.notes ?? current.notes,
+          todos: p.todos ?? current.todos,
           kidMeals: p.kidMeals ?? current.kidMeals,
           groceryConnections: p.groceryConnections ?? current.groceryConnections,
         };

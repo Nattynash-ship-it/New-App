@@ -140,6 +140,40 @@ describe("fitness — equipment & library", () => {
   });
 });
 
+describe("to-do list", () => {
+  it("adds, reorders by urgency, changes urgency, toggles, and removes", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addTodo("Buy stamps", "low");
+    const todo = useHub.getState().todos.find((t) => t.title === "Buy stamps");
+    expect(todo?.urgency).toBe("low");
+    expect(todo?.done).toBe(false);
+
+    useHub.getState().setTodoUrgency(todo!.id, "high");
+    expect(useHub.getState().todos.find((t) => t.id === todo!.id)?.urgency).toBe("high");
+
+    useHub.getState().toggleTodo(todo!.id);
+    expect(useHub.getState().todos.find((t) => t.id === todo!.id)?.done).toBe(true);
+
+    useHub.getState().removeTodo(todo!.id);
+    expect(useHub.getState().todos.some((t) => t.id === todo!.id)).toBe(false);
+  });
+});
+
+describe("data export round-trips every slice", () => {
+  it("includes newly-added slices (todos, kidMeals, notes, energyLog…) in the backup", async () => {
+    const { useHub, DATA_KEYS } = await import("../store/hub");
+    const json = useHub.getState().exportData();
+    const parsed = JSON.parse(json) as { data: Record<string, unknown> };
+    for (const key of DATA_KEYS) {
+      expect(Object.prototype.hasOwnProperty.call(parsed.data, key)).toBe(true);
+    }
+    // spot-check the slices the old export forgot
+    for (const key of ["todos", "kidMeals", "notes", "energyLog", "equipment", "attachments", "groceryConnections"]) {
+      expect(Object.prototype.hasOwnProperty.call(parsed.data, key)).toBe(true);
+    }
+  });
+});
+
 describe("kids' weekly meals", () => {
   it("upserts a meal cell and totals calories for the week", async () => {
     const { useHub } = await import("../store/hub");

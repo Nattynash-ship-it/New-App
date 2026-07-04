@@ -413,6 +413,16 @@ export default function SchoolPage() {
         subtitle="Credits, deadlines, study blocks, and review — the whole degree in one place."
       />
       <GraduationTracker />
+      <Card>
+        <SectionTitle right={<span className="text-xs text-muted">private · on this device</span>}>
+          School documents
+        </SectionTitle>
+        <p className="-mt-1 text-xs text-muted">
+          Your transcript, degree audit, syllabi, and forms — one place, stored privately on your
+          device.
+        </p>
+        <Attachments ownerType="general" ownerId="school" label="Transcript, syllabi & forms" />
+      </Card>
       <SmartCapture
         title="Import coursework"
         blurb="Paste or upload a syllabus PDF, a screenshot of a class schedule, or an assignment list — Vela extracts the deadlines and files them under School for you to confirm."

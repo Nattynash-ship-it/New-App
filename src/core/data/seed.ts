@@ -19,6 +19,7 @@ import type {
   Meeting,
   Note,
   PantryItem,
+  Todo,
   PlannedMeal,
   Routine,
   StoreReward,
@@ -325,6 +326,15 @@ export function seedChores(): Chore[] {
     { id: id("chore"), title: "Reading — 20 minutes", points: 15 },
     { id: id("chore"), title: "Math practice — one worksheet", points: 20 },
     { id: id("chore"), title: "Help with dinner prep", points: 10 },
+  ];
+}
+
+export function seedTodos(): Todo[] {
+  const now = new Date().toISOString();
+  return [
+    { id: id("todo"), title: "Renew library books", urgency: "medium", done: false, createdAt: now },
+    { id: id("todo"), title: "Call pediatrician about forms", urgency: "high", done: false, createdAt: now },
+    { id: id("todo"), title: "Look into summer camp options", urgency: "low", done: false, createdAt: now },
   ];
 }
 

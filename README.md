@@ -17,6 +17,14 @@ persists on-device, and the AI features fall back to deterministic on-device
 engines. Add `ANTHROPIC_API_KEY` to `.env.local` to upgrade the Reverse Recipe
 Engine and natural-language parsing to Claude.
 
+## Deploy
+
+Vela deploys to **Vercel** with zero config (Next.js 15), and runs with **no
+environment variables** — each one just unlocks an extra integration. Import the
+repo at [vercel.com/new](https://vercel.com/new) and click Deploy. To turn on AI
+photo/PDF reading, grocery webhooks, or email/school sign-in, see
+**[DEPLOY.md](./DEPLOY.md)** and **[.env.example](./.env.example)**.
+
 **Installable (PWA):** Vela ships a web manifest, app icons, and an offline
 service worker — once deployed over HTTPS it installs to a phone home screen
 and launches full-screen like a native app. First launch runs a lightweight

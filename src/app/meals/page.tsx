@@ -11,6 +11,7 @@ import type { DeliveryService, PantryCategory, Recipe } from "@/core/types";
 const STORE_LABEL: Record<DeliveryService, string> = {
   whole_foods: "Whole Foods",
   aldi: "Aldi",
+  instacart: "Instacart",
 };
 
 function CookFromKitchen() {
@@ -262,6 +263,7 @@ function Groceries() {
   const removeGroceryItem = useHub((s) => s.removeGroceryItem);
   const preferredStore = useHub((s) => s.preferredStore);
   const setPreferredStore = useHub((s) => s.setPreferredStore);
+  const groceryConnections = useHub((s) => s.groceryConnections);
   const [sendState, setSendState] = useState<string>("");
 
   async function copyList() {
@@ -283,13 +285,17 @@ function Groceries() {
       const res = await fetch("/api/webhooks/grocery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service, items: groceryList.filter((g) => !g.checked) }),
+        body: JSON.stringify({
+          service,
+          url: groceryConnections[service],
+          items: groceryList.filter((g) => !g.checked),
+        }),
       });
       const data = (await res.json()) as { status: string; message?: string };
       setSendState(
         data.status === "forwarded"
-          ? `Sent to ${service === "whole_foods" ? "Whole Foods" : "Aldi"} ✓`
-          : data.message ?? "Captured — delivery integration pending.",
+          ? `Sent to ${STORE_LABEL[service]} ✓`
+          : data.message ?? "Captured — connect this store in Settings → Connections to deliver.",
       );
     } catch {
       setSendState("Couldn't reach the delivery service.");

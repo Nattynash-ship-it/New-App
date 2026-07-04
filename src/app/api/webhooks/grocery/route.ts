@@ -21,29 +21,39 @@ export const runtime = "nodejs";
 const SERVICE_ENV: Record<DeliveryService, string | undefined> = {
   whole_foods: process.env.WHOLE_FOODS_WEBHOOK_URL,
   aldi: process.env.ALDI_WEBHOOK_URL,
+  instacart: process.env.INSTACART_WEBHOOK_URL,
 };
+
+const SERVICES: DeliveryService[] = ["whole_foods", "aldi", "instacart"];
 
 interface GroceryWebhookBody {
   service?: unknown;
   items?: unknown;
+  /** Per-user webhook URL configured in Connections (overrides the env var). */
+  url?: unknown;
 }
 
 export async function POST(request: Request) {
   let service: DeliveryService;
   let items: Array<Pick<GroceryItem, "name" | "quantity" | "category">>;
+  let userUrl: string | undefined;
 
   try {
     const body = (await request.json()) as GroceryWebhookBody;
-    if (body.service !== "whole_foods" && body.service !== "aldi") {
+    if (typeof body.service !== "string" || !SERVICES.includes(body.service as DeliveryService)) {
       return NextResponse.json(
-        { error: "`service` must be 'whole_foods' or 'aldi'." },
+        { error: "`service` must be 'whole_foods', 'aldi', or 'instacart'." },
         { status: 400 },
       );
     }
     if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ error: "`items` must be a non-empty array." }, { status: 400 });
     }
-    service = body.service;
+    // Only accept a valid http(s) URL — never forward to anything else.
+    if (typeof body.url === "string" && /^https?:\/\//i.test(body.url.trim())) {
+      userUrl = body.url.trim();
+    }
+    service = body.service as DeliveryService;
     items = (body.items as GroceryItem[]).map((i) => ({
       name: String(i.name),
       quantity: String(i.quantity ?? "1"),
@@ -61,7 +71,7 @@ export async function POST(request: Request) {
     items,
   };
 
-  const targetUrl = SERVICE_ENV[service];
+  const targetUrl = userUrl ?? SERVICE_ENV[service];
   if (!targetUrl) {
     // Placeholder mode: acknowledge and echo the normalized order so the UI
     // can confirm the flow end-to-end before a real integration exists.

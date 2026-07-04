@@ -43,6 +43,7 @@ import type {
   EnergyLevel,
   EnergyLog,
   Equipment,
+  GroceryConnections,
   FamilyActivity,
   FitnessGoal,
   GroceryItem,
@@ -122,6 +123,8 @@ export interface HubState {
   energyLog: EnergyLog;
   // Meals
   preferredStore: DeliveryService;
+  /** User-configured delivery webhook URLs per store (Connections). */
+  groceryConnections: GroceryConnections;
   // Work planning
   focus: { date: string; taskIds: string[] };
   // Family
@@ -232,6 +235,8 @@ export interface HubState {
 
   // --- Meals settings ---
   setPreferredStore: (s: DeliveryService) => void;
+  /** Save (or clear, with "") a delivery service's webhook URL. */
+  setGroceryConnection: (service: DeliveryService, url: string) => void;
 
   // --- Family actions ---
   addActivity: (a: Omit<FamilyActivity, "id">) => void;
@@ -282,6 +287,7 @@ function initialState() {
     waterGoal: 8,
     energyLog: {} as EnergyLog,
     preferredStore: "whole_foods" as DeliveryService,
+    groceryConnections: {} as GroceryConnections,
     focus: { date: todayISO(), taskIds: [] as string[] },
     kids: seedKids(),
     activities: seedActivities(),
@@ -314,7 +320,7 @@ export const useHub = create<HubState>()(
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
           routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
           attachments, notes, habits, water,
-          waterGoal, energyLog, preferredStore, focus, kids, activities, chores, rewards, ledger, kidMeals,
+          waterGoal, energyLog, preferredStore, groceryConnections, focus, kids, activities, chores, rewards, ledger, kidMeals,
         } = s;
         return JSON.stringify(
           {
@@ -804,6 +810,14 @@ export const useHub = create<HubState>()(
         set((s) => ({ energyLog: { ...s.energyLog, [todayISO()]: level } })),
 
       setPreferredStore: (preferredStore) => set({ preferredStore }),
+      setGroceryConnection: (service, url) =>
+        set((s) => {
+          const next = { ...s.groceryConnections };
+          const clean = url.trim();
+          if (clean) next[service] = clean;
+          else delete next[service];
+          return { groceryConnections: next };
+        }),
 
       // --- Family ---
       addActivity: (a) => set((s) => ({ activities: [...s.activities, { ...a, id: newId("act") }] })),
@@ -921,6 +935,7 @@ export const useHub = create<HubState>()(
           attachments: p.attachments ?? current.attachments,
           notes: p.notes ?? current.notes,
           kidMeals: p.kidMeals ?? current.kidMeals,
+          groceryConnections: p.groceryConnections ?? current.groceryConnections,
         };
       },
     },

@@ -1,9 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { addDays, todayISO } from "../dates";
-import { courseProgress, selectTimeline, selectUpcoming } from "../selectors";
+import { courseProgress, selectDayBlocks, selectTimeline, selectUpcoming } from "../selectors";
 import type { HubState } from "../store/hub";
 
 const today = todayISO();
+
+describe("selectDayBlocks (time-block calendar)", () => {
+  const blockBase = {
+    meetings: [],
+    assignments: [],
+    activities: [],
+    plannedMeals: [],
+    events: [],
+    studyBlocks: [],
+    courses: [],
+    kids: [],
+  };
+
+  it("positions a meeting with its real start and duration", () => {
+    const state = {
+      ...blockBase,
+      meetings: [{ id: "m1", title: "Sync", date: today, time: "10:00", durationMin: 45 }],
+    } as unknown as HubState;
+    const { timed } = selectDayBlocks(state, today);
+    expect(timed).toHaveLength(1);
+    expect(timed[0]).toMatchObject({ startMin: 600, endMin: 645, domain: "work" });
+  });
+
+  it("routes a timeless assignment to all-day", () => {
+    const state = {
+      ...blockBase,
+      assignments: [{ id: "a1", title: "Essay", dueDate: today, done: false }],
+    } as unknown as HubState;
+    const { timed, allDay } = selectDayBlocks(state, today);
+    expect(timed).toHaveLength(0);
+    expect(allDay.map((a) => a.title)).toContain("Essay");
+  });
+});
 
 /** Minimal state slice; selectTimeline only reads the data arrays. */
 function makeState(overrides: Partial<HubState>): HubState {

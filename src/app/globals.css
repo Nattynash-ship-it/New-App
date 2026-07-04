@@ -79,29 +79,30 @@
   --selection: rgba(64, 86, 216, 0.2);
 }
 
-/* Cartoon — bright, playful, high-energy light theme with bold ink outlines
- * and chunky offset shadows (see the scoped rules below). */
-[data-theme="cartoon"] {
+/* Bubblegum — a light, fun pink theme: soft blush surfaces, playful pink
+ * accent, and a cheerful pink/lilac glow. */
+[data-theme="bubblegum"] {
   color-scheme: light;
-  --paper: 255 247 234;
-  --surface: 255 255 255;
-  --ink: 34 30 58;
-  --muted: 122 116 150;
-  --line: rgba(34, 30, 58, 0.9);
-  --accent: 255 94 120;
-  --accent-dark: 232 74 100;
+  --paper: 255 238 247;
+  --surface: 255 252 254;
+  --ink: 74 34 62;
+  --muted: 164 122 146;
+  --line: rgba(120, 40, 90, 0.12);
+  --accent: 240 90 165;
+  --accent-dark: 222 72 148;
   --accent-ink: 255 255 255;
-  --work-bright: 42 96 232;
-  --school-bright: 205 110 20;
-  --meals-bright: 18 150 92;
-  --fitness-bright: 224 46 110;
-  --family-bright: 138 74 224;
-  --compass-bright: 226 82 108;
-  --page-glow: radial-gradient(900px 420px at 12% -10%, rgba(255, 214, 92, 0.4), transparent 55%),
-    radial-gradient(820px 420px at 100% 0%, rgba(126, 208, 255, 0.34), transparent 55%);
-  --shadow-card: 4px 4px 0 rgba(34, 30, 58, 0.9);
-  --shadow-lift: 6px 6px 0 rgba(34, 30, 58, 0.9);
-  --selection: rgba(255, 94, 120, 0.28);
+  --work-bright: 60 88 214;
+  --school-bright: 170 96 30;
+  --meals-bright: 20 132 84;
+  --fitness-bright: 214 46 120;
+  --family-bright: 150 78 214;
+  --compass-bright: 214 82 150;
+  --page-glow: radial-gradient(840px 420px at 10% -10%, rgba(255, 170, 210, 0.55), transparent 55%),
+    radial-gradient(760px 400px at 100% 0%, rgba(196, 172, 255, 0.36), transparent 55%),
+    radial-gradient(700px 420px at 55% 115%, rgba(255, 198, 224, 0.4), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(150, 60, 110, 0.06), 0 6px 20px rgba(150, 60, 110, 0.1);
+  --shadow-lift: 0 2px 6px rgba(150, 60, 110, 0.1), 0 14px 36px rgba(150, 60, 110, 0.16);
+  --selection: rgba(240, 90, 165, 0.24);
 }
 
 /* Glass — frosted glassmorphism over a soft aurora gradient (scoped rules
@@ -302,22 +303,7 @@
   backdrop-filter: blur(10px);
 }
 
-/* Cartoon — bold ink outlines, chunky offset shadows, extra-round corners. */
-[data-theme="cartoon"] .card {
-  border-width: 2px;
-  border-radius: 1.4rem;
-}
-[data-theme="cartoon"] .btn-primary,
-[data-theme="cartoon"] .btn-ghost {
-  border: 2px solid rgb(var(--ink));
-  box-shadow: 3px 3px 0 rgb(var(--ink));
-  font-weight: 700;
-}
-[data-theme="cartoon"] .btn-primary:active,
-[data-theme="cartoon"] .btn-ghost:active {
-  box-shadow: 1px 1px 0 rgb(var(--ink));
-  transform: translate(2px, 2px);
-}
-[data-theme="cartoon"] .chip {
-  border: 1.5px solid rgb(var(--ink) / 0.9);
+/* Bubblegum — soft, extra-rounded, friendly. */
+[data-theme="bubblegum"] .card {
+  border-radius: 1.5rem;
 }

@@ -74,6 +74,87 @@ export function selectTimeline(s: HubState, date: ISODate): TimelineEntry[] {
   return entries.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
 }
 
+// ---------------------------------------------------------------------------
+// Time-block calendar — a day laid out on an hour grid
+// ---------------------------------------------------------------------------
+
+export interface DayBlock {
+  id: string;
+  domain: Domain;
+  title: string;
+  subtitle?: string;
+  startMin: number;
+  endMin: number;
+}
+
+export interface DaySchedule {
+  timed: DayBlock[];
+  allDay: Array<{ id: string; domain: Domain; title: string }>;
+}
+
+function hmToMin(t?: string): number | null {
+  if (!t) return null;
+  const parts = t.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1] ?? "0");
+  if (Number.isNaN(h)) return null;
+  return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
+/**
+ * Everything happening on `date`, split into timed blocks (positioned on the
+ * hour grid, with a start + end) and all-day items. Meetings and study blocks
+ * carry real durations; other items get sensible default lengths.
+ */
+export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
+  const timed: DayBlock[] = [];
+  const allDay: DaySchedule["allDay"] = [];
+
+  const add = (
+    id: string,
+    domain: Domain,
+    title: string,
+    start: number | null,
+    dur: number,
+    subtitle?: string,
+  ) => {
+    if (start == null) allDay.push({ id, domain, title });
+    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur });
+  };
+
+  for (const m of s.meetings.filter((m) => m.date === date)) {
+    add(m.id, "work", m.title, hmToMin(m.time), Math.max(15, m.durationMin || 30), `${m.durationMin} min`);
+  }
+  for (const a of s.assignments.filter((a) => a.dueDate === date && !a.done)) {
+    const course = s.courses.find((c) => c.id === a.courseId);
+    add(a.id, "school", a.title, hmToMin(a.dueTime), 30, course ? `Due · ${course.code}` : "Due");
+  }
+  for (const act of s.activities.filter((a) => a.date === date)) {
+    const kid = s.kids.find((k) => k.id === act.kidId);
+    add(act.id, "family", act.title, hmToMin(act.time), 60, kid?.name ?? "Family");
+  }
+  const mealTimes: Record<string, [number, number]> = {
+    breakfast: [480, 30],
+    lunch: [720, 45],
+    dinner: [1110, 45],
+  };
+  for (const meal of s.plannedMeals.filter((m) => m.date === date)) {
+    const [start, dur] = mealTimes[meal.slot] ?? [720, 45];
+    add(meal.id, "meals", meal.title, start, dur, meal.slot);
+  }
+  for (const ev of s.events.filter((e) => e.date === date)) {
+    add(ev.id, ev.domain, ev.title, hmToMin(ev.time), 45);
+  }
+  const weekday = fromISODate(date).getDay();
+  for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {
+    const course = s.courses.find((c) => c.id === block.courseId);
+    add(block.id, "school", `Study · ${course?.name ?? "Focus"}`, hmToMin(block.time), block.durationMin, "study block");
+  }
+
+  timed.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+  return { timed, allDay };
+}
+
 /**
  * The "keep me updated" radar: everything coming in the next `days` days
  * (starting tomorrow — today lives on the timeline), sorted chronologically.

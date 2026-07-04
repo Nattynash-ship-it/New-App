@@ -10,6 +10,7 @@ import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
 import { SmartCapture } from "@/components/SmartCapture";
+import { TimeBlockCalendar } from "@/components/TimeBlockCalendar";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
 import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
@@ -201,6 +202,9 @@ export default function CompassPage() {
           <WaterCard />
         </div>
       </div>
+
+      {/* Time-block calendar — the day laid out on an hour grid */}
+      <TimeBlockCalendar />
 
       {/* Nothing sneaks up overnight */}
       <TomorrowHeadsUp />

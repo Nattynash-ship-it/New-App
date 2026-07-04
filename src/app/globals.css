@@ -105,15 +105,17 @@
   --selection: rgba(240, 90, 165, 0.24);
 }
 
-/* Glass — frosted glassmorphism over a soft aurora gradient (scoped rules
- * below add the blur + translucency). */
+/* Glass — true frosted glassmorphism. Low-alpha panels sit over a vivid but
+ * LIGHT mesh so the saturated colour reads THROUGH the blur, while dark ink
+ * still clears ~7:1. Recipe distilled from a multi-source research pass
+ * (css.glass / Hype4 / MDN / WCAG); scoped rules below do the frosting. */
 [data-theme="glass"] {
   color-scheme: light;
   --paper: 233 237 248;
-  --surface: 255 255 255;
+  --surface: 255 255 255; /* kept opaque; scoped rules add the translucency */
   --ink: 28 32 52;
   --muted: 92 100 128;
-  --line: rgba(255, 255, 255, 0.55);
+  --line: rgba(255, 255, 255, 0.6); /* bright glass rim */
   --accent: 120 108 246;
   --accent-dark: 100 88 226;
   --accent-ink: 255 255 255;
@@ -123,9 +125,9 @@
   --fitness-bright: 208 60 108;
   --family-bright: 122 78 216;
   --compass-bright: 96 104 210;
-  --page-glow: none;
-  --shadow-card: 0 2px 8px rgba(40, 50, 90, 0.08), 0 12px 40px rgba(40, 50, 90, 0.12);
-  --shadow-lift: 0 4px 12px rgba(40, 50, 90, 0.12), 0 18px 50px rgba(40, 50, 90, 0.18);
+  --page-glow: none; /* body gets the vivid mesh below instead */
+  --shadow-card: 0 8px 32px rgba(31, 38, 135, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-lift: 0 16px 48px rgba(31, 38, 135, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   --selection: rgba(120, 108, 246, 0.24);
 }
 
@@ -324,35 +326,57 @@
  * These live outside @layer components so they reliably win over .card.
  * ------------------------------------------------------------------------- */
 
-/* Glass — frosted glassmorphism. A vivid, liquid aurora gradient sits behind
- * translucent, blurred panels. The 1px light border + inset top highlight give
- * the light-catching glass edge; ink stays dark for ≥4.5:1 contrast. */
+/* Glass — the backdrop: saturated colour blobs over a LIGHT base, so the frost
+ * is loud in the gaps/edges yet the field under any card stays light enough for
+ * dark ink to clear ~7:1 (worst-case verified with the WCAG sRGB formula). */
 [data-theme="glass"] body {
   background-image:
-    radial-gradient(52% 44% at 10% 4%, rgba(124, 132, 255, 0.5), transparent 60%),
-    radial-gradient(48% 42% at 94% 8%, rgba(255, 128, 196, 0.42), transparent 60%),
-    radial-gradient(46% 44% at 78% 62%, rgba(120, 214, 255, 0.36), transparent 60%),
-    radial-gradient(58% 52% at 42% 112%, rgba(96, 224, 206, 0.4), transparent 60%);
+    radial-gradient(58% 52% at 8% 0%, rgba(124, 92, 255, 0.72), transparent 62%),
+    radial-gradient(54% 50% at 98% 6%, rgba(255, 94, 196, 0.64), transparent 60%),
+    radial-gradient(56% 56% at 82% 64%, rgba(46, 190, 255, 0.62), transparent 62%),
+    radial-gradient(66% 60% at 28% 110%, rgba(38, 224, 180, 0.58), transparent 62%),
+    radial-gradient(48% 48% at 60% 40%, rgba(255, 179, 71, 0.4), transparent 60%),
+    linear-gradient(135deg, #eef1ff 0%, #e6ecff 55%, #eaf3ff 100%);
   background-attachment: fixed;
 }
+/* The frosted panels: LOW-alpha fill so the blurred saturated colour reads
+ * THROUGH; blur + saturate + a touch of brightness keeps it airy. */
 [data-theme="glass"] .card,
 [data-theme="glass"] .hero-surface {
-  background-color: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.8);
-  backdrop-filter: blur(16px) saturate(1.8);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 32px rgba(38, 48, 92, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background-color: rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8) brightness(1.06);
+  backdrop-filter: blur(16px) saturate(1.8) brightness(1.06);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 8px 32px rgba(31, 38, 135, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
+/* Controls sit on the same glass, one tier thinner. */
 [data-theme="glass"] .btn-ghost,
 [data-theme="glass"] .input {
-  background-color: rgba(255, 255, 255, 0.48);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  backdrop-filter: blur(12px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.55);
 }
-/* Frost the sidebar too, so the whole shell reads as layered glass. */
+/* Sidebar reads as a heavier frosted slab. */
 [data-theme="glass"] aside {
-  -webkit-backdrop-filter: blur(14px) saturate(1.6);
-  backdrop-filter: blur(14px) saturate(1.6);
+  background-color: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7);
+  backdrop-filter: blur(20px) saturate(1.7);
+}
+/* Accessibility: honour reduced-transparency / higher-contrast by dropping the
+ * frost for an opaque veil (no blur, solid fill). */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  [data-theme="glass"] .card,
+  [data-theme="glass"] .hero-surface,
+  [data-theme="glass"] .btn-ghost,
+  [data-theme="glass"] .input,
+  [data-theme="glass"] aside {
+    background-color: rgb(248 250 255);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* Bubblegum — soft, extra-rounded, friendly. */

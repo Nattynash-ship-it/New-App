@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EnergyPlan } from "@/components/EnergyPlan";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { HomeHero, dayGreeting } from "@/components/HomeHero";
 import { LifeBalance } from "@/components/LifeBalance";
@@ -179,6 +180,9 @@ export default function CompassPage() {
 
       {/* Whole life at a glance */}
       <OverviewStrip />
+
+      {/* Energy-aware plan — right-size today in one tap */}
+      <EnergyPlan />
 
       <QuickAdd />
 

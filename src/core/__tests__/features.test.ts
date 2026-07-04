@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { addDays, todayISO } from "../dates";
 import { recommendPlan } from "../fitness/plan";
-import { encouragementForToday, graduationStats, habitStreak, matchRecipes, weeklyBalance } from "../selectors";
+import {
+  encouragementForToday,
+  graduationStats,
+  habitStreak,
+  matchRecipes,
+  todaysPlan,
+  weeklyBalance,
+} from "../selectors";
 import type { HubState } from "../store/hub";
 import type { PantryItem } from "../types";
 
@@ -106,6 +113,58 @@ describe("encouragementForToday", () => {
     const b = encouragementForToday();
     expect(a).toBe(b);
     expect(a.length).toBeGreaterThan(0);
+  });
+});
+
+describe("todaysPlan (energy-aware)", () => {
+  const today = todayISO();
+  const base = {
+    assignments: [],
+    meetings: [],
+    activities: [],
+    projects: [
+      {
+        id: "p1",
+        name: "P",
+        category: "",
+        status: "active" as const,
+        milestones: [],
+        trackingRefs: [],
+        notes: "",
+        tasks: Array.from({ length: 6 }, (_, i) => ({ id: `t${i}`, title: `Task ${i}`, done: false })),
+      },
+    ],
+    habits: [],
+  };
+
+  it("caps low-energy days to 3 items and defers the rest", () => {
+    const plan = todaysPlan(base as unknown as HubState, "low");
+    expect(plan.items).toHaveLength(3);
+    expect(plan.deferred).toBe(3); // 6 open tasks, 3 shown
+  });
+
+  it("shows more on a high-energy day", () => {
+    const plan = todaysPlan(base as unknown as HubState, "high");
+    expect(plan.items).toHaveLength(6); // capacity 7 > 6 tasks
+    expect(plan.deferred).toBe(0);
+  });
+
+  it("always keeps fixed commitments even past capacity", () => {
+    const state = {
+      ...base,
+      meetings: Array.from({ length: 4 }, (_, i) => ({
+        id: `m${i}`,
+        title: `Meeting ${i}`,
+        date: today,
+        time: "09:00",
+        durationMin: 30,
+      })),
+    } as unknown as HubState;
+    const plan = todaysPlan(state, "low"); // capacity 3, but 4 meetings are fixed
+    const meetings = plan.items.filter((i) => i.tag === "meeting");
+    expect(meetings).toHaveLength(4);
+    // no flexible slots remain
+    expect(plan.items.every((i) => i.fixed)).toBe(true);
   });
 });
 

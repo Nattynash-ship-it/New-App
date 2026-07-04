@@ -1,7 +1,7 @@
 import { addDays, daysUntil, formatTime, fromISODate, todayISO } from "./dates";
 import { RECIPE_LIBRARY, STAPLES, type LibraryRecipe } from "./data/recipeLibrary";
 import type { HubState } from "./store/hub";
-import type { CourseTopic, DomainSummary, ISODate, RadarEntry, TimelineEntry } from "./types";
+import type { CourseTopic, Domain, DomainSummary, EnergyLevel, ISODate, RadarEntry, TimelineEntry } from "./types";
 
 /**
  * Smart aggregation for the Daily Compass: merges meetings, academic
@@ -344,6 +344,99 @@ export function encouragementForToday(): string {
   let hash = 0;
   for (let i = 0; i < iso.length; i++) hash = (hash * 31 + iso.charCodeAt(i)) >>> 0;
   return ENCOURAGEMENTS[hash % ENCOURAGEMENTS.length]!;
+}
+
+// ---------------------------------------------------------------------------
+// Energy-aware daily plan — "here's today, scaled to how you feel"
+// ---------------------------------------------------------------------------
+
+export interface PlanItem {
+  id: string;
+  domain: Domain;
+  title: string;
+  time?: string;
+  /** Short reason chip, e.g. "overdue", "meeting", "focus", "habit". */
+  tag: string;
+  /** Commitments are fixed (meetings, deadlines); flexible items flex out. */
+  fixed: boolean;
+}
+
+export interface DailyPlan {
+  items: PlanItem[];
+  /** How many flexible items were left off today's plate given the capacity. */
+  deferred: number;
+  capacity: number;
+  message: string;
+}
+
+const ENERGY_CAPACITY: Record<EnergyLevel, number> = { low: 3, steady: 5, high: 7 };
+const ENERGY_MESSAGE: Record<EnergyLevel, string> = {
+  low: "Low-energy day — trimmed to the essentials. Be gentle with yourself.",
+  steady: "A steady day — here's a realistic plan, nothing over the top.",
+  high: "High energy — a fuller plan to make the most of it.",
+};
+
+export const ENERGY_META: Record<EnergyLevel, { label: string; icon: string }> = {
+  low: { label: "Low", icon: "🌙" },
+  steady: { label: "Steady", icon: "🌤" },
+  high: { label: "High", icon: "☀️" },
+};
+
+/**
+ * Build a realistic plan for today, scaled to self-reported energy. Fixed
+ * commitments (meetings, appointments, deadlines) always show; flexible work
+ * (open tasks, remaining habits) fills the rest of the capacity, and anything
+ * beyond it is reported as "deferred" rather than silently dropped — the whole
+ * point is to reduce the sense of an infinite to-do list on a hard day.
+ */
+export function todaysPlan(s: HubState, energy: EnergyLevel): DailyPlan {
+  const today = todayISO();
+  const capacity = ENERGY_CAPACITY[energy];
+
+  const fixed: PlanItem[] = [];
+
+  for (const a of s.assignments.filter((a) => !a.done && a.dueDate < today)) {
+    fixed.push({ id: a.id, domain: "school", title: a.title, time: a.dueTime, tag: "overdue", fixed: true });
+  }
+  for (const a of s.assignments.filter((a) => !a.done && a.dueDate === today)) {
+    fixed.push({ id: a.id, domain: "school", title: a.title, time: a.dueTime, tag: "due today", fixed: true });
+  }
+  for (const m of s.meetings.filter((m) => m.date === today)) {
+    fixed.push({ id: m.id, domain: "work", title: m.title, time: m.time, tag: "meeting", fixed: true });
+  }
+  for (const act of s.activities.filter((a) => a.date === today)) {
+    fixed.push({
+      id: act.id,
+      domain: "family",
+      title: act.title,
+      time: act.time,
+      tag: act.category === "appointment" ? "appointment" : "family",
+      fixed: true,
+    });
+  }
+
+  const flexible: PlanItem[] = [];
+  for (const p of s.projects) {
+    for (const t of p.tasks.filter((t) => !t.done)) {
+      flexible.push({ id: t.id, domain: "work", title: t.title, tag: "focus", fixed: false });
+    }
+  }
+  for (const h of s.habits.filter((h) => !habitDoneToday(h.history))) {
+    flexible.push({ id: h.id, domain: "fitness", title: h.name, tag: "habit", fixed: false });
+  }
+
+  fixed.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
+
+  const slots = Math.max(0, capacity - fixed.length);
+  const chosenFlexible = flexible.slice(0, slots);
+  const deferred = flexible.length - chosenFlexible.length;
+
+  return {
+    items: [...fixed, ...chosenFlexible],
+    deferred,
+    capacity,
+    message: ENERGY_MESSAGE[energy],
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -47,6 +47,14 @@ onboarding (your name + theme); everything else is editable from **Settings**
   reviewable list you confirm in one tap. Available on **Today, School, and
   Work** (`/api/ai/capture` reads images and PDFs with Claude; text and voice
   fall back to an on-device multi-item extractor in `src/core/nlp/extract.ts`).
+- **Energy-aware plan** — tell Vela your capacity for the day in one tap and
+  the Today "plan" right-sizes itself: fixed commitments (meetings, deadlines,
+  appointments) always show, flexible work fills the rest, and anything over
+  capacity is reported as "waiting" rather than looming (`todaysPlan` in
+  `src/core/selectors.ts`).
+- **Weekly Life Balance** — five rings (family, school, work, health, mind)
+  scored from real 7-day activity, with a gentle nudge toward whatever's gone
+  quiet.
 - **Seeded, not empty** — day one is pre-configured around real life (courses,
   routines, pantry, chores) so there's no setup tax.
 - **Graceful degradation** — every AI path has a local fallback; every fetch

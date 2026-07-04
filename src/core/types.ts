@@ -256,6 +256,10 @@ export interface Habit {
 /** Cups of water logged per day, keyed by ISO date. */
 export type WaterLog = Record<ISODate, number>;
 
+/** Self-reported energy/capacity for a day — drives how full the plan gets. */
+export type EnergyLevel = "low" | "steady" | "high";
+export type EnergyLog = Record<ISODate, EnergyLevel>;
+
 // ---------------------------------------------------------------------------
 // Family & Gamified Economy
 // ---------------------------------------------------------------------------

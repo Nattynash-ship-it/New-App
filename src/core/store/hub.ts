@@ -39,6 +39,8 @@ import type {
   Course,
   DegreePlan,
   DeliveryService,
+  EnergyLevel,
+  EnergyLog,
   Equipment,
   FamilyActivity,
   FitnessGoal,
@@ -114,6 +116,8 @@ export interface HubState {
   habits: Habit[];
   water: WaterLog;
   waterGoal: number;
+  /** Self-reported daily energy — powers the capacity-scaled "today's plan". */
+  energyLog: EnergyLog;
   // Meals
   preferredStore: DeliveryService;
   // Work planning
@@ -219,6 +223,8 @@ export interface HubState {
   removeHabit: (id: string) => void;
   logWater: (delta: number) => void;
   setWaterGoal: (n: number) => void;
+  /** Set today's energy level (drives the capacity-scaled plan). */
+  setEnergy: (level: EnergyLevel) => void;
 
   // --- Meals settings ---
   setPreferredStore: (s: DeliveryService) => void;
@@ -268,6 +274,7 @@ function initialState() {
     habits: seedHabits(),
     water: {} as WaterLog,
     waterGoal: 8,
+    energyLog: {} as EnergyLog,
     preferredStore: "whole_foods" as DeliveryService,
     focus: { date: todayISO(), taskIds: [] as string[] },
     kids: seedKids(),
@@ -300,7 +307,7 @@ export const useHub = create<HubState>()(
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
           routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
           attachments, notes, habits, water,
-          waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
+          waterGoal, energyLog, preferredStore, focus, kids, activities, chores, rewards, ledger,
         } = s;
         return JSON.stringify(
           {
@@ -786,6 +793,8 @@ export const useHub = create<HubState>()(
           return { water: { ...s.water, [today]: next } };
         }),
       setWaterGoal: (n) => set({ waterGoal: Math.min(20, Math.max(1, n)) }),
+      setEnergy: (level) =>
+        set((s) => ({ energyLog: { ...s.energyLog, [todayISO()]: level } })),
 
       setPreferredStore: (preferredStore) => set({ preferredStore }),
 
@@ -876,6 +885,7 @@ export const useHub = create<HubState>()(
           habits: p.habits ?? current.habits,
           water: p.water ?? current.water,
           waterGoal: p.waterGoal ?? current.waterGoal,
+          energyLog: p.energyLog ?? current.energyLog,
           fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
           weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
           equipment: p.equipment ?? current.equipment,

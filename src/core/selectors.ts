@@ -716,6 +716,14 @@ function normalize(name: string): string {
 }
 
 /**
+ * A YouTube search link for how to make a dish. A search (not a fixed video id)
+ * keeps the link fresh and always finds a current how-to.
+ */
+export function recipeVideoUrl(title: string): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} recipe`)}`;
+}
+
+/**
  * Matches the built-in recipe library against what's actually available:
  * pantry items marked on-hand plus everything on the grocery list (it's
  * incoming). Returns ready-now first, then near-misses (≤2 missing).

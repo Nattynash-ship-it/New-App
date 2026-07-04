@@ -6,6 +6,7 @@ import {
   graduationStats,
   habitStreak,
   matchRecipes,
+  recipeVideoUrl,
   todaysPlan,
   weeklyBalance,
 } from "../selectors";
@@ -89,6 +90,14 @@ describe("workout library — glute program + form videos", () => {
     expect(url).toContain("youtube.com/results");
     expect(url).toContain(encodeURIComponent("Banded Hip Thrusts proper form"));
     expect(url).not.toContain("band+above+knees");
+  });
+});
+
+describe("recipeVideoUrl", () => {
+  it("builds a YouTube how-to search for a dish", () => {
+    const url = recipeVideoUrl("Tofu veggie stir-fry");
+    expect(url).toContain("youtube.com/results");
+    expect(url).toContain(encodeURIComponent("Tofu veggie stir-fry recipe"));
   });
 });
 

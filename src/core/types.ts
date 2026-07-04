@@ -202,7 +202,10 @@ export interface GroceryItem {
   checked: boolean;
 }
 
-export type DeliveryService = "whole_foods" | "aldi";
+export type DeliveryService = "whole_foods" | "aldi" | "instacart";
+
+/** Per-service delivery webhook URLs the user configures (Connections). */
+export type GroceryConnections = Partial<Record<DeliveryService, string>>;
 
 // ---------------------------------------------------------------------------
 // Fitness & Wellness

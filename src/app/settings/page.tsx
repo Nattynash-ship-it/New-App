@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Card, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -49,7 +50,7 @@ function AppearanceCard() {
     <Card>
       <SectionTitle>Appearance</SectionTitle>
       <p className="mb-3 text-xs text-muted">
-        Four built-in themes. Your choice is remembered on this device.
+        Pick a look — light and playful or a calm dark. Remembered on this device.
       </p>
       <ThemeSwitcher />
     </Card>
@@ -128,6 +129,21 @@ function DataCard() {
   );
 }
 
+function ConnectionsCard() {
+  return (
+    <Card>
+      <SectionTitle>Connections</SectionTitle>
+      <p className="mb-3 text-xs text-muted">
+        Send grocery lists to Whole Foods, Aldi, or Instacart, and link your Gmail, Outlook, or
+        school email so nothing slips.
+      </p>
+      <Link href="/connections" className="btn-primary text-sm">
+        Manage connections →
+      </Link>
+    </Card>
+  );
+}
+
 function AboutCard() {
   return (
     <Card>
@@ -157,6 +173,7 @@ export default function SettingsPage() {
         <ProfileCard />
         <AppearanceCard />
       </div>
+      <ConnectionsCard />
       <DataCard />
       <AboutCard />
     </div>

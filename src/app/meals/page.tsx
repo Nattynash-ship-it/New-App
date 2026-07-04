@@ -14,6 +14,14 @@ const STORE_LABEL: Record<DeliveryService, string> = {
   instacart: "Instacart",
 };
 
+// Where "Order on …" opens. These stores don't accept a prefilled cart URL, so
+// Vela copies the list to the clipboard and opens the store ready to paste.
+const STORE_URL: Record<DeliveryService, string> = {
+  whole_foods: "https://www.amazon.com/alm/storefront?almBrandId=VUZHIFdob2xlIEZvb2Rz",
+  aldi: "https://shop.aldi.us/",
+  instacart: "https://www.instacart.com/store",
+};
+
 function CookFromKitchen() {
   const state = useHub();
   const planMeal = useHub((s) => s.planMeal);
@@ -302,25 +310,32 @@ function Groceries() {
   }
 
   async function sendTo(service: DeliveryService) {
-    setSendState("sending");
+    const items = groceryList.filter((g) => !g.checked);
+    if (items.length === 0) {
+      setSendState("Nothing to order — the list is empty.");
+      return;
+    }
+    // Open the store right away (synchronously, so it isn't popup-blocked)…
+    window.open(STORE_URL[service], "_blank", "noopener");
+    // …and copy the list so it's ready to paste into the store.
+    const text = items
+      .map((g) => `${g.name}${g.quantity !== "1" ? ` (${g.quantity})` : ""}`)
+      .join("\n");
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setSendState(`List copied & ${STORE_LABEL[service]} opened — paste it to finish your order.`);
+    // Also forward to a configured delivery webhook, if the user set one up.
     try {
       const res = await fetch("/api/webhooks/grocery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service,
-          url: groceryConnections[service],
-          items: groceryList.filter((g) => !g.checked),
-        }),
+        body: JSON.stringify({ service, url: groceryConnections[service], items }),
       });
-      const data = (await res.json()) as { status: string; message?: string };
-      setSendState(
-        data.status === "forwarded"
-          ? `Sent to ${STORE_LABEL[service]} ✓`
-          : data.message ?? "Captured — connect this store in Settings → Connections to deliver.",
-      );
+      const data = (await res.json()) as { status: string };
+      if (data.status === "forwarded") {
+        setSendState(`List copied, ${STORE_LABEL[service]} opened & order forwarded ✓`);
+      }
     } catch {
-      setSendState("Couldn't reach the delivery service.");
+      /* the store already opened with the list copied — webhook is a bonus */
     }
   }
 
@@ -369,7 +384,7 @@ function Groceries() {
                 </select>
               </label>
               <button className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => void sendTo(preferredStore)}>
-                Send to {STORE_LABEL[preferredStore]}
+                🛒 Order on {STORE_LABEL[preferredStore]}
               </button>
               <button className="btn-ghost !px-3 !py-1.5 text-xs" onClick={() => void copyList()}>
                 Copy list

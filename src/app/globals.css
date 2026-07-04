@@ -9,7 +9,32 @@
  * tints swap per theme so small labels stay legible everywhere.
  * ------------------------------------------------------------------------- */
 
+/* Nocturne — deep indigo night with a luminous periwinkle-violet accent.
+ * The default first impression: creative, dark, high-contrast. */
 :root,
+[data-theme="nocturne"] {
+  color-scheme: dark;
+  --paper: 14 15 27;
+  --surface: 24 26 46;
+  --ink: 233 234 247;
+  --muted: 150 154 180;
+  --line: rgba(255, 255, 255, 0.09);
+  --accent: 150 140 250;
+  --accent-dark: 130 120 232;
+  --accent-ink: 14 12 34;
+  --work-bright: 152 177 247;
+  --school-bright: 234 157 94;
+  --meals-bright: 87 204 139;
+  --fitness-bright: 243 149 176;
+  --family-bright: 190 165 240;
+  --compass-bright: 176 168 252;
+  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(150, 140, 250, 0.11), transparent 60%);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
+  --selection: rgba(150, 140, 250, 0.32);
+}
+
+/* Midnight — near-black with an electric lime accent. */
 [data-theme="midnight"] {
   color-scheme: dark;
   --paper: 11 15 19;
@@ -30,6 +55,29 @@
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.35);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.45);
   --selection: rgba(200, 240, 77, 0.35);
+}
+
+/* Velvet — deep plum/wine with a warm rose accent. */
+[data-theme="velvet"] {
+  color-scheme: dark;
+  --paper: 26 15 23;
+  --surface: 40 24 37;
+  --ink: 244 232 240;
+  --muted: 178 156 170;
+  --line: rgba(255, 232, 245, 0.09);
+  --accent: 233 122 168;
+  --accent-dark: 212 104 148;
+  --accent-ink: 40 14 28;
+  --work-bright: 168 172 244;
+  --school-bright: 236 168 108;
+  --meals-bright: 104 206 148;
+  --fitness-bright: 244 150 178;
+  --family-bright: 206 168 240;
+  --compass-bright: 234 160 190;
+  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(233, 122, 168, 0.1), transparent 60%);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
+  --selection: rgba(233, 122, 168, 0.3);
 }
 
 [data-theme="daylight"] {
@@ -54,28 +102,6 @@
   --selection: rgba(64, 86, 216, 0.2);
 }
 
-[data-theme="meadow"] {
-  color-scheme: light;
-  --paper: 243 246 241;
-  --surface: 255 255 255;
-  --ink: 24 29 25;
-  --muted: 104 114 106;
-  --line: rgba(20, 30, 24, 0.1);
-  --accent: 31 122 78;
-  --accent-dark: 23 99 62;
-  --accent-ink: 255 255 255;
-  --work-bright: 55 84 190;
-  --school-bright: 158 84 26;
-  --meals-bright: 17 105 58;
-  --fitness-bright: 190 55 92;
-  --family-bright: 108 64 187;
-  --compass-bright: 106 122 26;
-  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(31, 122, 78, 0.07), transparent 60%);
-  --shadow-card: 0 1px 2px rgba(20, 32, 24, 0.06), 0 6px 20px rgba(20, 32, 24, 0.07);
-  --shadow-lift: 0 2px 6px rgba(20, 32, 24, 0.08), 0 14px 36px rgba(20, 32, 24, 0.12);
-  --selection: rgba(31, 122, 78, 0.22);
-}
-
 [data-theme="aurora"] {
   color-scheme: dark;
   --paper: 13 16 32;
@@ -96,29 +122,6 @@
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.4);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(0, 0, 0, 0.5);
   --selection: rgba(94, 224, 216, 0.3);
-}
-
-/* Bloom — warm, soft "wellness" palette: cream, terracotta coral, sage. */
-[data-theme="bloom"] {
-  color-scheme: light;
-  --paper: 247 241 231;
-  --surface: 255 253 249;
-  --ink: 42 35 32;
-  --muted: 138 127 118;
-  --line: rgba(60, 45, 35, 0.1);
-  --accent: 207 106 76;
-  --accent-dark: 184 92 62;
-  --accent-ink: 255 255 255;
-  --work-bright: 55 84 190;
-  --school-bright: 158 84 26;
-  --meals-bright: 24 118 78;
-  --fitness-bright: 190 55 92;
-  --family-bright: 108 64 187;
-  --compass-bright: 106 122 26;
-  --page-glow: radial-gradient(1100px 480px at 75% -12%, rgba(207, 106, 76, 0.07), transparent 60%);
-  --shadow-card: 0 1px 2px rgba(120, 80, 55, 0.06), 0 6px 20px rgba(120, 80, 55, 0.08);
-  --shadow-lift: 0 2px 6px rgba(120, 80, 55, 0.09), 0 14px 36px rgba(120, 80, 55, 0.14);
-  --selection: rgba(207, 106, 76, 0.2);
 }
 
 /* Ember — cozy warm dark: espresso surfaces, coral glow. */

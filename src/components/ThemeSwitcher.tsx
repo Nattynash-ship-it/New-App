@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_THEME, THEME_STORAGE_KEY, THEMES } from "@/core/themes";
+import { DEFAULT_THEME, THEME_IDS, THEME_STORAGE_KEY, THEMES } from "@/core/themes";
 
 function applyTheme(id: string) {
   document.documentElement.dataset.theme = id;
@@ -12,12 +12,13 @@ function applyTheme(id: string) {
   }
 }
 
-/** Four built-in themes, switchable live. Persisted per device. */
+/** Built-in themes, switchable live. Persisted per device. */
 export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
   const [active, setActive] = useState(DEFAULT_THEME);
 
   useEffect(() => {
-    setActive(document.documentElement.dataset.theme ?? DEFAULT_THEME);
+    const current = document.documentElement.dataset.theme ?? DEFAULT_THEME;
+    setActive(THEME_IDS.includes(current) ? current : DEFAULT_THEME);
   }, []);
 
   return (

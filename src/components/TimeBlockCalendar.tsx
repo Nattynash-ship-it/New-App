@@ -55,6 +55,8 @@ function fmtDay(date: string): string {
 export function TimeBlockCalendar() {
   const state = useHub();
   const addFromIntent = useHub((s) => s.addFromIntent);
+  const removeTimelineItem = useHub((s) => s.removeTimelineItem);
+  const [selected, setSelected] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const date = addDays(todayISO(), offset);
   const isToday = offset === 0;
@@ -233,18 +235,28 @@ export function TimeBlockCalendar() {
               const top = (b.startMin - startMin) * PX_PER_MIN;
               const h = Math.max(20, (b.endMin - b.startMin) * PX_PER_MIN - 2);
               const widthPct = 100 / b.lanes;
+              const isSelected = selected === b.id;
               return (
                 <div
                   key={`${b.domain}-${b.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`absolute cursor-default overflow-hidden rounded-lg ${style.soft} px-2 py-1`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (b.removable) setSelected(isSelected ? null : b.id);
+                  }}
+                  className={`group absolute overflow-visible rounded-lg ${style.soft} px-2 py-1 ${
+                    b.removable ? "cursor-pointer" : "cursor-default"
+                  } ${isSelected ? "ring-2 ring-fitness" : ""}`}
                   style={{
                     top,
                     height: h,
                     left: `calc(${b.lane * widthPct}% + 2px)`,
                     width: `calc(${widthPct}% - 4px)`,
                   }}
-                  title={`${b.title} · ${formatTime(minToHM(b.startMin))}`}
+                  title={
+                    b.removable
+                      ? `${b.title} · ${formatTime(minToHM(b.startMin))} · tap to remove`
+                      : `${b.title} · ${formatTime(minToHM(b.startMin))}`
+                  }
                 >
                   <span className={`absolute inset-y-1 left-0 w-1 rounded-full ${style.dot}`} aria-hidden />
                   <p className={`truncate pl-1.5 text-[11px] font-semibold leading-tight ${style.text}`}>
@@ -255,6 +267,21 @@ export function TimeBlockCalendar() {
                       {formatTime(minToHM(b.startMin))}
                       {b.subtitle ? ` · ${b.subtitle}` : ""}
                     </p>
+                  ) : null}
+                  {b.removable ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeTimelineItem(b.id);
+                        setSelected(null);
+                      }}
+                      aria-label={`Remove ${b.title}`}
+                      className={`absolute -right-1.5 -top-1.5 z-30 h-5 w-5 items-center justify-center rounded-full bg-fitness text-[11px] leading-none text-white shadow-card ${
+                        isSelected ? "flex" : "hidden group-hover:flex"
+                      }`}
+                    >
+                      ×
+                    </button>
                   ) : null}
                 </div>
               );

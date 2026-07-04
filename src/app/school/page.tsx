@@ -11,6 +11,7 @@ import {
   SectionTitle,
   Skeleton,
 } from "@/components/ui";
+import { Attachments } from "@/components/Attachments";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -334,6 +335,7 @@ function CourseCard({ courseId }: { courseId: string }) {
                     placeholder="Add topic (e.g. Graph Theory)"
                     onAdd={(name) => addTopic(course.id, unit.id, name)}
                   />
+                  <Attachments ownerType="unit" ownerId={unit.id} label="Unit files" />
                 </div>
               ) : null}
             </div>
@@ -344,6 +346,7 @@ function CourseCard({ courseId }: { courseId: string }) {
         placeholder={`Add unit (e.g. Unit ${course.units.length + 1} · Recursion)`}
         onAdd={(name) => addUnit(course.id, name)}
       />
+      <Attachments ownerType="course" ownerId={course.id} label="Course files (syllabus, notes, PDFs)" />
     </Card>
   );
 }

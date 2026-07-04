@@ -11,6 +11,7 @@ import type {
   Assignment,
   Chore,
   Course,
+  Equipment,
   FamilyActivity,
   Habit,
   Kid,
@@ -220,38 +221,43 @@ export function seedPlannedMeals(): PlannedMeal[] {
 export function seedRoutines(): Routine[] {
   return [
     {
-      id: "routine_lagree",
-      name: "Lagree Pilates",
-      focus: "Full-body slow-twitch endurance",
+      id: "routine_strength",
+      name: "Strength & Glutes",
+      focus: "Dumbbells + kettlebell · posterior-chain strength",
       exercises: [
-        { id: id("ex"), name: "Plank to Pike", target: "2 min slow tempo" },
-        { id: id("ex"), name: "Carriage Lunges", target: "90 sec / side" },
-        { id: id("ex"), name: "Bear Crawl Hold", target: "60 sec" },
-        { id: id("ex"), name: "Serve the Platter", target: "90 sec / arm" },
+        { id: id("ex"), name: "Romanian (Russian) Deadlift", target: "4 × 10 moderate-heavy" },
+        { id: id("ex"), name: "Kettlebell Hip Thrust", target: "4 × 12" },
+        { id: id("ex"), name: "Bulgarian Split Squat", target: "3 × 10 / leg" },
+        { id: id("ex"), name: "Kettlebell Swing", target: "3 × 15" },
       ],
     },
     {
-      id: "routine_glute",
-      name: "Glute Training",
-      focus: "Posterior chain strength",
+      id: "routine_conditioning",
+      name: "Cardio Conditioning",
+      focus: "Rower, bike & rope · keep the heart rate up",
       exercises: [
-        { id: id("ex"), name: "Russian Deadlift", target: "4 × 10 moderate-heavy" },
-        { id: id("ex"), name: "Hip Thrust", target: "4 × 12" },
-        { id: id("ex"), name: "Bulgarian Split Squat", target: "3 × 10 / leg" },
-        { id: id("ex"), name: "Cable Kickback", target: "3 × 15 / leg" },
+        { id: id("ex"), name: "Rower Intervals", target: "8 × (250m hard / 90s easy)" },
+        { id: id("ex"), name: "Bike Sprints", target: "10 × (30s all-out / 60s easy)" },
+        { id: id("ex"), name: "Weighted Rope Skips", target: "5 × 2 min" },
+        { id: id("ex"), name: "Medicine Ball Slams", target: "3 × 15" },
       ],
     },
     {
       id: "routine_recovery",
       name: "Active Recovery",
-      focus: "Mobility & circulation",
+      focus: "Easy bike + mobility · circulation and rest",
       exercises: [
-        { id: id("ex"), name: "Incline Walk", target: "25 min easy pace" },
+        { id: id("ex"), name: "Easy Bike Spin", target: "15 min easy pace" },
         { id: id("ex"), name: "Hip Flexor Stretch Series", target: "10 min" },
-        { id: id("ex"), name: "Foam Roll — quads/glutes", target: "8 min" },
+        { id: id("ex"), name: "Band Shoulder Mobility", target: "8 min" },
       ],
     },
   ];
+}
+
+/** Default home-gym equipment — editable in Fitness → My equipment. */
+export function seedEquipment(): Equipment[] {
+  return ["rower", "bike", "dumbbells", "kettlebell", "jump_rope", "medicine_ball", "bands", "bodyweight"];
 }
 
 /** Recent consecutive days (including today) as ISO dates, for streak seeds. */

@@ -28,10 +28,10 @@ onboarding (your name + theme); everything else is editable from **Settings**
 | Route | Module | What it does |
 | --- | --- | --- |
 | `/` | **Daily Compass** | Morning/evening mood check-in (~20s), natural-language quick add, a single aggregated timeline of today's meetings, deadlines, family activities, and meals, and a 14-day mood trend chart. |
-| `/work` | **Work Hub** | Professional projects with document/correspondence tracking refs, task lists, and the meeting schedule. |
-| `/school` | **School Hub** | Self-paced CS degree tracker. Courses → units → topics (e.g. the 7-unit Discrete Math course with Graph Theory), plus assignment deadlines. |
+| `/work` | **Work Hub** | Professional projects with document/correspondence tracking refs, task lists, the meeting schedule, and file attachments per project. |
+| `/school` | **School Hub** | Self-paced CS degree tracker. Courses → units → topics (e.g. the 7-unit Discrete Math course with Graph Theory), plus assignment deadlines. Attach syllabi, notes, and PDFs to any course or unit. |
 | `/meals` | **Nutrition & Grocery** | Vegan, high-volume/low-calorie defaults. Check off pantry ingredients → the Reverse Recipe Engine generates a meal from exactly those items. A 7-day × 3-slot week planner grid, plus grocery lists generated from planned meals + pantry gaps, routed to delivery-service webhooks (Whole Foods / Aldi placeholders). |
-| `/fitness` | **Fitness & Wellness** | Goal-based training plan, streaks, and one-tap effort logging, plus a habit tracker (streak rings) and daily water intake. |
+| `/fitness` | **Fitness & Wellness** | Goal-based training plan and an at-home workout library filtered to the equipment you own (rower, bike, dumbbells, kettlebells, ropes, medicine ball, bands) — tap any workout into your routines. Streaks, one-tap effort logging, a habit tracker (streak rings), and daily water intake. |
 | `/family` | **Family & General Store** | Kid-tagged activity calendar and a gamified points economy — chores earn points, the General Store spends them, with a full ledger. |
 
 ## Zero-friction UX
@@ -41,6 +41,11 @@ onboarding (your name + theme); everything else is editable from **Settings**
   (`src/core/nlp/parser.ts`). Ambiguous phrases escalate to `/api/ai/parse`
   (Claude with a strict JSON schema) and land in the right module
   automatically.
+- **Smart Capture (paste · photo · voice → plan)** — paste a school email,
+  snap a flyer/appointment card, or dictate a brain-dump, and Vela extracts
+  every date, deadline, and appointment into a reviewable list you confirm in
+  one tap (`/api/ai/capture` with Claude vision; text and voice fall back to an
+  on-device multi-item extractor in `src/core/nlp/extract.ts`).
 - **Seeded, not empty** — day one is pre-configured around real life (courses,
   routines, pantry, chores) so there's no setup tax.
 - **Graceful degradation** — every AI path has a local fallback; every fetch

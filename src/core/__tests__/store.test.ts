@@ -68,6 +68,25 @@ describe("profile + data management", () => {
   });
 });
 
+describe("persist merge (older stored blobs)", () => {
+  it("backfills fields added after a slice was first persisted", async () => {
+    const { useHub } = await import("../store/hub");
+    // Simulate localStorage written by an older build: a profile that predates
+    // the `roles` field, and no wellness slices at all.
+    const persistedState = { profile: { name: "Legacy User", onboarded: true } };
+    // @ts-expect-error merge is defined in the persist options
+    const merged = useHub.persist.getOptions().merge(persistedState, useHub.getState());
+    expect(merged.profile.name).toBe("Legacy User");
+    expect(merged.profile.onboarded).toBe(true);
+    // The crashing field — must be defined, never undefined.
+    expect(Array.isArray(merged.profile.roles)).toBe(true);
+    // Wellness slices added later are backfilled from seed/defaults.
+    expect(Array.isArray(merged.habits)).toBe(true);
+    expect(typeof merged.water).toBe("object");
+    expect(typeof merged.waterGoal).toBe("number");
+  });
+});
+
 describe("wellness", () => {
   it("toggles a habit for today and back", async () => {
     const { useHub } = await import("../store/hub");
@@ -97,5 +116,48 @@ describe("wellness", () => {
     expect(useHub.getState().water[todayISO()]).toBe(3);
     useHub.getState().logWater(-10);
     expect(useHub.getState().water[todayISO()]).toBe(0);
+  });
+});
+
+describe("fitness — equipment & library", () => {
+  it("edits the equipment inventory", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().setEquipment(["dumbbells", "kettlebell"]);
+    expect(useHub.getState().equipment).toEqual(["dumbbells", "kettlebell"]);
+  });
+
+  it("adds a full library workout as a routine in one step", async () => {
+    const { useHub } = await import("../store/hub");
+    const before = useHub.getState().routines.length;
+    useHub.getState().addRoutineWithExercises("Rower Intervals", "Cardio", [
+      { name: "Warm-up", target: "3 min" },
+      { name: "Intervals", target: "8 × 250m" },
+    ]);
+    const routine = useHub.getState().routines.find((r) => r.name === "Rower Intervals");
+    expect(useHub.getState().routines.length).toBe(before + 1);
+    expect(routine?.exercises).toHaveLength(2);
+    expect(routine?.exercises[0]?.id).toMatch(/^ex_/); // ids were assigned
+  });
+});
+
+describe("attachments", () => {
+  it("adds and removes file metadata scoped to an owner", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addAttachment({
+      id: "att_1",
+      ownerType: "course",
+      ownerId: "course_x",
+      name: "syllabus.pdf",
+      mime: "application/pdf",
+      size: 1234,
+      addedAt: new Date(0).toISOString(),
+    });
+    const forCourse = useHub
+      .getState()
+      .attachments.filter((a) => a.ownerType === "course" && a.ownerId === "course_x");
+    expect(forCourse).toHaveLength(1);
+    expect(forCourse[0]?.name).toBe("syllabus.pdf");
+    useHub.getState().removeAttachment("att_1");
+    expect(useHub.getState().attachments.some((a) => a.id === "att_1")).toBe(false);
   });
 });

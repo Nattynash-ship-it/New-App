@@ -210,6 +210,17 @@ export type DeliveryService = "whole_foods" | "aldi";
 
 export type FitnessGoal = "strength" | "sculpt" | "conditioning" | "mobility" | "habit";
 
+/** At-home equipment. Drives which library workouts are shown as "doable". */
+export type Equipment =
+  | "rower"
+  | "bike"
+  | "dumbbells"
+  | "kettlebell"
+  | "jump_rope"
+  | "medicine_ball"
+  | "bands"
+  | "bodyweight";
+
 export interface RoutineExercise {
   id: Id;
   name: string; // e.g. "Russian Deadlift"
@@ -218,7 +229,7 @@ export interface RoutineExercise {
 
 export interface Routine {
   id: Id;
-  name: string; // "Lagree Pilates", "Glute Training", "Active Recovery"
+  name: string; // "Strength & Glutes", "Cardio Conditioning", "Active Recovery"
   focus: string;
   exercises: RoutineExercise[];
 }
@@ -290,6 +301,29 @@ export interface PointTransaction {
   delta: number; // + earned, - spent
   reason: string;
   createdAt: ISODateTime;
+}
+
+// ---------------------------------------------------------------------------
+// Attachments (upload a PDF / image to any section)
+// ---------------------------------------------------------------------------
+
+/** What a file is attached to. "general" is the standalone documents vault. */
+export type AttachmentOwner = "course" | "unit" | "project" | "general";
+
+/**
+ * File metadata. The bytes live in on-device blob storage (IndexedDB on web,
+ * a filesystem adapter on native) keyed by `id`; only this lightweight record
+ * is kept in the store so state stays small, serializable, and portable.
+ */
+export interface Attachment {
+  id: Id;
+  ownerType: AttachmentOwner;
+  ownerId: Id;
+  name: string;
+  mime: string;
+  /** Bytes, for a human-readable size label. */
+  size: number;
+  addedAt: ISODateTime;
 }
 
 // ---------------------------------------------------------------------------

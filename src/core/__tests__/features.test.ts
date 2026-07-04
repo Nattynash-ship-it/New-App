@@ -61,15 +61,15 @@ describe("matchRecipes (cook with what you have)", () => {
 });
 
 describe("recommendPlan (goal-based programming)", () => {
-  it("maps strength goals onto the glute routine", () => {
+  it("maps strength goals onto the strength routine", () => {
     const plan = recommendPlan(["strength"]);
-    expect(plan.find((l) => l.routineId === "routine_glute")?.sessions).toBe(2);
+    expect(plan.find((l) => l.routineId === "routine_strength")?.sessions).toBe(2);
   });
 
   it("merges overlapping goals without double-counting", () => {
     const plan = recommendPlan(["sculpt", "conditioning"]);
-    const lagree = plan.find((l) => l.routineId === "routine_lagree");
-    expect(lagree?.sessions).toBe(2); // max, not sum
+    const conditioning = plan.find((l) => l.routineId === "routine_conditioning");
+    expect(conditioning?.sessions).toBe(2); // max, not sum
   });
 
   it("falls back to a balanced split with no goals", () => {

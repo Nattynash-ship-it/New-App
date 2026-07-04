@@ -19,6 +19,7 @@ import {
   seedCourses,
   seedKids,
   seedMeetings,
+  seedEquipment,
   seedPantry,
   seedPlannedMeals,
   seedHabits,
@@ -29,12 +30,15 @@ import {
 } from "../data/seed";
 import type {
   Assignment,
+  Attachment,
+  AttachmentOwner,
   CheckIn,
   CheckInPeriod,
   Chore,
   Course,
   DegreePlan,
   DeliveryService,
+  Equipment,
   FamilyActivity,
   FitnessGoal,
   GroceryItem,
@@ -50,6 +54,7 @@ import type {
   PointTransaction,
   Recipe,
   Routine,
+  RoutineExercise,
   ScheduledEvent,
   StoreReward,
   StudyBlock,
@@ -98,6 +103,9 @@ export interface HubState {
   workoutLogs: WorkoutLog[];
   fitnessGoals: FitnessGoal[];
   weeklySessionTarget: number;
+  equipment: Equipment[];
+  // Attachments (files uploaded to any section)
+  attachments: Attachment[];
   // Wellness
   habits: Habit[];
   water: WaterLog;
@@ -177,11 +185,23 @@ export interface HubState {
   logWorkout: (routineId: string, effort: WorkoutLog["effort"], note: string) => void;
   removeWorkoutLog: (id: string) => void;
   addRoutine: (name: string, focus: string) => void;
+  /** Add a fully-formed routine (e.g. from the workout library) in one step. */
+  addRoutineWithExercises: (
+    name: string,
+    focus: string,
+    exercises: Array<{ name: string; target: string }>,
+  ) => void;
   removeRoutine: (id: string) => void;
   addExercise: (routineId: string, name: string, target: string) => void;
   removeExercise: (routineId: string, exerciseId: string) => void;
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setWeeklySessionTarget: (n: number) => void;
+  setEquipment: (equipment: Equipment[]) => void;
+
+  // --- Attachments ---
+  /** Record uploaded-file metadata (bytes are stored on-device separately). */
+  addAttachment: (att: Attachment) => void;
+  removeAttachment: (id: string) => void;
 
   // --- Wellness actions ---
   toggleHabitToday: (id: string) => void;
@@ -232,6 +252,8 @@ function initialState() {
     workoutLogs: [] as WorkoutLog[],
     fitnessGoals: ["sculpt", "strength"] as FitnessGoal[],
     weeklySessionTarget: 4,
+    equipment: seedEquipment(),
+    attachments: [] as Attachment[],
     habits: seedHabits(),
     water: {} as WaterLog,
     waterGoal: 8,
@@ -265,7 +287,8 @@ export const useHub = create<HubState>()(
         const {
           profile, checkIns, events, projects, meetings, courses, assignments,
           studyBlocks, degreePlan, pantry, recipes, plannedMeals, groceryList,
-          routines, workoutLogs, fitnessGoals, weeklySessionTarget, habits, water,
+          routines, workoutLogs, fitnessGoals, weeklySessionTarget, equipment,
+          attachments, habits, water,
           waterGoal, preferredStore, focus, kids, activities, chores, rewards, ledger,
         } = s;
         return JSON.stringify(
@@ -645,6 +668,20 @@ export const useHub = create<HubState>()(
         set((s) => ({
           routines: [...s.routines, { id: newId("routine"), name, focus, exercises: [] }],
         })),
+      addRoutineWithExercises: (name, focus, exercises) =>
+        set((s) => ({
+          routines: [
+            ...s.routines,
+            {
+              id: newId("routine"),
+              name,
+              focus,
+              exercises: exercises.map(
+                (e): RoutineExercise => ({ id: newId("ex"), name: e.name, target: e.target }),
+              ),
+            },
+          ],
+        })),
       removeRoutine: (id) =>
         set((s) => ({
           routines: s.routines.filter((r) => r.id !== id),
@@ -668,6 +705,12 @@ export const useHub = create<HubState>()(
         })),
       setFitnessGoals: (goals) => set({ fitnessGoals: goals }),
       setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
+      setEquipment: (equipment) => set({ equipment }),
+
+      // --- Attachments ---
+      addAttachment: (att) => set((s) => ({ attachments: [att, ...s.attachments] })),
+      removeAttachment: (id) =>
+        set((s) => ({ attachments: s.attachments.filter((a) => a.id !== id) })),
 
       // --- Wellness ---
       toggleHabitToday: (id) =>
@@ -768,6 +811,32 @@ export const useHub = create<HubState>()(
     {
       name: "life-hub-v1",
       storage: createJSONStorage(() => localStorage),
+      /**
+       * Zustand's default rehydrate does a *shallow* top-level merge, so a
+       * persisted `profile` created before a field existed (e.g. `roles`) would
+       * silently override the initialised profile and drop the new field —
+       * crashing any code that reads it. Deep-merge each object slice over the
+       * fresh initial state so newly-added fields always have a default.
+       */
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<HubState>;
+        return {
+          ...current,
+          ...p,
+          profile: { ...current.profile, ...(p.profile ?? {}) },
+          degreePlan: { ...current.degreePlan, ...(p.degreePlan ?? {}) },
+          focus: { ...current.focus, ...(p.focus ?? {}) },
+          // Slices added after the first release — fall back to seed/default
+          // when an older persisted blob doesn't carry them.
+          habits: p.habits ?? current.habits,
+          water: p.water ?? current.water,
+          waterGoal: p.waterGoal ?? current.waterGoal,
+          fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
+          weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
+          equipment: p.equipment ?? current.equipment,
+          attachments: p.attachments ?? current.attachments,
+        };
+      },
     },
   ),
 );

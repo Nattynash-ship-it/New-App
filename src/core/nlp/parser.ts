@@ -142,11 +142,20 @@ function cleanTitle(text: string, remove: string[]): string {
   }
   title = title
     .replace(/^\s*(add|schedule|create|remind me( about| to)?|put)\s+(an?\s+)?/i, "")
-    .replace(/\b(next|this)\s*$/i, "")
-    .replace(/\b(at|on|due|for)\s*$/i, "")
     .replace(/\s{2,}/g, " ")
-    .trim()
-    .replace(/^[,\-–\s]+|[,\-–\s]+$/g, "");
+    .trim();
+  // Peel off trailing punctuation and any dangling connector words the date/time
+  // removal left behind ("…museum on .", "…is due", "…for") — repeat since they
+  // can stack ("due on").
+  let prev: string;
+  do {
+    prev = title;
+    title = title
+      .replace(/[.,;:–-]+$/g, "")
+      .replace(/\b(next|this|at|on|in|due|for|by|the|of|is|are|was|were|be)\s*$/i, "")
+      .trim();
+  } while (title !== prev);
+  title = title.replace(/^[,\-–\s]+/g, "").trim();
   if (!title) return "Untitled";
   return title.charAt(0).toUpperCase() + title.slice(1);
 }

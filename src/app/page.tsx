@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { HabitStreaks } from "@/components/HabitStreaks";
+import { HomeHero, dayGreeting } from "@/components/HomeHero";
 import { MoodTrend } from "@/components/MoodTrend";
 import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
+import { SmartCapture } from "@/components/SmartCapture";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
 import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
-import { encouragementForToday, selectTimeline } from "@/core/selectors";
+import { selectTimeline } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
-import type { CheckInPeriod, Mood } from "@/core/types";
+import type { Mood } from "@/core/types";
 
 const MOODS: Array<{ value: Mood; face: string; label: string }> = [
   { value: 1, face: "◦", label: "Heavy" },
@@ -23,15 +25,8 @@ const MOODS: Array<{ value: Mood; face: string; label: string }> = [
   { value: 5, face: "●", label: "Great" },
 ];
 
-function greeting(): { word: string; period: CheckInPeriod } {
-  const h = new Date().getHours();
-  if (h < 12) return { word: "Good morning", period: "morning" };
-  if (h < 17) return { word: "Good afternoon", period: "morning" };
-  return { word: "Good evening", period: "evening" };
-}
-
 function CheckInCard() {
-  const { period } = greeting();
+  const { period } = dayGreeting();
   const checkIns = useHub((s) => s.checkIns);
   const addCheckIn = useHub((s) => s.addCheckIn);
   const existing = checkIns.find((c) => c.date === todayISO() && c.period === period);
@@ -174,33 +169,20 @@ function Timeline() {
 
 export default function CompassPage() {
   const hydrated = useHydrated();
-  const { word } = greeting();
-  const name = useHub((s) => s.profile.name);
 
   if (!hydrated) return <Skeleton />;
 
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-          <span className="text-accent">✦</span> Vela ·{" "}
-          {new Date().toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-        <h1 className="mt-1 flex items-center gap-2 font-display text-3xl tracking-tight">
-          {word}, {name} <span className="text-accent">♥</span>
-        </h1>
-        <p className="mt-1 text-sm text-muted">{encouragementForToday()}</p>
-        <RoleChip />
-      </header>
+      <HomeHero />
 
       {/* Whole life at a glance */}
       <OverviewStrip />
 
       <QuickAdd />
+
+      {/* Bulk capture — paste an email, snap a flyer, or dictate */}
+      <SmartCapture />
 
       {/* Wellness at a glance — habits + hydration */}
       <div className="grid gap-5 lg:grid-cols-5">
@@ -229,50 +211,5 @@ export default function CompassPage() {
 
       <MotivationBanner />
     </div>
-  );
-}
-
-function RoleChip() {
-  const roles = useHub((s) => s.profile.roles);
-  const setRoles = useHub((s) => s.setRoles);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(roles.join(", "));
-
-  if (editing) {
-    return (
-      <form
-        className="mt-2 inline-flex items-center gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setRoles(draft.split(",").map((r) => r.trim()).filter(Boolean));
-          setEditing(false);
-        }}
-      >
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Mom, Student, Professional"
-          className="input !w-64 !py-1 text-xs"
-        />
-        <button type="submit" className="btn-ghost !px-2.5 !py-1 text-xs">
-          Save
-        </button>
-      </form>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => {
-        setDraft(roles.join(", "));
-        setEditing(true);
-      }}
-      className="mt-2 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted transition-colors hover:border-accent"
-    >
-      <span className="text-accent">◔</span>
-      {roles.length ? roles.join(" · ") : "Add your roles"}
-      <span className="opacity-60">✎</span>
-    </button>
   );
 }

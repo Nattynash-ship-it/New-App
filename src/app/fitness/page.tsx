@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Skeleton } from "@/components/ui";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
+import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
 import { fitnessWeek } from "@/core/selectors";
@@ -325,10 +326,20 @@ export default function FitnessPage() {
         <GoalsCard />
         <WeekPlanCard />
       </div>
-      <div className="grid gap-5 lg:grid-cols-3">
-        {routineIds.map((id) => (
-          <RoutineCard key={id} routineId={id} />
-        ))}
+
+      {/* At-home workout library — pick from full routines built for your gear */}
+      <EquipmentCard />
+      <WorkoutLibrary />
+
+      <div>
+        <SectionTitle right={<span className="text-xs text-muted">tap an effort to log</span>}>
+          My routines
+        </SectionTitle>
+        <div className="grid gap-5 lg:grid-cols-3">
+          {routineIds.map((id) => (
+            <RoutineCard key={id} routineId={id} />
+          ))}
+        </div>
       </div>
       <AddRoutine />
       <History />

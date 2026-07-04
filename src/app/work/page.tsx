@@ -16,6 +16,7 @@ const STATUS_STYLE: Record<ProjectStatus, string> = {
   blocked: "bg-fitness-soft text-fitness-bright",
   done: "bg-accent-soft text-accent",
 };
+const PROJECT_STATUSES: ProjectStatus[] = ["active", "waiting", "blocked", "done"];
 
 function TopThree() {
   const projects = useHub((s) => s.projects);
@@ -201,6 +202,7 @@ function ProjectCard({ projectId }: { projectId: string }) {
   const removeMilestone = useHub((s) => s.removeMilestone);
   const addMilestone = useHub((s) => s.addMilestone);
   const removeProject = useHub((s) => s.removeProject);
+  const setProjectStatus = useHub((s) => s.setProjectStatus);
   const [newTask, setNewTask] = useState("");
   const [newMilestone, setNewMilestone] = useState("");
 
@@ -215,7 +217,24 @@ function ProjectCard({ projectId }: { projectId: string }) {
           <p className="text-xs text-muted">{project.category}</p>
         </div>
         <span className="flex items-center gap-1.5">
-          <span className={`chip ${STATUS_STYLE[project.status]}`}>{project.status}</span>
+          <span className="relative inline-flex items-center">
+            <span className={`chip ${STATUS_STYLE[project.status]}`}>
+              {project.status}
+              <span aria-hidden className="ml-0.5 opacity-60">▾</span>
+            </span>
+            <select
+              value={project.status}
+              onChange={(e) => setProjectStatus(project.id, e.target.value as ProjectStatus)}
+              aria-label={`Status for ${project.name}`}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            >
+              {PROJECT_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+          </span>
           <button
             onClick={() => removeProject(project.id)}
             aria-label={`Delete project ${project.name}`}

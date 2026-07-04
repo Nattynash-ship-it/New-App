@@ -224,6 +224,14 @@ function GeneralStore() {
   const [kidName, setKidName] = useState("");
   const activeKid = kids.find((k) => k.id === activeKidId) ?? kids[0];
 
+  // Chores this kid has already completed today — locked until tomorrow.
+  const today = todayISO();
+  const doneToday = new Set(
+    ledger
+      .filter((t) => t.kidId === activeKid?.id && t.choreId && t.createdAt.slice(0, 10) === today)
+      .map((t) => t.choreId),
+  );
+
   return (
     <Card>
       <SectionTitle>The General Store</SectionTitle>
@@ -300,15 +308,19 @@ function GeneralStore() {
               Earn — chores & progress
             </p>
             <ul className="space-y-1.5">
-              {chores.map((c) => (
+              {chores.map((c) => {
+                const claimed = doneToday.has(c.id);
+                return (
                 <li key={c.id} className="group flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2">
-                  <span className="text-sm">{c.title}</span>
+                  <span className={`text-sm ${claimed ? "text-muted line-through" : ""}`}>{c.title}</span>
                   <span className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => completeChore(c.id, activeKid.id)}
-                      className="btn-ghost !px-2.5 !py-1 text-xs !text-family-bright hover:!border-family"
+                      disabled={claimed}
+                      title={claimed ? "Already done today — resets tomorrow" : undefined}
+                      className="btn-ghost !px-2.5 !py-1 text-xs !text-family-bright hover:!border-family disabled:!text-muted disabled:opacity-50"
                     >
-                      +{c.points}
+                      {claimed ? "done ✓" : `+${c.points}`}
                     </button>
                     <button
                       onClick={() => removeChore(c.id)}
@@ -319,7 +331,8 @@ function GeneralStore() {
                     </button>
                   </span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             <InlineAdd
               placeholder='Add chore ("Water plants = 5")'

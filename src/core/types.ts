@@ -319,6 +319,8 @@ export interface PointTransaction {
   delta: number; // + earned, - spent
   reason: string;
   createdAt: ISODateTime;
+  /** Set for chore earnings — lets us enforce one completion per chore per day. */
+  choreId?: Id;
 }
 
 // ---------------------------------------------------------------------------

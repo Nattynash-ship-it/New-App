@@ -61,6 +61,7 @@ import type {
   ParsedIntent,
   PlannedMeal,
   PointTransaction,
+  ProjectStatus,
   Recipe,
   Routine,
   RoutineExercise,
@@ -174,6 +175,7 @@ export interface HubState {
   // --- Work actions ---
   addProject: (name: string, category: string) => void;
   removeProject: (id: string) => void;
+  setProjectStatus: (id: string, status: ProjectStatus) => void;
   toggleWorkTask: (projectId: string, taskId: string) => void;
   addWorkTask: (projectId: string, title: string) => void;
   removeWorkTask: (projectId: string, taskId: string) => void;
@@ -440,6 +442,10 @@ export const useHub = create<HubState>()(
         set((s) => ({
           projects: s.projects.filter((p) => p.id !== id),
           meetings: s.meetings.map((m) => (m.projectId === id ? { ...m, projectId: undefined } : m)),
+        })),
+      setProjectStatus: (id, status) =>
+        set((s) => ({
+          projects: s.projects.map((p) => (p.id === id ? { ...p, status } : p)),
         })),
       removeWorkTask: (projectId, taskId) =>
         set((s) => ({
@@ -907,13 +913,20 @@ export const useHub = create<HubState>()(
         set((s) => ({ rewards: [...s.rewards, { id: newId("rw"), title, cost }] })),
       removeReward: (id) => set((s) => ({ rewards: s.rewards.filter((r) => r.id !== id) })),
       completeChore: (choreId, kidId) => {
-        const chore = get().chores.find((c) => c.id === choreId);
+        const s = get();
+        const chore = s.chores.find((c) => c.id === choreId);
         if (!chore) return;
-        set((s) => ({
-          kids: s.kids.map((k) => (k.id === kidId ? { ...k, points: k.points + chore.points } : k)),
+        // One completion per chore per kid per day — no point farming.
+        const today = todayISO();
+        const alreadyToday = s.ledger.some(
+          (t) => t.choreId === choreId && t.kidId === kidId && t.createdAt.slice(0, 10) === today,
+        );
+        if (alreadyToday) return;
+        set((st) => ({
+          kids: st.kids.map((k) => (k.id === kidId ? { ...k, points: k.points + chore.points } : k)),
           ledger: [
-            { id: newId("tx"), kidId, delta: chore.points, reason: chore.title, createdAt: nowISO() },
-            ...s.ledger,
+            { id: newId("tx"), kidId, delta: chore.points, reason: chore.title, createdAt: nowISO(), choreId },
+            ...st.ledger,
           ],
         }));
       },

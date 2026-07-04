@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { Attachments } from "@/components/Attachments";
+import { SmartCapture } from "@/components/SmartCapture";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -403,6 +404,10 @@ export default function SchoolPage() {
         subtitle="Credits, deadlines, study blocks, and review — the whole degree in one place."
       />
       <GraduationTracker />
+      <SmartCapture
+        title="Import coursework"
+        blurb="Paste or upload a syllabus PDF, a screenshot of a class schedule, or an assignment list — Vela extracts the deadlines and files them under School for you to confirm."
+      />
       <div className="grid gap-5 lg:grid-cols-2">
         <StudySchedule />
         <AssignmentList />

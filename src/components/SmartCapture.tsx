@@ -65,7 +65,13 @@ function fileToBase64(file: File): Promise<string> {
  * into scheduled items you can review and add in one tap. Uses Claude when an
  * API key is present; text/voice fall back to the on-device extractor.
  */
-export function SmartCapture() {
+export function SmartCapture({
+  title = "Smart capture",
+  blurb = "Paste a school email, snap a flyer, or just talk — Vela pulls out the dates and files them for you to confirm.",
+}: {
+  title?: string;
+  blurb?: string;
+} = {}) {
   const addFromIntent = useHub((s) => s.addFromIntent);
   const [mode, setMode] = useState<Mode>("paste");
   const [text, setText] = useState("");
@@ -113,7 +119,7 @@ export function SmartCapture() {
     }
   }
 
-  async function runImage(file: File) {
+  async function runFile(file: File) {
     setBusy(true);
     reset();
     try {
@@ -121,18 +127,18 @@ export function SmartCapture() {
       const res = await fetch("/api/ai/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: { mime: file.type || "image/jpeg", data } }),
+        body: JSON.stringify({ file: { mime: file.type || "application/octet-stream", data } }),
       });
       const payload = (await res.json()) as { items?: ParsedIntent[]; error?: string };
       if (!res.ok) {
-        setError(payload.error ?? "Couldn't read that photo. Try pasting the text instead.");
+        setError(payload.error ?? "Couldn't read that file. Try pasting the text instead.");
         return;
       }
       const found = payload.items ?? [];
       setItems(found.map((i) => ({ ...i, include: true })));
-      if (found.length === 0) setError("Nothing schedulable found in that image.");
+      if (found.length === 0) setError("Nothing schedulable found in that file.");
     } catch {
-      setError("Couldn't process that image.");
+      setError("Couldn't process that file.");
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -188,19 +194,16 @@ export function SmartCapture() {
 
   const modes: Array<{ id: Mode; label: string; icon: string }> = [
     { id: "paste", label: "Paste", icon: "📋" },
-    { id: "photo", label: "Photo", icon: "📷" },
+    { id: "photo", label: "Photo / PDF", icon: "📄" },
     ...(voiceSupported ? [{ id: "voice" as const, label: "Dictate", icon: "🎤" }] : []),
   ];
 
   return (
     <Card>
-      <SectionTitle right={<span className="text-xs text-muted">email · flyer · voice → plan</span>}>
-        Smart capture
+      <SectionTitle right={<span className="text-xs text-muted">text · screenshot · PDF · voice</span>}>
+        {title}
       </SectionTitle>
-      <p className="-mt-1 mb-3 text-xs text-muted">
-        Paste a school email, snap a flyer, or just talk — Vela pulls out the dates and files them
-        for you to confirm.
-      </p>
+      <p className="-mt-1 mb-3 text-xs text-muted">{blurb}</p>
 
       <div className="mb-3 flex gap-1.5">
         {modes.map((m) => (
@@ -228,20 +231,20 @@ export function SmartCapture() {
             disabled={busy}
             className="btn-ghost text-sm"
           >
-            {busy ? "Reading photo…" : "📷 Choose a photo"}
+            {busy ? "Reading file…" : "📄 Choose a screenshot or PDF"}
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) void runImage(f);
+              if (f) void runFile(f);
             }}
           />
           <span className="text-[11px] text-muted">
-            A flyer, appointment card, or printed schedule works best.
+            A syllabus PDF, a screenshot of a class schedule, a flyer, or an appointment card.
           </span>
         </div>
       ) : (

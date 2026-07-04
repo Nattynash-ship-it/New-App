@@ -33,6 +33,9 @@ const CAPTURE_SCHEMA = {
 
 interface CaptureBody {
   text?: unknown;
+  /** A screenshot/photo (image/*) or a PDF, as { mime, data(base64) }. */
+  file?: unknown;
+  /** Back-compat alias for `file`. */
   image?: unknown;
 }
 
@@ -66,31 +69,33 @@ words. If there is genuinely nothing schedulable, return an empty items array.`;
 
 export async function POST(request: Request) {
   let text = "";
-  let image: { mime: string; data: string } | null = null;
+  let file: { mime: string; data: string } | null = null;
   try {
     const body = (await request.json()) as CaptureBody;
     if (typeof body.text === "string") text = body.text.trim().slice(0, 8000);
+    const raw = body.file ?? body.image;
     if (
-      body.image &&
-      typeof body.image === "object" &&
-      typeof (body.image as { mime?: unknown }).mime === "string" &&
-      typeof (body.image as { data?: unknown }).data === "string"
+      raw &&
+      typeof raw === "object" &&
+      typeof (raw as { mime?: unknown }).mime === "string" &&
+      typeof (raw as { data?: unknown }).data === "string"
     ) {
-      const img = body.image as { mime: string; data: string };
-      image = { mime: img.mime, data: img.data };
+      const f = raw as { mime: string; data: string };
+      file = { mime: f.mime, data: f.data };
     }
-    if (!text && !image) {
-      return NextResponse.json({ error: "Provide `text` or an `image`." }, { status: 400 });
+    if (!text && !file) {
+      return NextResponse.json({ error: "Provide `text` or a `file`." }, { status: 400 });
     }
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  // No API key: text still works via the on-device extractor; images can't.
+  // No API key: text still works via the on-device extractor; files (photos /
+  // PDFs) need the model to read them.
   if (!process.env.ANTHROPIC_API_KEY) {
-    if (image && !text) {
+    if (file && !text) {
       return NextResponse.json(
-        { error: "Reading photos needs an ANTHROPIC_API_KEY. Paste or dictate the text instead." },
+        { error: "Reading photos or PDFs needs an ANTHROPIC_API_KEY. Paste or dictate the text instead." },
         { status: 503 },
       );
     }
@@ -102,22 +107,29 @@ export async function POST(request: Request) {
     const today = new Date().toISOString().slice(0, 10);
 
     const content: Anthropic.ContentBlockParam[] = [];
-    if (image) {
-      const allowed = ["image/png", "image/jpeg", "image/gif", "image/webp"];
-      const mediaType = allowed.includes(image.mime) ? image.mime : "image/jpeg";
-      content.push({
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: mediaType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
-          data: image.data,
-        },
-      });
+    if (file) {
+      if (file.mime === "application/pdf") {
+        content.push({
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: file.data },
+        });
+      } else {
+        const allowed = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+        const mediaType = allowed.includes(file.mime) ? file.mime : "image/jpeg";
+        content.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mediaType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+            data: file.data,
+          },
+        });
+      }
     }
     content.push({
       type: "text",
-      text: image
-        ? "Extract every event, appointment, deadline, or task from this photo (a flyer, schedule, or appointment card)."
+      text: file
+        ? "Extract every event, appointment, deadline, assignment, or task from this file (a flyer, screenshot, syllabus, class schedule, or appointment card)."
         : `Extract everything schedulable from this text:\n\n${text}`,
     });
 

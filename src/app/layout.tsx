@@ -23,17 +23,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B0F13",
+  themeColor: "#0E0F1B",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-const themeInit = `(function(){try{var t=localStorage.getItem("hub-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}})()`;
+// Apply the saved theme before first paint, migrating anyone still on a
+// removed theme (e.g. the old cream "bloom") to the current default.
+const themeInit = `(function(){try{var v=["nocturne","midnight","aurora","ember","velvet","daylight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="nocturne";if(t)localStorage.setItem("hub-theme","nocturne")}}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="bloom" suppressHydrationWarning>
+    <html lang="en" data-theme="nocturne" suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before first paint to avoid a flash */}
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

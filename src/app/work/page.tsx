@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { Attachments } from "@/components/Attachments";
+import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
 import type { ProjectStatus } from "@/core/types";
@@ -371,6 +372,10 @@ export default function WorkPage() {
         eyebrow="Work Hub"
         title="Professional projects"
         subtitle="Plan the projects, protect the focus, join the meetings — one place."
+      />
+      <SmartCapture
+        title="Capture from an email or notes"
+        blurb="Paste a meeting invite, a screenshot, or notes — Vela pulls out the meetings and deadlines and files them under Work for you to confirm."
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <TopThree />

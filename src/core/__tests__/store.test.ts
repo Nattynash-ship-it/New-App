@@ -236,6 +236,38 @@ describe("data export round-trips every slice", () => {
   });
 });
 
+describe("work projects", () => {
+  it("changes a project's status", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addProject("Website refresh", "Marketing");
+    const proj = useHub.getState().projects.find((p) => p.name === "Website refresh")!;
+    expect(proj.status).toBe("active");
+
+    useHub.getState().setProjectStatus(proj.id, "blocked");
+    expect(useHub.getState().projects.find((p) => p.id === proj.id)?.status).toBe("blocked");
+  });
+});
+
+describe("chores — one completion per day", () => {
+  it("awards points once, then ignores same-day repeats", async () => {
+    const { useHub } = await import("../store/hub");
+    const kid = useHub.getState().kids[0]!;
+    useHub.getState().addChore("Feed the cat", 7);
+    const chore = useHub.getState().chores.find((c) => c.title === "Feed the cat")!;
+    const before = useHub.getState().kids.find((k) => k.id === kid.id)!.points;
+
+    useHub.getState().completeChore(chore.id, kid.id);
+    const afterOne = useHub.getState().kids.find((k) => k.id === kid.id)!.points;
+    expect(afterOne).toBe(before + 7);
+
+    // Second attempt today is a no-op — no double points, no extra ledger row.
+    const rows = useHub.getState().ledger.filter((t) => t.choreId === chore.id).length;
+    useHub.getState().completeChore(chore.id, kid.id);
+    expect(useHub.getState().kids.find((k) => k.id === kid.id)!.points).toBe(before + 7);
+    expect(useHub.getState().ledger.filter((t) => t.choreId === chore.id).length).toBe(rows);
+  });
+});
+
 describe("kids' weekly meals", () => {
   it("upserts a meal cell and totals calories for the week", async () => {
     const { useHub } = await import("../store/hub");

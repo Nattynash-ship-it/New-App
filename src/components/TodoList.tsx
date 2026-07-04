@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, Checkbox, EmptyState, SectionTitle } from "./ui";
 import { MicButton } from "./MicButton";
 import { useHub } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { Urgency } from "@/core/types";
 
 const URGENCY: Record<Urgency, { label: string; order: number; chip: string; dot: string }> = {
@@ -21,6 +22,7 @@ export function TodoList() {
   const toggleTodo = useHub((s) => s.toggleTodo);
   const removeTodo = useHub((s) => s.removeTodo);
   const setTodoUrgency = useHub((s) => s.setTodoUrgency);
+  const pushUndo = useUndo((s) => s.push);
   const [title, setTitle] = useState("");
   const [urgency, setUrgency] = useState<Urgency>("medium");
 
@@ -88,7 +90,10 @@ export function TodoList() {
               <div className="min-w-0 flex-1">
                 <Checkbox
                   checked={t.done}
-                  onChange={() => toggleTodo(t.id)}
+                  onChange={() => {
+                    toggleTodo(t.id);
+                    pushUndo(`Done: ${t.title}`, () => toggleTodo(t.id));
+                  }}
                   onRemove={() => removeTodo(t.id)}
                   label={t.title}
                   vanish

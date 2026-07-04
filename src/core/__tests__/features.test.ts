@@ -67,6 +67,31 @@ describe("matchRecipes (cook with what you have)", () => {
   });
 });
 
+describe("workout library — glute program + form videos", () => {
+  it("includes the 6-day glute program from the uploaded plan", async () => {
+    const { WORKOUT_LIBRARY } = await import("../fitness/library");
+    const days = ["mon", "tue", "wed", "thu", "fri", "sat"].map((d) => `lib_glute_${d}`);
+    const glute = WORKOUT_LIBRARY.filter((w) => days.includes(w.id));
+    expect(glute.length).toBe(6);
+    expect(glute.every((w) => w.exercises.length > 0)).toBe(true);
+  });
+
+  it("shows glute workouts to someone with bands + dumbbells", async () => {
+    const { workoutsForEquipment } = await import("../fitness/library");
+    const ids = workoutsForEquipment(["bands", "dumbbells"]).map((w) => w.id);
+    expect(ids).toContain("lib_glute_mon");
+    expect(ids).toContain("lib_glute_sat");
+  });
+
+  it("builds a clean YouTube form-search URL, stripping parenthetical cues", async () => {
+    const { formVideoUrl } = await import("../fitness/library");
+    const url = formVideoUrl("Banded Hip Thrusts (band above knees)");
+    expect(url).toContain("youtube.com/results");
+    expect(url).toContain(encodeURIComponent("Banded Hip Thrusts proper form"));
+    expect(url).not.toContain("band+above+knees");
+  });
+});
+
 describe("recommendPlan (goal-based programming)", () => {
   it("maps strength goals onto the strength routine", () => {
     const plan = recommendPlan(["strength"]);

@@ -226,7 +226,147 @@ export const WORKOUT_LIBRARY: LibraryWorkout[] = [
       { name: "Hollow Hold", target: "3 × 20s" },
     ],
   },
+
+  // --- 8-Week Glute & Sculpt Tracker (from the uploaded plan) ---
+  // A 6-day split: bands + dumbbells at home. Progressive overload weekly.
+  {
+    id: "lib_glute_mon",
+    name: "Glute Program · Day 1 — Upper Glutes + Arms",
+    focus: "8-Week Tracker · upper-glute shelf, triceps/biceps, core",
+    goals: ["sculpt", "strength"],
+    equipment: ["bands", "dumbbells", "bodyweight"],
+    durationMin: 45,
+    level: "moderate",
+    exercises: [
+      { name: "Banded Hip Thrusts (band above knees)", target: "4 × 15" },
+      { name: "Frog Pumps", target: "3 × 20" },
+      { name: "Banded Lateral Walks", target: "3 × 20 steps" },
+      { name: "Standing Kickbacks at 45°", target: "3 × 15 / side" },
+      { name: "Seated Banded Hip Abductions (lean forward)", target: "3 × 25" },
+      { name: "Tricep Dips on Chair", target: "4 × 12" },
+      { name: "Overhead Dumbbell Tricep Extension", target: "3 × 12" },
+      { name: "Bicep Curls", target: "3 × 12" },
+      { name: "Dead Bugs", target: "3 × 12 / side" },
+      { name: "Reverse Crunches", target: "3 × 15" },
+      { name: "Forearm Plank", target: "3 × 45 sec" },
+    ],
+  },
+  {
+    id: "lib_glute_tue",
+    name: "Glute Program · Day 2 — Glutes + Legs",
+    focus: "8-Week Tracker · posterior chain, quads, core",
+    goals: ["strength", "sculpt"],
+    equipment: ["dumbbells", "bodyweight"],
+    durationMin: 45,
+    level: "moderate",
+    exercises: [
+      { name: "Dumbbell Romanian Deadlifts", target: "4 × 12" },
+      { name: "Bulgarian Split Squats", target: "3 × 10 / side" },
+      { name: "Goblet Squats", target: "4 × 12" },
+      { name: "Curtsy Lunges", target: "3 × 12 / side" },
+      { name: "Single-Leg Glute Bridge", target: "3 × 12 / side" },
+      { name: "Calf Raises", target: "3 × 20" },
+      { name: "Leg Raises", target: "3 × 15" },
+      { name: "Bicycle Crunches", target: "3 × 20" },
+      { name: "Side Plank", target: "2 × 30 sec / side" },
+    ],
+  },
+  {
+    id: "lib_glute_wed",
+    name: "Glute Program · Day 3 — Upper Glutes + Arms",
+    focus: "8-Week Tracker · glute activation, shoulders/arms, core",
+    goals: ["sculpt", "strength"],
+    equipment: ["bands", "dumbbells", "bodyweight"],
+    durationMin: 45,
+    level: "moderate",
+    exercises: [
+      { name: "Single-Leg Hip Thrusts", target: "4 × 10 / side" },
+      { name: "Fire Hydrants (band)", target: "3 × 15 / side" },
+      { name: "Rainbow Kicks", target: "3 × 12 / side" },
+      { name: "Standing Banded Abductions", target: "3 × 20 / side" },
+      { name: "Glute Bridge Hold + Abduction Pulses", target: "3 × 20" },
+      { name: "Close-Grip Push-Ups (knees fine)", target: "4 × 10" },
+      { name: "Tricep Kickbacks", target: "3 × 12 / side" },
+      { name: "Hammer Curls", target: "3 × 12" },
+      { name: "Lateral Raises", target: "3 × 12" },
+      { name: "Mountain Climbers", target: "3 × 30" },
+      { name: "Hollow Hold", target: "3 × 30 sec" },
+      { name: "Reverse Crunches", target: "3 × 15" },
+    ],
+  },
+  {
+    id: "lib_glute_thu",
+    name: "Glute Program · Day 4 — Glutes + Legs",
+    focus: "8-Week Tracker · heavy hip thrusts, unilateral legs, core",
+    goals: ["strength", "sculpt"],
+    equipment: ["dumbbells", "bodyweight"],
+    durationMin: 45,
+    level: "tough",
+    exercises: [
+      { name: "Dumbbell Hip Thrusts (heaviest weight)", target: "4 × 12" },
+      { name: "Step-Ups on Chair (lean slightly forward)", target: "3 × 12 / side" },
+      { name: "Sumo Squats", target: "4 × 15" },
+      { name: "Reverse Lunges", target: "3 × 12 / side" },
+      { name: "Donkey Kicks (ankle weights)", target: "3 × 15 / side" },
+      { name: "Wall Sit", target: "3 × 45 sec" },
+      { name: "Plank Hip Dips", target: "3 × 20" },
+      { name: "Flutter Kicks", target: "3 × 30 sec" },
+      { name: "Dead Bugs", target: "3 × 12 / side" },
+    ],
+  },
+  {
+    id: "lib_glute_fri",
+    name: "Glute Program · Day 5 — Upper Glutes + Arms",
+    focus: "8-Week Tracker · beat Day 1's numbers, shoulders, core",
+    goals: ["sculpt", "strength"],
+    equipment: ["bands", "dumbbells", "bodyweight"],
+    durationMin: 45,
+    level: "moderate",
+    exercises: [
+      { name: "Banded Hip Thrusts (beat Day 1!)", target: "4 × 15" },
+      { name: "Frog Pumps", target: "3 × 25" },
+      { name: "Kneeling Banded Kickback (upward angle)", target: "3 × 15 / side" },
+      { name: "Clamshells", target: "3 × 20 / side" },
+      { name: "Seated Abductions", target: "3 × 30" },
+      { name: "Shoulder Press", target: "4 × 12" },
+      { name: "Skull Crushers (lying tricep extension)", target: "3 × 12" },
+      { name: "Bicep 21s", target: "3 sets" },
+      { name: "Plank", target: "3 × 60 sec" },
+      { name: "Leg Raises", target: "3 × 15" },
+      { name: "Russian Twists", target: "3 × 30" },
+    ],
+  },
+  {
+    id: "lib_glute_sat",
+    name: "Glute Program · Day 6 — Full Burn",
+    focus: "8-Week Tracker · full-body glutes, legs, arms + a core circuit",
+    goals: ["strength", "conditioning", "sculpt"],
+    equipment: ["bands", "dumbbells", "bodyweight"],
+    durationMin: 50,
+    level: "tough",
+    exercises: [
+      { name: "Romanian Deadlifts", target: "4 × 12" },
+      { name: "Hip Thrusts", target: "4 × 15" },
+      { name: "Goblet Squats", target: "3 × 12" },
+      { name: "Curtsy Lunges", target: "3 × 10 / side" },
+      { name: "Lateral Band Walks", target: "3 × 20" },
+      { name: "Tricep Dips", target: "3 × 15" },
+      { name: "Bicep Curls", target: "3 × 12" },
+      { name: "Overhead Press", target: "3 × 12" },
+      { name: "Core Circuit: mtn climbers / rev crunches / plank / bicycles", target: "3 rounds × 30 sec each" },
+    ],
+  },
 ];
+
+/**
+ * A YouTube search link for an exercise's proper form. Using a search (rather
+ * than a hardcoded video id) means the link never rots and always surfaces
+ * current demos — strip any parenthetical cue first so the query stays clean.
+ */
+export function formVideoUrl(exercise: string): string {
+  const clean = exercise.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${clean} proper form`)}`;
+}
 
 /** Workouts you can do with the equipment you own (every required piece). */
 export function workoutsForEquipment(owned: Equipment[]): LibraryWorkout[] {

@@ -129,6 +129,32 @@
   --selection: rgba(120, 108, 246, 0.24);
 }
 
+/* Cartoon — playful comic look: bright canvas, a vivid pop accent, bold ink
+ * outlines and hard offset shadows (scoped rules below add the outlines). */
+[data-theme="cartoon"] {
+  color-scheme: light;
+  --paper: 247 249 255;
+  --surface: 255 255 255;
+  --ink: 26 22 45;
+  --muted: 108 104 138;
+  --line: rgb(26 22 45);
+  --accent: 255 92 120;
+  --accent-dark: 232 72 100;
+  --accent-ink: 255 255 255;
+  --work-bright: 40 92 232;
+  --school-bright: 198 100 16;
+  --meals-bright: 16 148 90;
+  --fitness-bright: 224 44 108;
+  --family-bright: 132 70 224;
+  --compass-bright: 232 82 108;
+  --page-glow: radial-gradient(680px 360px at 8% -12%, rgba(255, 214, 92, 0.45), transparent 55%),
+    radial-gradient(620px 340px at 100% -6%, rgba(120, 206, 255, 0.4), transparent 55%),
+    radial-gradient(620px 360px at 55% 116%, rgba(255, 150, 190, 0.38), transparent 55%);
+  --shadow-card: 4px 4px 0 rgb(26 22 45);
+  --shadow-lift: 6px 6px 0 rgb(26 22 45);
+  --selection: rgba(255, 92, 120, 0.28);
+}
+
 /* ---------------------------------------------------------------------------
  * Motion — subtle, purposeful, and disabled for reduced-motion users.
  * ------------------------------------------------------------------------- */
@@ -298,29 +324,62 @@
  * These live outside @layer components so they reliably win over .card.
  * ------------------------------------------------------------------------- */
 
-/* Glass — a soft aurora gradient behind frosted, translucent cards. */
+/* Glass — frosted glassmorphism. A vivid, liquid aurora gradient sits behind
+ * translucent, blurred panels. The 1px light border + inset top highlight give
+ * the light-catching glass edge; ink stays dark for ≥4.5:1 contrast. */
 [data-theme="glass"] body {
   background-image:
-    radial-gradient(58% 48% at 12% 6%, rgba(124, 138, 255, 0.4), transparent 60%),
-    radial-gradient(54% 46% at 92% 10%, rgba(255, 140, 200, 0.34), transparent 60%),
-    radial-gradient(60% 55% at 50% 108%, rgba(96, 220, 214, 0.32), transparent 60%);
+    radial-gradient(52% 44% at 10% 4%, rgba(124, 132, 255, 0.5), transparent 60%),
+    radial-gradient(48% 42% at 94% 8%, rgba(255, 128, 196, 0.42), transparent 60%),
+    radial-gradient(46% 44% at 78% 62%, rgba(120, 214, 255, 0.36), transparent 60%),
+    radial-gradient(58% 52% at 42% 112%, rgba(96, 224, 206, 0.4), transparent 60%);
   background-attachment: fixed;
 }
 [data-theme="glass"] .card,
 [data-theme="glass"] .hero-surface {
   background-color: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-  border-color: rgba(255, 255, 255, 0.65);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  backdrop-filter: blur(16px) saturate(1.8);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(38, 48, 92, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 [data-theme="glass"] .btn-ghost,
 [data-theme="glass"] .input {
-  background-color: rgba(255, 255, 255, 0.45);
+  background-color: rgba(255, 255, 255, 0.48);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+}
+/* Frost the sidebar too, so the whole shell reads as layered glass. */
+[data-theme="glass"] aside {
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
 }
 
 /* Bubblegum — soft, extra-rounded, friendly. */
 [data-theme="bubblegum"] .card {
   border-radius: 1.5rem;
+}
+
+/* Cartoon — bold ink outlines + hard offset shadows, with a springy press. */
+[data-theme="cartoon"] .card {
+  border-width: 2.5px;
+  border-radius: 1.15rem;
+}
+[data-theme="cartoon"] .btn-primary,
+[data-theme="cartoon"] .btn-ghost {
+  border: 2.5px solid rgb(var(--ink));
+  box-shadow: 3px 3px 0 rgb(var(--ink));
+  font-weight: 700;
+}
+[data-theme="cartoon"] .btn-primary:active,
+[data-theme="cartoon"] .btn-ghost:active {
+  box-shadow: 1px 1px 0 rgb(var(--ink));
+  transform: translate(2px, 2px);
+}
+[data-theme="cartoon"] .input {
+  border-width: 2px;
+  border-color: rgb(var(--ink) / 0.85);
+}
+[data-theme="cartoon"] .chip {
+  border: 1.5px solid rgb(var(--ink) / 0.85);
 }

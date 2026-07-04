@@ -15,6 +15,7 @@ export interface ThemeMeta {
 
 export const THEMES: ThemeMeta[] = [
   { id: "glass", label: "Glass", bg: "#E4EAF8", accent: "#786CF6", mode: "light" },
+  { id: "cartoon", label: "Cartoon", bg: "#F7F9FF", accent: "#FF5C78", mode: "light" },
   { id: "bubblegum", label: "Bubblegum", bg: "#FFEEF7", accent: "#F05AA5", mode: "light" },
   { id: "daylight", label: "Daylight", bg: "#F7F8FA", accent: "#4056D8", mode: "light" },
   { id: "nocturne", label: "Nocturne", bg: "#0E0F1B", accent: "#968CFA", mode: "dark" },

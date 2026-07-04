@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Card, SectionTitle } from "./ui";
+import { MicButton } from "./MicButton";
 import { parseCourses, type ParsedCourse } from "@/core/nlp/courses";
 import { useHub } from "@/core/store/hub";
 
@@ -139,9 +140,12 @@ export function ClassImporter() {
             placeholder={"Paste transcript lines, e.g.\nMATH 232  Discrete Mathematics  4  A\nCS 310  Data Structures & Algorithms  4  In Progress"}
             className="input min-h-[84px] resize-y text-sm"
           />
-          <button onClick={runPaste} disabled={!text.trim()} className="btn-primary mt-2 !px-4 !py-1.5 text-sm">
-            Find my classes
-          </button>
+          <div className="mt-2 flex items-center gap-2">
+            <button onClick={runPaste} disabled={!text.trim()} className="btn-primary !px-4 !py-1.5 text-sm">
+              Find my classes
+            </button>
+            <MicButton value={text} onChange={setText} />
+          </div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MicButton } from "./MicButton";
 import { parseQuickAdd } from "@/core/nlp/parser";
 import { useHub } from "@/core/store/hub";
 import { formatFriendly, formatTime } from "@/core/dates";
@@ -76,6 +77,7 @@ export function QuickAdd() {
           className="w-full bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted/60"
           aria-label="Natural language quick add"
         />
+        <MicButton value={text} onChange={setText} />
         <button type="submit" className="btn-primary !px-3.5 !py-1.5" disabled={!text.trim() || busy}>
           {busy ? "…" : "Add"}
         </button>

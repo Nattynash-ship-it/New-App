@@ -6,6 +6,7 @@ import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { Attachments } from "@/components/Attachments";
+import { MicButton } from "@/components/MicButton";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
 import { formVideoUrl } from "@/core/fitness/library";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
@@ -303,6 +304,7 @@ function AddRoutine() {
     >
       <span className="text-sm text-muted">New routine</span>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Routine name" className="input min-w-[150px] flex-1 !py-1.5 text-xs" />
+      <MicButton value={name} onChange={setName} />
       <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="Focus (e.g. Upper body)" className="input min-w-[150px] flex-1 !py-1.5 text-xs" />
       <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!name.trim()}>
         Create

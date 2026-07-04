@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { KidMeals } from "@/components/KidMeals";
+import { MicButton } from "@/components/MicButton";
 import { addDays, formatFriendly, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
 import type { ActivityCategory } from "@/core/types";
@@ -27,6 +28,7 @@ function AddActivity() {
       }}
     >
       <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add activity or appointment" className="input min-w-[150px] flex-1 !py-1.5 text-xs" />
+      <MicButton value={title} onChange={setTitle} />
       <select value={kidId} onChange={(e) => setKidId(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Who">
         <option value="">Whole family</option>
         {kids.map((k) => (

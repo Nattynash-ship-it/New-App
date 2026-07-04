@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Checkbox, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { Attachments } from "@/components/Attachments";
+import { MicButton } from "@/components/MicButton";
 import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -124,6 +125,7 @@ function MeetingList() {
           }}
         >
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Meeting title" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
+          <MicButton value={title} onChange={setTitle} />
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Date" />
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Time" />
           <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Video link (optional)" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
@@ -285,6 +287,7 @@ function ProjectCard({ projectId }: { projectId: string }) {
             placeholder="Add milestone"
             className="input !py-1 text-xs"
           />
+          <MicButton value={newMilestone} onChange={setNewMilestone} />
           <button type="submit" className="btn-ghost shrink-0 !px-2.5 !py-1 text-xs" disabled={!newMilestone.trim()}>
             Add
           </button>
@@ -327,6 +330,7 @@ function ProjectCard({ projectId }: { projectId: string }) {
           placeholder={`Add a task (${open} open)`}
           className="input !py-1.5 text-xs"
         />
+        <MicButton value={newTask} onChange={setNewTask} />
         <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!newTask.trim()}>
           Add
         </button>
@@ -356,6 +360,7 @@ function AddProject() {
     >
       <span className="text-sm text-muted">New project</span>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" className="input min-w-[160px] flex-1 !py-1.5 text-xs" />
+      <MicButton value={name} onChange={setName} />
       <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (optional)" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
       <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!name.trim()}>
         Create

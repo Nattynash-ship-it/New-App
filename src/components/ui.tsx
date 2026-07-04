@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { MicButton } from "./MicButton";
 import type { Domain } from "@/core/types";
 
 export const DOMAIN_STYLES: Record<Domain, { text: string; soft: string; dot: string; label: string }> = {
@@ -164,6 +165,7 @@ export function InlineAdd({
         placeholder={placeholder}
         className="input min-w-[140px] flex-1 !py-1.5 text-xs"
       />
+      <MicButton value={value} onChange={setValue} />
       {extra}
       <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!value.trim()}>
         Add

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Attachments } from "@/components/Attachments";
+import { MicButton } from "@/components/MicButton";
 import { Card, EmptyState, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { formatFriendly } from "@/core/dates";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -158,6 +159,8 @@ function AddNote() {
         <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!title.trim() && !body.trim()}>
           Save note
         </button>
+        <MicButton value={body} onChange={setBody} />
+        <span className="text-[11px] text-muted">dictate the note</span>
         <button type="button" onClick={() => setOpen(false)} className="text-xs text-muted hover:text-ink">
           Cancel
         </button>

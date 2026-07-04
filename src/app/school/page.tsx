@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { Attachments } from "@/components/Attachments";
+import { MicButton } from "@/components/MicButton";
 import { ClassImporter } from "@/components/ClassImporter";
 import { SmartCapture } from "@/components/SmartCapture";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
@@ -261,6 +262,7 @@ function AssignmentList() {
         }}
       >
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add assignment" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
+        <MicButton value={title} onChange={setTitle} />
         <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Due date" />
         <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input !w-auto max-w-[140px] !py-1.5 text-xs" aria-label="Course">
           <option value="">No course</option>
@@ -382,6 +384,7 @@ function AddCourse() {
       <span className="text-sm text-muted">New course</span>
       <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Code (CS 320)" className="input !w-28 !py-1.5 text-xs" />
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Course name" className="input min-w-[160px] flex-1 !py-1.5 text-xs" />
+      <MicButton value={name} onChange={setName} />
       <label className="flex items-center gap-1 text-xs text-muted">
         Credits
         <input

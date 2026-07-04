@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, Checkbox, EmptyState, SectionTitle } from "./ui";
+import { MicButton } from "./MicButton";
 import { useHub } from "@/core/store/hub";
 import type { Urgency } from "@/core/types";
 
@@ -49,6 +50,7 @@ export function TodoList() {
           placeholder="Add a to-do…"
           className="input min-w-[140px] flex-1 !py-1.5 text-sm"
         />
+        <MicButton value={title} onChange={setTitle} />
         <div className="flex items-center gap-1" role="radiogroup" aria-label="Urgency">
           {LEVELS.map((u) => (
             <button

@@ -7,6 +7,7 @@ import { MoodTrend } from "@/components/MoodTrend";
 import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
+import { SmartCapture } from "@/components/SmartCapture";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
 import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
@@ -179,6 +180,9 @@ export default function CompassPage() {
       <OverviewStrip />
 
       <QuickAdd />
+
+      {/* Bulk capture — paste an email, snap a flyer, or dictate */}
+      <SmartCapture />
 
       {/* Wellness at a glance — habits + hydration */}
       <div className="grid gap-5 lg:grid-cols-5">

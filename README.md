@@ -41,6 +41,11 @@ onboarding (your name + theme); everything else is editable from **Settings**
   (`src/core/nlp/parser.ts`). Ambiguous phrases escalate to `/api/ai/parse`
   (Claude with a strict JSON schema) and land in the right module
   automatically.
+- **Smart Capture (paste · photo · voice → plan)** — paste a school email,
+  snap a flyer/appointment card, or dictate a brain-dump, and Vela extracts
+  every date, deadline, and appointment into a reviewable list you confirm in
+  one tap (`/api/ai/capture` with Claude vision; text and voice fall back to an
+  on-device multi-item extractor in `src/core/nlp/extract.ts`).
 - **Seeded, not empty** — day one is pre-configured around real life (courses,
   routines, pantry, chores) so there's no setup tax.
 - **Graceful degradation** — every AI path has a local fallback; every fetch

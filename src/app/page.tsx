@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { HomeHero, dayGreeting } from "@/components/HomeHero";
+import { LifeBalance } from "@/components/LifeBalance";
 import { MoodTrend } from "@/components/MoodTrend";
 import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
@@ -180,6 +181,9 @@ export default function CompassPage() {
       <OverviewStrip />
 
       <QuickAdd />
+
+      {/* One glance: is any part of life being dropped? */}
+      <LifeBalance />
 
       {/* Bulk capture — paste an email, snap a flyer, or dictate */}
       <SmartCapture />

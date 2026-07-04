@@ -347,6 +347,131 @@ export function encouragementForToday(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Weekly Life Balance — a gentle scorecard across the life areas
+// ---------------------------------------------------------------------------
+
+export interface BalanceArea {
+  key: "family" | "school" | "work" | "health" | "mind";
+  label: string;
+  icon: string;
+  /** 0–100 "how much you've tended this area this week". */
+  score: number;
+  /** The real numbers behind the score, so it never feels like magic. */
+  detail: string;
+  href: string;
+}
+
+export interface WeeklyBalance {
+  areas: BalanceArea[];
+  overall: number;
+  /** The lowest-scoring area — what a gentle nudge should point at. */
+  quietest: BalanceArea;
+}
+
+const clampPct = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+/**
+ * A weekly balance view across motherhood, school, work, health, and mind.
+ * Each score reflects concrete, dated activity from the last 7 days (workouts
+ * logged, topics finished, check-ins, chores, meetings) — the detail line
+ * always shows the real numbers so the ring is transparent, not a black box.
+ */
+export function weeklyBalance(s: HubState): WeeklyBalance {
+  const today = todayISO();
+  const weekAgo = addDays(today, -6);
+  const inWeek = (d: ISODate) => d >= weekAgo && d <= today;
+
+  // Family — chores completed + kid activities this week
+  const choresDone = s.ledger.filter((t) => t.delta > 0 && inWeek(t.createdAt.slice(0, 10))).length;
+  const activitiesThisWeek = s.activities.filter((a) => inWeek(a.date)).length;
+  const family: BalanceArea = {
+    key: "family",
+    label: "Family",
+    icon: "🏠",
+    score: clampPct((choresDone + activitiesThisWeek) * 15),
+    detail: `${choresDone} chore${choresDone === 1 ? "" : "s"} · ${activitiesThisWeek} activit${activitiesThisWeek === 1 ? "y" : "ies"}`,
+    href: "/family",
+  };
+
+  // School — topics finished this week, dinged for overdue work
+  let topicsThisWeek = 0;
+  for (const c of s.courses) {
+    for (const u of c.units) {
+      for (const t of u.topics) {
+        if (t.completed && t.completedAt && inWeek(t.completedAt.slice(0, 10))) topicsThisWeek += 1;
+      }
+    }
+  }
+  const overdue = s.assignments.filter((a) => !a.done && a.dueDate < today).length;
+  const school: BalanceArea = {
+    key: "school",
+    label: "School",
+    icon: "🎓",
+    score: clampPct(topicsThisWeek * 25 - overdue * 15),
+    detail: `${topicsThisWeek} topic${topicsThisWeek === 1 ? "" : "s"}${overdue ? ` · ${overdue} overdue` : ""}`,
+    href: "/school",
+  };
+
+  // Work — meetings this week + whether today's top-3 ritual is set
+  const meetingsThisWeek = s.meetings.filter((m) => inWeek(m.date)).length;
+  const focusSet = s.focus.date === today && s.focus.taskIds.length > 0;
+  const openTasks = s.projects.reduce((n, p) => n + p.tasks.filter((t) => !t.done).length, 0);
+  const work: BalanceArea = {
+    key: "work",
+    label: "Work",
+    icon: "💼",
+    score: clampPct(meetingsThisWeek * 20 + (focusSet ? 30 : 0)),
+    detail: `${meetingsThisWeek} meeting${meetingsThisWeek === 1 ? "" : "s"} · ${openTasks} open`,
+    href: "/work",
+  };
+
+  // Health — sessions vs target, blended with habit consistency
+  const sessions = s.workoutLogs.filter((l) => inWeek(l.date)).length;
+  const target = Math.max(1, s.weeklySessionTarget);
+  const movePct = (sessions / target) * 100;
+  const habitHits = s.habits.reduce((n, h) => n + h.history.filter((d) => inWeek(d)).length, 0);
+  const habitPossible = Math.max(1, s.habits.length * 7);
+  const habitPct = (habitHits / habitPossible) * 100;
+  const health: BalanceArea = {
+    key: "health",
+    label: "Health",
+    icon: "💪",
+    score: clampPct((movePct + habitPct) / 2),
+    detail: `${sessions}/${target} sessions`,
+    href: "/fitness",
+  };
+
+  // Mind — days with a mood check-in this week
+  const checkinDays = new Set(s.checkIns.filter((c) => inWeek(c.date)).map((c) => c.date)).size;
+  const mind: BalanceArea = {
+    key: "mind",
+    label: "Mind",
+    icon: "🧘",
+    score: clampPct((checkinDays / 7) * 100),
+    detail: `checked in ${checkinDays}/7 days`,
+    href: "/",
+  };
+
+  const areas = [family, school, work, health, mind];
+  const overall = clampPct(areas.reduce((n, a) => n + a.score, 0) / areas.length);
+  const quietest = areas.reduce((lo, a) => (a.score < lo.score ? a : lo), areas[0]!);
+
+  return { areas, overall, quietest };
+}
+
+const BALANCE_NUDGE: Record<BalanceArea["key"], string> = {
+  family: "Home's been quiet — a quick chore or a bit of family time keeps it humming.",
+  school: "School's been light this week — one topic or a short study block moves the needle.",
+  work: "Not much logged at work — setting today's top 3 is a small refocus.",
+  health: "Your body's asking for movement — even a 20-minute session counts.",
+  mind: "You haven't checked in much — take 20 seconds for a mood check-in.",
+};
+
+export function balanceNudge(area: BalanceArea): string {
+  return BALANCE_NUDGE[area.key];
+}
+
+// ---------------------------------------------------------------------------
 // Fitness: weekly target + streak
 // ---------------------------------------------------------------------------
 

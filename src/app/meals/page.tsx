@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
-import { matchRecipes } from "@/core/selectors";
+import { matchRecipes, recipeVideoUrl } from "@/core/selectors";
 import { newId, useHub, useHydrated } from "@/core/store/hub";
 import type { DeliveryService, PantryCategory, Recipe } from "@/core/types";
 
@@ -63,16 +63,27 @@ function CookFromKitchen() {
                   needs: {missing.join(", ")}
                 </p>
               ) : null}
-              <button
-                className="btn-ghost mt-2 self-start !px-2.5 !py-1 text-[11px]"
-                onClick={() => {
-                  planMeal(todayISO(), "dinner", recipe.title);
-                  setPlanned(recipe.id);
-                  setTimeout(() => setPlanned(null), 2500);
-                }}
-              >
-                {planned === recipe.id ? "Planned ✓" : "Plan for dinner"}
-              </button>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  className="btn-ghost self-start !px-2.5 !py-1 text-[11px]"
+                  onClick={() => {
+                    planMeal(todayISO(), "dinner", recipe.title);
+                    setPlanned(recipe.id);
+                    setTimeout(() => setPlanned(null), 2500);
+                  }}
+                >
+                  {planned === recipe.id ? "Planned ✓" : "Plan for dinner"}
+                </button>
+                <a
+                  href={recipeVideoUrl(recipe.title)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-semibold text-meals-bright hover:underline"
+                  title={`Watch how to make ${recipe.title}`}
+                >
+                  ▶ Watch
+                </a>
+              </div>
             </div>
           ))}
         </div>
@@ -243,12 +254,23 @@ function ReverseRecipeEngine() {
               </ol>
             </div>
           </div>
-          <button
-            className="btn-ghost mt-3 !px-3 !py-1.5 text-xs"
-            onClick={() => planMeal(todayISO(), "dinner", recipe.title, recipe.id)}
-          >
-            Add to tonight&apos;s plan
-          </button>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              className="btn-ghost !px-3 !py-1.5 text-xs"
+              onClick={() => planMeal(todayISO(), "dinner", recipe.title, recipe.id)}
+            >
+              Add to tonight&apos;s plan
+            </button>
+            <a
+              href={recipeVideoUrl(recipe.title)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-meals-bright hover:underline"
+              title={`Watch how to make ${recipe.title}`}
+            >
+              ▶ Watch how-to
+            </a>
+          </div>
         </div>
       ) : null}
     </Card>

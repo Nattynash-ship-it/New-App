@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, DOMAIN_STYLES, SectionTitle } from "./ui";
 import { selectDayBlocks, type DayBlock } from "@/core/selectors";
 import { addDays, formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+import type { ParsedIntentKind } from "@/core/types";
 
 const PX_PER_MIN = 0.8; // 60 min = 48px
+
+const ADD_KINDS: Array<{ value: ParsedIntentKind; label: string }> = [
+  { value: "event", label: "Event" },
+  { value: "meeting", label: "Meeting" },
+  { value: "assignment", label: "Assignment" },
+  { value: "family_activity", label: "Family" },
+  { value: "meal", label: "Meal" },
+  { value: "workout", label: "Workout" },
+];
 
 interface Positioned extends DayBlock {
   lane: number;
@@ -44,10 +54,18 @@ function fmtDay(date: string): string {
 
 export function TimeBlockCalendar() {
   const state = useHub();
+  const addFromIntent = useHub((s) => s.addFromIntent);
   const [offset, setOffset] = useState(0);
   const date = addDays(todayISO(), offset);
   const isToday = offset === 0;
   const { timed, allDay } = selectDayBlocks(state, date);
+
+  // Add-event form state
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [adding, setAdding] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftTime, setDraftTime] = useState("09:00");
+  const [draftKind, setDraftKind] = useState<ParsedIntentKind>("event");
 
   // Grid bounds: 7am–9pm by default, widened to fit anything earlier/later.
   let startHour = 7;
@@ -66,11 +84,38 @@ export function TimeBlockCalendar() {
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const showNow = isToday && nowMin >= startMin && nowMin <= endHour * 60;
 
+  function openAdd(atMin?: number) {
+    const base = atMin ?? (isToday ? nowMin : 9 * 60);
+    const snapped = Math.min(endHour * 60 - 15, Math.max(startMin, Math.round(base / 15) * 15));
+    setDraftTime(minToHM(snapped));
+    setDraftTitle("");
+    setDraftKind("event");
+    setAdding(true);
+  }
+
+  function onGridClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!gridRef.current) return;
+    const rect = gridRef.current.getBoundingClientRect();
+    openAdd(startMin + (e.clientY - rect.top) / PX_PER_MIN);
+  }
+
+  function save(e: React.FormEvent) {
+    e.preventDefault();
+    const title = draftTitle.trim();
+    if (!title) return;
+    addFromIntent({ kind: draftKind, title, date, time: draftTime, confidence: 1 });
+    setAdding(false);
+    setDraftTitle("");
+  }
+
   return (
     <Card>
       <SectionTitle
         right={
           <div className="flex items-center gap-1">
+            <button className="btn-ghost !px-2.5 !py-1 text-xs" onClick={() => openAdd()} aria-label="Add event">
+              ＋ Add
+            </button>
             <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setOffset(offset - 1)} aria-label="Previous day">
               ‹
             </button>
@@ -89,6 +134,46 @@ export function TimeBlockCalendar() {
         <span className="ml-2 text-xs font-normal text-muted">{fmtDay(date)}</span>
       </SectionTitle>
 
+      {adding ? (
+        <form
+          className="animate-slide-in mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-paper p-2.5"
+          onSubmit={save}
+        >
+          <input
+            autoFocus
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            placeholder="New event"
+            className="input min-w-[140px] flex-1 !py-1.5 text-xs"
+          />
+          <input
+            type="time"
+            value={draftTime}
+            onChange={(e) => setDraftTime(e.target.value)}
+            className="input !w-auto !py-1.5 text-xs"
+            aria-label="Time"
+          />
+          <select
+            value={draftKind}
+            onChange={(e) => setDraftKind(e.target.value as ParsedIntentKind)}
+            className="input !w-auto !py-1.5 text-xs"
+            aria-label="Type"
+          >
+            {ADD_KINDS.map((k) => (
+              <option key={k.value} value={k.value}>
+                {k.label}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!draftTitle.trim()}>
+            Add
+          </button>
+          <button type="button" className="btn-ghost !px-2.5 !py-1.5 text-xs" onClick={() => setAdding(false)}>
+            Cancel
+          </button>
+        </form>
+      ) : null}
+
       {allDay.length > 0 ? (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {allDay.map((a) => {
@@ -103,11 +188,20 @@ export function TimeBlockCalendar() {
       ) : null}
 
       {timed.length === 0 && allDay.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
-          Nothing scheduled — a clear day on the calendar. ✦
-        </p>
+        <button
+          onClick={() => openAdd()}
+          className="w-full rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+        >
+          Nothing scheduled — a clear day. ＋ Add something
+        </button>
       ) : (
-        <div className="relative mt-1 overflow-hidden" style={{ height }}>
+        <div
+          ref={gridRef}
+          onClick={onGridClick}
+          className="relative mt-1 cursor-copy overflow-hidden"
+          style={{ height }}
+          title="Click a time to add"
+        >
           {/* Hour grid */}
           {hours.map((h) => {
             const top = (h * 60 - startMin) * PX_PER_MIN;
@@ -142,7 +236,8 @@ export function TimeBlockCalendar() {
               return (
                 <div
                   key={`${b.domain}-${b.id}`}
-                  className={`absolute overflow-hidden rounded-lg ${style.soft} px-2 py-1`}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`absolute cursor-default overflow-hidden rounded-lg ${style.soft} px-2 py-1`}
                   style={{
                     top,
                     height: h,

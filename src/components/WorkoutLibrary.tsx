@@ -5,6 +5,7 @@ import { Card, SectionTitle } from "./ui";
 import {
   EQUIPMENT_META,
   LEVEL_META,
+  formVideoUrl,
   workoutsForEquipment,
   type LibraryWorkout,
 } from "@/core/fitness/library";
@@ -117,9 +118,21 @@ function WorkoutCard({ workout }: { workout: LibraryWorkout }) {
           {workout.exercises.map((ex, i) => (
             <li
               key={i}
-              className="flex items-baseline justify-between gap-3 rounded-lg bg-paper px-2.5 py-1.5 text-xs"
+              className="flex items-baseline justify-between gap-2 rounded-lg bg-paper px-2.5 py-1.5 text-xs"
             >
-              <span className="font-medium">{ex.name}</span>
+              <span className="min-w-0">
+                <span className="font-medium">{ex.name}</span>
+                <a
+                  href={formVideoUrl(ex.name)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-1.5 whitespace-nowrap text-[10px] font-semibold text-fitness-bright hover:underline"
+                  title={`Watch proper form for ${ex.name}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  ▶ form
+                </a>
+              </span>
               <span className="shrink-0 text-muted">{ex.target}</span>
             </li>
           ))}

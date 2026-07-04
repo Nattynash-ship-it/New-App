@@ -7,6 +7,7 @@ import { WaterCard } from "@/components/WaterCard";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { Attachments } from "@/components/Attachments";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
+import { formVideoUrl } from "@/core/fitness/library";
 import { GOAL_META, recommendPlan } from "@/core/fitness/plan";
 import { fitnessWeek } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -159,8 +160,19 @@ function RoutineCard({ routineId }: { routineId: string }) {
       </div>
       <ul className="space-y-1 text-xs">
         {routine.exercises.map((ex) => (
-          <li key={ex.id} className="group flex items-baseline justify-between gap-3 rounded-lg bg-paper px-2.5 py-1.5">
-            <span>{ex.name}</span>
+          <li key={ex.id} className="group flex items-baseline justify-between gap-2 rounded-lg bg-paper px-2.5 py-1.5">
+            <span className="min-w-0">
+              {ex.name}
+              <a
+                href={formVideoUrl(ex.name)}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-1.5 whitespace-nowrap text-[10px] font-semibold text-fitness-bright hover:underline"
+                title={`Watch proper form for ${ex.name}`}
+              >
+                ▶ form
+              </a>
+            </span>
             <span className="flex shrink-0 items-center gap-1">
               <span className="text-muted">{ex.target}</span>
               <button

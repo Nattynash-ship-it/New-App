@@ -85,6 +85,10 @@ export interface DayBlock {
   subtitle?: string;
   startMin: number;
   endMin: number;
+  /** True for one-off scheduled items that can be deleted straight from the
+   * calendar (meetings, events, meals, activities). Assignments and recurring
+   * study blocks are managed in their own sections, so they're left in place. */
+  removable: boolean;
 }
 
 export interface DaySchedule {
@@ -117,9 +121,10 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     start: number | null,
     dur: number,
     subtitle?: string,
+    removable = true,
   ) => {
     if (start == null) allDay.push({ id, domain, title });
-    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur });
+    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable });
   };
 
   for (const m of s.meetings.filter((m) => m.date === date)) {
@@ -127,7 +132,7 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
   }
   for (const a of s.assignments.filter((a) => a.dueDate === date && !a.done)) {
     const course = s.courses.find((c) => c.id === a.courseId);
-    add(a.id, "school", a.title, hmToMin(a.dueTime), 30, course ? `Due · ${course.code}` : "Due");
+    add(a.id, "school", a.title, hmToMin(a.dueTime), 30, course ? `Due · ${course.code}` : "Due", false);
   }
   for (const act of s.activities.filter((a) => a.date === date)) {
     const kid = s.kids.find((k) => k.id === act.kidId);
@@ -148,7 +153,7 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
   const weekday = fromISODate(date).getDay();
   for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {
     const course = s.courses.find((c) => c.id === block.courseId);
-    add(block.id, "school", `Study · ${course?.name ?? "Focus"}`, hmToMin(block.time), block.durationMin, "study block");
+    add(block.id, "school", `Study · ${course?.name ?? "Focus"}`, hmToMin(block.time), block.durationMin, "study block", false);
   }
 
   timed.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);

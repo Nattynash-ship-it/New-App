@@ -12,6 +12,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO } from "../dates";
+import { RECIPE_LIBRARY } from "../data/recipeLibrary";
 import {
   seedActivities,
   seedAssignments,
@@ -668,6 +669,23 @@ export const useHub = create<HubState>()(
                 id: newId("gro"),
                 name: ing.name,
                 quantity: ing.quantity,
+                category: "pantry",
+                checked: false,
+              });
+            }
+          }
+        }
+        // Built-in library recipes planned this week (their ingredients are
+        // names only — quantities stay flexible, so default to "1").
+        for (const recipe of RECIPE_LIBRARY) {
+          if (!week.has(recipe.id)) continue;
+          for (const name of recipe.ingredients) {
+            const key = name.toLowerCase();
+            if (!onHand.has(key) && !needed.has(key)) {
+              needed.set(key, {
+                id: newId("gro"),
+                name,
+                quantity: "1",
                 category: "pantry",
                 checked: false,
               });

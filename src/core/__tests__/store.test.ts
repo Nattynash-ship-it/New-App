@@ -159,6 +159,27 @@ describe("to-do list", () => {
   });
 });
 
+describe("groceries from planned meals", () => {
+  it("pulls ingredients from a planned library recipe onto the list", async () => {
+    const { useHub } = await import("../store/hub");
+    const { todayISO } = await import("../dates");
+    const { RECIPE_LIBRARY } = await import("../data/recipeLibrary");
+
+    // Start clean so pantry restock noise doesn't mask the recipe pull.
+    useHub.setState({ pantry: [], plannedMeals: [], groceryList: [] });
+    const recipe = RECIPE_LIBRARY[0]!;
+
+    // Plan the library recipe (carrying its id, like the "Plan for dinner" button).
+    useHub.getState().planMeal(todayISO(), "dinner", recipe.title, recipe.id);
+    useHub.getState().generateGroceryList();
+
+    const names = useHub.getState().groceryList.map((g) => g.name.toLowerCase());
+    for (const ing of recipe.ingredients) {
+      expect(names).toContain(ing.toLowerCase());
+    }
+  });
+});
+
 describe("data export round-trips every slice", () => {
   it("includes newly-added slices (todos, kidMeals, notes, energyLog…) in the backup", async () => {
     const { useHub, DATA_KEYS } = await import("../store/hub");

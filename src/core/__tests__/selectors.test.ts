@@ -36,6 +36,19 @@ describe("selectDayBlocks (time-block calendar)", () => {
     expect(timed).toHaveLength(0);
     expect(allDay.map((a) => a.title)).toContain("Essay");
   });
+
+  it("marks one-off scheduled items removable and managed items not", () => {
+    const state = {
+      ...blockBase,
+      meetings: [{ id: "m1", title: "Sync", date: today, time: "10:00", durationMin: 30 }],
+      assignments: [{ id: "a1", title: "Lab", dueDate: today, dueTime: "14:00", done: false }],
+    } as unknown as HubState;
+    const { timed } = selectDayBlocks(state, today);
+    const meeting = timed.find((b) => b.id === "m1");
+    const assignment = timed.find((b) => b.id === "a1");
+    expect(meeting?.removable).toBe(true);
+    expect(assignment?.removable).toBe(false);
+  });
 });
 
 /** Minimal state slice; selectTimeline only reads the data arrays. */

@@ -75,7 +75,7 @@ function CookFromKitchen() {
                 <button
                   className="btn-ghost self-start !px-2.5 !py-1 text-[11px]"
                   onClick={() => {
-                    planMeal(todayISO(), "dinner", recipe.title);
+                    planMeal(todayISO(), "dinner", recipe.title, recipe.id);
                     setPlanned(recipe.id);
                     setTimeout(() => setPlanned(null), 2500);
                   }}

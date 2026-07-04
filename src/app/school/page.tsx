@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { Attachments } from "@/components/Attachments";
+import { ClassImporter } from "@/components/ClassImporter";
 import { SmartCapture } from "@/components/SmartCapture";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
@@ -432,6 +433,7 @@ export default function SchoolPage() {
         <AssignmentList />
       </div>
       <ReviewQueue />
+      <ClassImporter />
       <div className="grid gap-5 lg:grid-cols-2">
         {courseIds.map((id) => (
           <CourseCard key={id} courseId={id} />

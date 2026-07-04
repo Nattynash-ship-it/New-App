@@ -17,7 +17,7 @@
   --paper: 14 15 27;
   --surface: 24 26 46;
   --ink: 233 234 247;
-  --muted: 150 154 180;
+  --muted: 174 178 200;
   --line: rgba(255, 255, 255, 0.09);
   --accent: 150 140 250;
   --accent-dark: 130 120 232;
@@ -40,7 +40,7 @@
   --paper: 11 15 19;
   --surface: 19 26 32;
   --ink: 237 242 238;
-  --muted: 142 153 161;
+  --muted: 166 176 186;
   --line: rgba(255, 255, 255, 0.08);
   --accent: 200 240 77;
   --accent-dark: 178 217 61;
@@ -62,7 +62,7 @@
   --paper: 247 248 250;
   --surface: 255 255 255;
   --ink: 22 24 29;
-  --muted: 100 108 119;
+  --muted: 82 90 102;
   --line: rgba(15, 20, 30, 0.1);
   --accent: 64 86 216;
   --accent-dark: 52 71 184;
@@ -86,7 +86,7 @@
   --paper: 255 238 247;
   --surface: 255 252 254;
   --ink: 74 34 62;
-  --muted: 164 122 146;
+  --muted: 132 96 116;
   --line: rgba(120, 40, 90, 0.12);
   --accent: 240 90 165;
   --accent-dark: 222 72 148;
@@ -114,7 +114,7 @@
   --paper: 233 237 248;
   --surface: 255 255 255; /* kept opaque; scoped rules add the translucency */
   --ink: 28 32 52;
-  --muted: 92 100 128;
+  --muted: 72 80 108;
   --line: rgba(255, 255, 255, 0.6); /* bright glass rim */
   --accent: 120 108 246;
   --accent-dark: 100 88 226;
@@ -138,7 +138,7 @@
   --paper: 247 249 255;
   --surface: 255 255 255;
   --ink: 26 22 45;
-  --muted: 108 104 138;
+  --muted: 88 84 118;
   --line: rgb(26 22 45);
   --accent: 255 92 120;
   --accent-dark: 232 72 100;
@@ -269,7 +269,8 @@
 
 @layer base {
   html {
-    -webkit-font-smoothing: antialiased;
+    /* Default (subpixel) smoothing renders text a touch heavier than the old
+     * `antialiased` grayscale — clearer and less "thin" on the eyes. */
     text-rendering: optimizeLegibility;
   }
   body {

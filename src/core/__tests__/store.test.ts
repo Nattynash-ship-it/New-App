@@ -286,6 +286,32 @@ describe("course completion", () => {
   });
 });
 
+describe("degree template loader", () => {
+  it("adds template courses as in-progress and skips duplicates by name", async () => {
+    const { useHub } = await import("../store/hub");
+    const { WGU_BSCS } = await import("../data/degreeTemplates");
+    useHub.setState({ courses: [] });
+
+    const added = useHub.getState().loadDegreeTemplate(
+      WGU_BSCS.programName,
+      WGU_BSCS.totalCredits,
+      WGU_BSCS.courses,
+    );
+    expect(added).toBe(WGU_BSCS.courses.length);
+    expect(useHub.getState().courses.every((c) => c.completed === false)).toBe(true);
+    expect(useHub.getState().degreePlan.programName).toBe(WGU_BSCS.programName);
+
+    // Loading again adds nothing (all names already present).
+    const again = useHub.getState().loadDegreeTemplate(
+      WGU_BSCS.programName,
+      WGU_BSCS.totalCredits,
+      WGU_BSCS.courses,
+    );
+    expect(again).toBe(0);
+    expect(useHub.getState().courses.length).toBe(WGU_BSCS.courses.length);
+  });
+});
+
 describe("school portal & alerts", () => {
   it("saves the school portal URL and alert preference, and backs them up", async () => {
     const { useHub } = await import("../store/hub");

@@ -8,6 +8,10 @@ import { formatFriendly, formatTime } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
 import type { ParsedIntent, ParsedIntentKind } from "@/core/types";
 
+// "class" is a review-only kind: it isn't a schedulable intent, it routes the
+// item into your degree plan (addCourse) instead of onto the calendar.
+type ReviewKind = ParsedIntentKind | "class";
+
 const KIND_TO_DOMAIN = {
   meeting: "work",
   assignment: "school",
@@ -15,9 +19,11 @@ const KIND_TO_DOMAIN = {
   meal: "meals",
   workout: "fitness",
   event: "compass",
+  class: "school",
 } as const;
 
-const KIND_LABEL: Record<ParsedIntentKind, string> = {
+const KIND_LABEL: Record<ReviewKind, string> = {
+  class: "Class",
   meeting: "Meeting",
   assignment: "Assignment",
   family_activity: "Family",
@@ -26,8 +32,16 @@ const KIND_LABEL: Record<ParsedIntentKind, string> = {
   event: "Event",
 };
 
+/** Split "MATH 232 Discrete Mathematics" → { code, name }. */
+function splitCourseTitle(title: string): { code: string; name: string } {
+  const m = title.trim().match(/^([A-Za-z]{2,5}\s?-?\s?\d{2,4}[A-Za-z]?)\s+(.+)$/);
+  if (m && m[1] && m[2]) return { code: m[1].replace(/\s+/g, " ").toUpperCase(), name: m[2].trim() };
+  return { code: "", name: title.trim() };
+}
+
 type Mode = "paste" | "photo" | "voice";
-interface ReviewItem extends ParsedIntent {
+interface ReviewItem extends Omit<ParsedIntent, "kind"> {
+  kind: ReviewKind;
   include: boolean;
 }
 
@@ -75,6 +89,7 @@ export function SmartCapture({
   blurb?: string;
 } = {}) {
   const addFromIntent = useHub((s) => s.addFromIntent);
+  const addCourse = useHub((s) => s.addCourse);
   const [mode, setMode] = useState<Mode>("paste");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -214,9 +229,14 @@ export function SmartCapture({
   function addSelected() {
     if (!items) return;
     const chosen = items.filter((i) => i.include);
-    chosen.forEach((i) =>
-      addFromIntent({ kind: i.kind, title: i.title, date: i.date, time: i.time, confidence: i.confidence }),
-    );
+    chosen.forEach((i) => {
+      if (i.kind === "class") {
+        const { code, name } = splitCourseTitle(i.title);
+        addCourse(code || "COURSE", name, 3);
+      } else {
+        addFromIntent({ kind: i.kind, title: i.title, date: i.date, time: i.time, confidence: i.confidence });
+      }
+    });
     setAdded(chosen.length);
     setItems(null);
     setText("");
@@ -371,27 +391,33 @@ export function SmartCapture({
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <select
                             value={it.kind}
-                            onChange={(e) => patch(idx, { kind: e.target.value as ParsedIntentKind })}
+                            onChange={(e) => patch(idx, { kind: e.target.value as ReviewKind })}
                             className={`chip cursor-pointer border-0 ${style.soft} ${style.text}`}
                             aria-label="Type"
                           >
-                            {(Object.keys(KIND_LABEL) as ParsedIntentKind[]).map((k) => (
+                            {(Object.keys(KIND_LABEL) as ReviewKind[]).map((k) => (
                               <option key={k} value={k}>
                                 {KIND_LABEL[k]}
                               </option>
                             ))}
                           </select>
-                          <input
-                            type="date"
-                            value={it.date}
-                            onChange={(e) => patch(idx, { date: e.target.value })}
-                            className="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] text-muted outline-none"
-                            aria-label="Date"
-                          />
-                          <span className="text-[11px] text-muted">
-                            {formatFriendly(it.date)}
-                            {it.time ? ` · ${formatTime(it.time)}` : ""}
-                          </span>
+                          {it.kind === "class" ? (
+                            <span className="text-[11px] text-school-bright">→ adds to your degree plan</span>
+                          ) : (
+                            <>
+                              <input
+                                type="date"
+                                value={it.date}
+                                onChange={(e) => patch(idx, { date: e.target.value })}
+                                className="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] text-muted outline-none"
+                                aria-label="Date"
+                              />
+                              <span className="text-[11px] text-muted">
+                                {formatFriendly(it.date)}
+                                {it.time ? ` · ${formatTime(it.time)}` : ""}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -133,6 +133,114 @@ function EmailRow({ provider }: { provider: (typeof EMAIL)[number] }) {
   );
 }
 
+function SchoolPortalRow() {
+  const saved = useHub((s) => s.schoolPortalUrl);
+  const setSchoolPortalUrl = useHub((s) => s.setSchoolPortalUrl);
+  const [url, setUrl] = useState(saved || "https://my.wgu.edu");
+  const [status, setStatus] = useState("");
+  const connected = Boolean(saved);
+
+  function normalize(raw: string): string {
+    const t = raw.trim();
+    if (!t) return "";
+    return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  }
+
+  return (
+    <div className="rounded-xl border border-line p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <span aria-hidden>🎓</span>
+          School portal
+          <span className="text-xs font-normal text-muted">· one tap to your school website</span>
+        </span>
+        <span className={`chip ${connected ? "bg-school-soft text-school-bright" : "border border-line text-muted"}`}>
+          {connected ? "● Saved" : "Not saved"}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://my.wgu.edu"
+          className="input min-w-[200px] flex-1 !py-1.5 text-xs"
+        />
+        <button
+          className="btn-primary !px-3 !py-1.5 text-xs"
+          onClick={() => {
+            const n = normalize(url);
+            setSchoolPortalUrl(n);
+            setUrl(n);
+            setStatus(n ? "Saved ✓" : "Cleared.");
+          }}
+        >
+          Save
+        </button>
+        <button
+          className="btn-ghost !px-3 !py-1.5 text-xs"
+          onClick={() => window.open(normalize(url), "_blank", "noopener")}
+          disabled={!url.trim()}
+        >
+          Open ↗
+        </button>
+      </div>
+      <p className="mt-1.5 text-[11px] text-muted">
+        Saved on your device. Your portal opens in a new tab — Vela never sees your school password.
+      </p>
+      {status ? <p className="mt-1 text-xs text-muted">{status}</p> : null}
+    </div>
+  );
+}
+
+function AlertsRow() {
+  const enabled = useHub((s) => s.alertsEnabled);
+  const setAlertsEnabled = useHub((s) => s.setAlertsEnabled);
+  const [status, setStatus] = useState("");
+
+  async function enable() {
+    if (typeof Notification === "undefined") {
+      setStatus("This browser doesn't support notifications.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setAlertsEnabled(true);
+      new Notification("Vela alerts are on ✓", {
+        body: "You'll get a heads-up here when new school email arrives (once your inbox is connected).",
+      });
+      setStatus("Alerts enabled — that test notification confirms they work.");
+    } else {
+      setAlertsEnabled(false);
+      setStatus("Notifications are blocked. Allow them in your browser settings to get alerts.");
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-line p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <span aria-hidden>🔔</span>
+            New-email alerts
+          </p>
+          <p className="mt-0.5 text-xs text-muted">
+            Get a notification when new school email lands. Turn on alerts here, then connect your
+            inbox above — on a deployed Vela, new messages ping you automatically.
+          </p>
+        </div>
+        {enabled ? (
+          <span className="chip shrink-0 bg-school-soft text-school-bright">● On</span>
+        ) : (
+          <button className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" onClick={() => void enable()}>
+            Enable
+          </button>
+        )}
+      </div>
+      {status ? <p className="mt-2 rounded-lg bg-paper px-2.5 py-1.5 text-[11px] text-muted">{status}</p> : null}
+    </div>
+  );
+}
+
 export default function ConnectionsPage() {
   const hydrated = useHydrated();
   if (!hydrated) return <Skeleton />;
@@ -173,9 +281,11 @@ export default function ConnectionsPage() {
           set up yet.
         </p>
         <div className="space-y-2">
+          <SchoolPortalRow />
           {EMAIL.map((p) => (
             <EmailRow key={p.id} provider={p} />
           ))}
+          <AlertsRow />
         </div>
       </Card>
 

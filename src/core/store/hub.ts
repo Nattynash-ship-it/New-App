@@ -83,7 +83,7 @@ export const DATA_KEYS = [
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
-  "rewards", "ledger", "kidMeals",
+  "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -153,6 +153,11 @@ export interface HubState {
   ledger: PointTransaction[];
   /** Weekly meal template per kid (breakfast/lunch/dinner + calories). */
   kidMeals: KidMeal[];
+  // School / inbox
+  /** One-tap link to your school portal (e.g. https://my.wgu.edu). */
+  schoolPortalUrl: string;
+  /** Opted into browser alerts (e.g. for new school email once connected). */
+  alertsEnabled: boolean;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -278,6 +283,8 @@ export interface HubState {
   redeemReward: (rewardId: string, kidId: string) => void;
   /** Upsert a kid's meal for a weekday slot; an empty title clears the cell. */
   setKidMeal: (kidId: string, day: number, slot: MealSlot, title: string, calories: number) => void;
+  setSchoolPortalUrl: (url: string) => void;
+  setAlertsEnabled: (on: boolean) => void;
 }
 
 function initialState() {
@@ -322,6 +329,8 @@ function initialState() {
     rewards: seedRewards(),
     ledger: [] as PointTransaction[],
     kidMeals: seedKidMeals(),
+    schoolPortalUrl: "",
+    alertsEnabled: false,
   };
 }
 
@@ -966,6 +975,8 @@ export const useHub = create<HubState>()(
             ],
           };
         }),
+      setSchoolPortalUrl: (url) => set({ schoolPortalUrl: url.trim() }),
+      setAlertsEnabled: (alertsEnabled) => set({ alertsEnabled }),
     }),
     {
       name: "life-hub-v1",

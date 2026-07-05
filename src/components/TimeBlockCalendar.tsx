@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Card, DOMAIN_STYLES, SectionTitle } from "./ui";
+import { MicButton } from "./MicButton";
 import { selectDayBlocks, type DayBlock } from "@/core/selectors";
 import { addDays, formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
@@ -148,6 +149,7 @@ export function TimeBlockCalendar() {
             placeholder="New event"
             className="input min-w-[140px] flex-1 !py-1.5 text-xs"
           />
+          <MicButton value={draftTitle} onChange={setDraftTitle} />
           <input
             type="time"
             value={draftTime}

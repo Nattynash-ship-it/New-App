@@ -5,6 +5,7 @@ import { Card, SectionTitle } from "./ui";
 import { MicButton } from "./MicButton";
 import { parseCourses, type ParsedCourse } from "@/core/nlp/courses";
 import { extractPdfText, isPdf } from "@/core/ai/readFile";
+import { WGU_BSCS } from "@/core/data/degreeTemplates";
 import { useHub } from "@/core/store/hub";
 
 type Mode = "paste" | "file";
@@ -29,6 +30,8 @@ function fileToBase64(file: File): Promise<string> {
  */
 export function ClassImporter() {
   const addCourse = useHub((s) => s.addCourse);
+  const loadDegreeTemplate = useHub((s) => s.loadDegreeTemplate);
+  const [templateMsg, setTemplateMsg] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("paste");
   const [text, setText] = useState("");
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -111,6 +114,37 @@ export function ClassImporter() {
         Paste your transcript or class list, or upload a transcript PDF / screenshot — Vela pulls out
         your classes for you to confirm.
       </p>
+
+      <div className="mb-3 rounded-xl border border-dashed border-line bg-paper p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold">Start from a degree plan</p>
+            <p className="text-[11px] text-muted">
+              Loads the {WGU_BSCS.label} courses as in-progress — then mark completed ones and check
+              off the rest as you go.
+            </p>
+          </div>
+          <button
+            className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs"
+            onClick={() => {
+              const n = loadDegreeTemplate(
+                WGU_BSCS.programName,
+                WGU_BSCS.totalCredits,
+                WGU_BSCS.courses,
+              );
+              setTemplateMsg(
+                n === 0
+                  ? "Those classes are already on your plan."
+                  : `Added ${n} ${n === 1 ? "class" : "classes"} — edit codes/credits to match your official Degree Plan.`,
+              );
+              setTimeout(() => setTemplateMsg(null), 6000);
+            }}
+          >
+            ＋ Load WGU plan
+          </button>
+        </div>
+        {templateMsg ? <p className="mt-1.5 text-[11px] text-school-bright">{templateMsg}</p> : null}
+      </div>
 
       <div className="mb-3 flex gap-1.5">
         {(["paste", "file"] as Mode[]).map((m) => (

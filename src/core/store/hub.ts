@@ -196,6 +196,13 @@ export interface HubState {
   addCourse: (code: string, name: string, credits: number, completed?: boolean) => void;
   removeCourse: (id: string) => void;
   toggleCourseCompleted: (id: string) => void;
+  /** Add a batch of template courses as in-progress, skipping ones already on
+   *  the plan (matched by name). Returns how many were newly added. */
+  loadDegreeTemplate: (
+    programName: string,
+    totalCredits: number,
+    courses: Array<{ code: string; name: string; credits: number }>,
+  ) => number;
   addUnit: (courseId: string, name: string) => void;
   addTopic: (courseId: string, unitId: string, name: string) => void;
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
@@ -556,6 +563,28 @@ export const useHub = create<HubState>()(
               : c,
           ),
         })),
+      loadDegreeTemplate: (programName, totalCredits, courses) => {
+        const s = get();
+        const have = new Set(s.courses.map((c) => c.name.trim().toLowerCase()));
+        const fresh = courses.filter((c) => !have.has(c.name.trim().toLowerCase()));
+        if (fresh.length > 0) {
+          set((st) => ({
+            degreePlan: { ...st.degreePlan, programName, totalCredits },
+            courses: [
+              ...st.courses,
+              ...fresh.map((c) => ({
+                id: newId("course"),
+                code: c.code,
+                name: c.name,
+                credits: c.credits,
+                units: [{ id: newId("unit"), name: "Unit 1", topics: [] }],
+                completed: false,
+              })),
+            ],
+          }));
+        }
+        return fresh.length;
+      },
       removeCourse: (id) =>
         set((s) => ({
           courses: s.courses.filter((c) => c.id !== id),

@@ -95,7 +95,7 @@ export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     if (file && !text) {
       return NextResponse.json(
-        { error: "Reading photos or PDFs needs an ANTHROPIC_API_KEY. Paste or dictate the text instead." },
+        { error: "A PDF is read right on your device — a photo/screenshot needs an ANTHROPIC_API_KEY, or paste/dictate the text instead." },
         { status: 503 },
       );
     }

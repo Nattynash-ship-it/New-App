@@ -268,6 +268,24 @@ describe("chores — one completion per day", () => {
   });
 });
 
+describe("school portal & alerts", () => {
+  it("saves the school portal URL and alert preference, and backs them up", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().setSchoolPortalUrl("  https://my.wgu.edu  ");
+    expect(useHub.getState().schoolPortalUrl).toBe("https://my.wgu.edu");
+
+    useHub.getState().setAlertsEnabled(true);
+    expect(useHub.getState().alertsEnabled).toBe(true);
+
+    const snapshot = useHub.getState().exportData();
+    useHub.getState().setSchoolPortalUrl("");
+    useHub.getState().setAlertsEnabled(false);
+    expect(useHub.getState().importData(snapshot)).toBe(true);
+    expect(useHub.getState().schoolPortalUrl).toBe("https://my.wgu.edu");
+    expect(useHub.getState().alertsEnabled).toBe(true);
+  });
+});
+
 describe("kids' weekly meals", () => {
   it("upserts a meal cell and totals calories for the week", async () => {
     const { useHub } = await import("../store/hub");

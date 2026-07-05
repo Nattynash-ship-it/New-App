@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, DOMAIN_STYLES, SectionTitle } from "./ui";
 import { extractItems } from "@/core/nlp/extract";
+import { extractPdfText, isPdf } from "@/core/ai/readFile";
 import { formatFriendly, formatTime } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
 import type { ParsedIntent, ParsedIntentKind } from "@/core/types";
@@ -61,9 +62,10 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * Smart Capture — turn a pasted email, a flyer photo, or a spoken brain-dump
- * into scheduled items you can review and add in one tap. Uses Claude when an
- * API key is present; text/voice fall back to the on-device extractor.
+ * Smart Capture — turn a pasted email, a flyer photo, a PDF, or a spoken
+ * brain-dump into scheduled items you can review and add in one tap. Text,
+ * voice, and PDFs are read on-device (no API key); photos/screenshots use
+ * Claude when a key is configured.
  */
 export function SmartCapture({
   title = "Smart capture",
@@ -123,6 +125,39 @@ export function SmartCapture({
     setBusy(true);
     reset();
     try {
+      // PDFs: read the text layer on-device first — private, and works with no
+      // API key. Only image-only (scanned) PDFs fall through to the server.
+      if (isPdf(file)) {
+        let pdfText = "";
+        try {
+          pdfText = await extractPdfText(file);
+        } catch {
+          /* couldn't read the text layer — fall through to the server path */
+        }
+        if (pdfText.length > 20) {
+          // Instant on-device result, then let the server refine if a key exists.
+          const local = extractItems(pdfText);
+          setItems(local.map((i) => ({ ...i, include: true })));
+          try {
+            const res = await fetch("/api/ai/capture", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: pdfText }),
+            });
+            if (res.ok) {
+              const data = (await res.json()) as { items: ParsedIntent[] };
+              setItems(data.items.map((i) => ({ ...i, include: true })));
+            }
+          } catch {
+            /* on-device result already shown */
+          }
+          if (local.length === 0) {
+            setError("Read the PDF, but found nothing schedulable in it.");
+          }
+          return;
+        }
+      }
+
       const data = await fileToBase64(file);
       const res = await fetch("/api/ai/capture", {
         method: "POST",

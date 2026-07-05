@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Card, SectionTitle } from "./ui";
 import { MicButton } from "./MicButton";
 import { parseCourses, type ParsedCourse } from "@/core/nlp/courses";
+import { extractPdfText, isPdf } from "@/core/ai/readFile";
 import { useHub } from "@/core/store/hub";
 
 type Mode = "paste" | "file";
@@ -21,9 +22,9 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * Add your classes from a transcript — paste the text (works offline) or upload
- * a transcript PDF / screenshot (read by Claude when deployed). Review the
- * detected classes, then add them all in one tap.
+ * Add your classes from a transcript — paste the text or upload a transcript
+ * PDF (both read on-device, no API key). Screenshots are read by Claude when a
+ * key is configured. Review the detected classes, then add them in one tap.
  */
 export function ClassImporter() {
   const addCourse = useHub((s) => s.addCourse);
@@ -52,6 +53,20 @@ export function ClassImporter() {
     setAdded(null);
     setRows(null);
     try {
+      // PDFs: read the text layer on-device first — private, no API key needed.
+      if (isPdf(file)) {
+        let pdfText = "";
+        try {
+          pdfText = await extractPdfText(file);
+        } catch {
+          /* no readable text layer — fall through to the server path */
+        }
+        if (pdfText.length > 20) {
+          show(parseCourses(pdfText));
+          return;
+        }
+      }
+
       const data = await fileToBase64(file);
       const res = await fetch("/api/ai/courses", {
         method: "POST",

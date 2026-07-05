@@ -141,6 +141,10 @@ export interface Course {
   credits: number;
   units: CourseUnit[]; // supports multi-unit courses (7-unit Discrete Math)
   targetDate?: ISODate;
+  /** Passed already (e.g. from a transcript). Counts toward earned credits;
+   *  in-progress courses (false/undefined) get a checkbox to tick when done. */
+  completed?: boolean;
+  completedAt?: ISODateTime;
 }
 
 export interface Assignment {

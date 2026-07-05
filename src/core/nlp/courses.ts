@@ -9,6 +9,21 @@ export interface ParsedCourse {
   code: string;
   name: string;
   credits: number;
+  /** Passed on the transcript (a letter grade / Pass / Credit), vs. still in
+   *  progress. Undefined when the line carries no grade signal. */
+  completed?: boolean;
+}
+
+/** Read a transcript row's grade column: a passing grade → done, an
+ *  in-progress marker → not done, anything else → unknown. */
+function detectCompleted(line: string): boolean | undefined {
+  if (/\b(in\s*progress|in-progress|\bIP\b|registered|enrolled|current|not\s*started|planned|withdrawn|\bW\b)\b/i.test(line)) {
+    return false;
+  }
+  if (/\b(A|B|C|D|A[-+]|B[-+]|C[-+]|Pass|Passed|Credit|\bCR\b|Complete[d]?|Transferred|\bT\b)\b/.test(line)) {
+    return true;
+  }
+  return undefined;
 }
 
 function tidyName(s: string): string {
@@ -57,7 +72,7 @@ export function parseCourses(text: string): ParsedCourse[] {
     const key = code.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ code, name, credits });
+    out.push({ code, name, credits, completed: detectCompleted(line) });
     if (out.length >= 40) break;
   }
 

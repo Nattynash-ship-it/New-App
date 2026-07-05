@@ -10,6 +10,7 @@ import { useHub } from "@/core/store/hub";
 type Mode = "paste" | "file";
 interface Row extends ParsedCourse {
   include: boolean;
+  completed: boolean;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -37,7 +38,7 @@ export function ClassImporter() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   function show(courses: ParsedCourse[]) {
-    setRows(courses.map((c) => ({ ...c, include: true })));
+    setRows(courses.map((c) => ({ ...c, include: true, completed: c.completed ?? false })));
     if (courses.length === 0) setError("No classes found — check the text or add them manually below.");
   }
 
@@ -90,7 +91,7 @@ export function ClassImporter() {
   function addSelected() {
     if (!rows) return;
     const chosen = rows.filter((r) => r.include && r.name.trim());
-    chosen.forEach((r) => addCourse(r.code.trim() || "COURSE", r.name.trim(), r.credits));
+    chosen.forEach((r) => addCourse(r.code.trim() || "COURSE", r.name.trim(), r.credits, r.completed));
     setAdded(chosen.length);
     setRows(null);
     setText("");
@@ -174,7 +175,7 @@ export function ClassImporter() {
       {rows && rows.length > 0 ? (
         <div className="mt-4">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Found {rows.length} — edit or uncheck, then add
+            Found {rows.length} — mark the ones you&apos;ve completed, then add
           </p>
           <ul className="space-y-1.5">
             {rows.map((r, i) => (
@@ -216,6 +217,17 @@ export function ClassImporter() {
                     aria-label="Credits"
                   />
                 </label>
+                <button
+                  type="button"
+                  onClick={() => patch(i, { completed: !r.completed })}
+                  aria-pressed={r.completed}
+                  title={r.completed ? "Completed — counts toward your credits" : "Still in progress — you'll check it off later"}
+                  className={`chip shrink-0 cursor-pointer ${
+                    r.completed ? "bg-school-soft text-school-bright" : "border border-line text-muted"
+                  }`}
+                >
+                  {r.completed ? "✓ Completed" : "In progress"}
+                </button>
               </li>
             ))}
           </ul>

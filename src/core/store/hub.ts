@@ -193,8 +193,9 @@ export interface HubState {
   toggleFocusTask: (taskId: string) => void;
 
   // --- School actions ---
-  addCourse: (code: string, name: string, credits: number) => void;
+  addCourse: (code: string, name: string, credits: number, completed?: boolean) => void;
   removeCourse: (id: string) => void;
+  toggleCourseCompleted: (id: string) => void;
   addUnit: (courseId: string, name: string) => void;
   addTopic: (courseId: string, unitId: string, name: string) => void;
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
@@ -532,7 +533,7 @@ export const useHub = create<HubState>()(
         }),
 
       // --- School ---
-      addCourse: (code, name, credits) =>
+      addCourse: (code, name, credits, completed = false) =>
         set((s) => ({
           courses: [
             ...s.courses,
@@ -542,8 +543,18 @@ export const useHub = create<HubState>()(
               name,
               credits,
               units: [{ id: newId("unit"), name: "Unit 1", topics: [] }],
+              completed,
+              ...(completed ? { completedAt: nowISO() } : {}),
             },
           ],
+        })),
+      toggleCourseCompleted: (id) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id === id
+              ? { ...c, completed: !c.completed, completedAt: c.completed ? undefined : nowISO() }
+              : c,
+          ),
         })),
       removeCourse: (id) =>
         set((s) => ({

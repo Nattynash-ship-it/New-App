@@ -289,20 +289,41 @@ function CourseCard({ courseId }: { courseId: string }) {
   const addTopic = useHub((s) => s.addTopic);
   const addUnit = useHub((s) => s.addUnit);
   const removeCourse = useHub((s) => s.removeCourse);
+  const toggleCourseCompleted = useHub((s) => s.toggleCourseCompleted);
   const [openUnit, setOpenUnit] = useState<string | null>(null);
 
   if (!course) return null;
   const { done, total, pct } = courseProgress(course);
+  const isDone = Boolean(course.completed);
 
   return (
-    <Card>
+    <Card className={isDone ? "opacity-80" : ""}>
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">{course.name}</h3>
-          <p className="text-xs text-muted">
-            {course.code} · {course.credits} credits · {course.units.length} units
-            {course.targetDate ? ` · target ${formatShort(course.targetDate)}` : ""}
-          </p>
+        <div className="flex items-start gap-2.5">
+          <button
+            onClick={() => toggleCourseCompleted(course.id)}
+            role="checkbox"
+            aria-checked={isDone}
+            aria-label={isDone ? `Mark ${course.name} not completed` : `Mark ${course.name} completed`}
+            title={isDone ? "Completed — tap to reopen" : "Tap when you've completed this class"}
+            className={`mt-0.5 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+              isDone ? "border-school bg-school text-white" : "border-ink/25 bg-surface hover:border-school"
+            }`}
+          >
+            {isDone ? (
+              <svg width="11" height="9" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            ) : null}
+          </button>
+          <div>
+            <h3 className={`text-sm font-semibold ${isDone ? "text-muted line-through" : ""}`}>{course.name}</h3>
+            <p className="text-xs text-muted">
+              {course.code} · {course.credits} credits
+              {isDone ? " · completed ✓" : ` · ${course.units.length} units`}
+              {!isDone && course.targetDate ? ` · target ${formatShort(course.targetDate)}` : ""}
+            </p>
+          </div>
         </div>
         <span className="flex items-center gap-1.5">
           <span className="font-display text-xl text-school-bright">{pct}%</span>
@@ -315,6 +336,8 @@ function CourseCard({ courseId }: { courseId: string }) {
           </button>
         </span>
       </div>
+      {isDone ? null : (
+        <>
       <ProgressBar pct={pct} colorClass="bg-school" />
       <p className="mt-1.5 text-xs text-muted">
         {done} of {total} topics logged
@@ -364,6 +387,8 @@ function CourseCard({ courseId }: { courseId: string }) {
         placeholder={`Add unit (e.g. Unit ${course.units.length + 1} · Recursion)`}
         onAdd={(name) => addUnit(course.id, name)}
       />
+        </>
+      )}
       <Attachments ownerType="course" ownerId={course.id} label="Course files (syllabus, notes, PDFs)" />
     </Card>
   );
@@ -408,6 +433,34 @@ function AddCourse() {
   );
 }
 
+const OUTLOOK_URL = "https://outlook.office.com/mail/";
+
+function SchoolQuickLinks() {
+  const portal = useHub((s) => s.schoolPortalUrl);
+  return (
+    <div className="flex flex-wrap gap-2">
+      <a
+        href={portal || "/connections"}
+        target={portal ? "_blank" : undefined}
+        rel="noreferrer"
+        className="btn-ghost !px-3 !py-1.5 text-xs"
+        title={portal ? `Open ${portal}` : "Add your school portal in Connections"}
+      >
+        🎓 {portal ? "Open school portal" : "Add school portal"} ↗
+      </a>
+      <a
+        href={OUTLOOK_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="btn-ghost !px-3 !py-1.5 text-xs"
+        title="Open your school email in Outlook on the web"
+      >
+        📧 Open Outlook ↗
+      </a>
+    </div>
+  );
+}
+
 export default function SchoolPage() {
   const hydrated = useHydrated();
   const courseIds = useHub((s) => s.courses).map((c) => c.id);
@@ -421,6 +474,7 @@ export default function SchoolPage() {
         title="Self-paced CS degree"
         subtitle="Credits, deadlines, study blocks, and review — the whole degree in one place."
       />
+      <SchoolQuickLinks />
       <GraduationTracker />
       <Card>
         <SectionTitle right={<span className="text-xs text-muted">private · on this device</span>}>

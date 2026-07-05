@@ -268,6 +268,24 @@ describe("chores — one completion per day", () => {
   });
 });
 
+describe("course completion", () => {
+  it("adds a completed course and counts its credits toward earned", async () => {
+    const { useHub } = await import("../store/hub");
+    const { graduationStats } = await import("../selectors");
+    const before = graduationStats(useHub.getState()).completed;
+
+    useHub.getState().addCourse("HIST 100", "World History", 3, true);
+    const course = useHub.getState().courses.find((c) => c.code === "HIST 100")!;
+    expect(course.completed).toBe(true);
+    expect(graduationStats(useHub.getState()).completed).toBe(before + 3);
+
+    // Toggling it back to in-progress removes those credits from earned again.
+    useHub.getState().toggleCourseCompleted(course.id);
+    expect(useHub.getState().courses.find((c) => c.id === course.id)?.completed).toBe(false);
+    expect(graduationStats(useHub.getState()).completed).toBe(before);
+  });
+});
+
 describe("school portal & alerts", () => {
   it("saves the school portal URL and alert preference, and backs them up", async () => {
     const { useHub } = await import("../store/hub");

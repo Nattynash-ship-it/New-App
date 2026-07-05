@@ -303,7 +303,10 @@ export function selectDomainSummaries(s: HubState): DomainSummary[] {
   ];
 }
 
-export function courseProgress(course: { units: { topics: { completed: boolean }[] }[] }): {
+export function courseProgress(course: {
+  completed?: boolean;
+  units: { topics: { completed: boolean }[] }[];
+}): {
   done: number;
   total: number;
   pct: number;
@@ -316,6 +319,9 @@ export function courseProgress(course: { units: { topics: { completed: boolean }
       if (t.completed) done += 1;
     }
   }
+  // A course passed already (e.g. from a transcript) reads as fully done even
+  // when no topics were logged for it.
+  if (course.completed) return { done: total, total, pct: 100 };
   return { done, total, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
 }
 
@@ -334,13 +340,17 @@ export interface GraduationStats {
 
 export function graduationStats(s: HubState): GraduationStats {
   const { programName, totalCredits, completedCredits, targetGraduation } = s.degreePlan;
-  const inProgress = s.courses.reduce((n, c) => n + c.credits, 0);
+  // Completed courses (e.g. from a transcript) add to earned credits; the rest
+  // are still in progress.
+  const completedFromCourses = s.courses.reduce((n, c) => n + (c.completed ? c.credits : 0), 0);
+  const inProgress = s.courses.reduce((n, c) => n + (c.completed ? 0 : c.credits), 0);
+  const completed = completedCredits + completedFromCourses;
   return {
     programName,
-    completed: completedCredits,
+    completed,
     inProgress,
     total: totalCredits,
-    pct: totalCredits === 0 ? 0 : Math.round((completedCredits / totalCredits) * 100),
+    pct: totalCredits === 0 ? 0 : Math.round((completed / totalCredits) * 100),
     targetGraduation,
   };
 }

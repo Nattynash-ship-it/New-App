@@ -220,6 +220,9 @@ export interface HubState {
   addPantryItem: (name: string, category: PantryCategory) => void;
   removePantryItem: (id: string) => void;
   addGroceryItem: (name: string) => void;
+  /** Add several items at once, skipping ones already listed or on hand.
+   *  Returns how many were newly added. */
+  addGroceryItems: (names: string[]) => number;
   removeGroceryItem: (id: string) => void;
   restoreGroceryItem: (item: GroceryItem) => void;
   saveRecipe: (r: Recipe) => void;
@@ -695,6 +698,36 @@ export const useHub = create<HubState>()(
             { id: newId("gro"), name, quantity: "1", category: "pantry" as const, checked: false },
           ],
         })),
+      addGroceryItems: (names) => {
+        const s = get();
+        // Skip anything already on the list or already on hand in the pantry —
+        // and de-dupe the incoming batch case-insensitively.
+        const seen = new Set([
+          ...s.groceryList.map((g) => g.name.toLowerCase()),
+          ...s.pantry.filter((p) => p.onHand).map((p) => p.name.toLowerCase()),
+        ]);
+        const fresh: string[] = [];
+        for (const name of names) {
+          const key = name.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          fresh.push(name);
+        }
+        if (fresh.length === 0) return 0;
+        set((st) => ({
+          groceryList: [
+            ...st.groceryList,
+            ...fresh.map((name) => ({
+              id: newId("gro"),
+              name,
+              quantity: "1",
+              category: "pantry" as const,
+              checked: false,
+            })),
+          ],
+        }));
+        return fresh.length;
+      },
       removeGroceryItem: (id) =>
         set((s) => ({ groceryList: s.groceryList.filter((g) => g.id !== id) })),
       restoreGroceryItem: (item) =>

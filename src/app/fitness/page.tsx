@@ -5,6 +5,7 @@ import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Ske
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
+import { FoolproofPlan } from "@/components/FoolproofPlan";
 import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
@@ -365,6 +366,9 @@ export default function FitnessPage() {
         <GoalsCard />
         <WeekPlanCard />
       </div>
+
+      {/* The foolproof plan — workouts + meal prep + groceries for your goal */}
+      <FoolproofPlan />
 
       {/* Training plans — the 8-week glute tracker + your own uploads */}
       <TrainingPlans />

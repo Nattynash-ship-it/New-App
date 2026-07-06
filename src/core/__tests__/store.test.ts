@@ -251,6 +251,28 @@ describe("data export round-trips every slice", () => {
   });
 });
 
+describe("planner board statuses", () => {
+  it("moves a task between buckets and keeps done in sync", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addProject("Board test", "Ops");
+    const proj = useHub.getState().projects.find((p) => p.name === "Board test")!;
+    useHub.getState().addWorkTask(proj.id, "Ship the thing");
+    const task = () => useHub.getState().projects.find((p) => p.id === proj.id)!.tasks[0]!;
+
+    useHub.getState().setWorkTaskStatus(proj.id, task().id, "doing");
+    expect(task().status).toBe("doing");
+    expect(task().done).toBe(false);
+
+    useHub.getState().setWorkTaskStatus(proj.id, task().id, "done");
+    expect(task().done).toBe(true);
+
+    // The list-view checkbox stays in sync: toggling done resets to "todo".
+    useHub.getState().toggleWorkTask(proj.id, task().id);
+    expect(task().done).toBe(false);
+    expect(task().status).toBe("todo");
+  });
+});
+
 describe("work projects", () => {
   it("changes a project's status", async () => {
     const { useHub } = await import("../store/hub");
@@ -324,6 +346,36 @@ describe("degree template loader", () => {
     );
     expect(again).toBe(0);
     expect(useHub.getState().courses.length).toBe(WGU_BSCS.courses.length);
+  });
+});
+
+describe("course pass/fail outcome", () => {
+  it("passed earns credits, failed earns nothing and leaves the projection", async () => {
+    const { useHub } = await import("../store/hub");
+    const { graduationStats } = await import("../selectors");
+    useHub.getState().addCourse("CHEM 110", "Chemistry", 4);
+    const course = useHub.getState().courses.find((c) => c.code === "CHEM 110")!;
+    const base = graduationStats(useHub.getState());
+
+    useHub.getState().setCourseOutcome(course.id, "passed");
+    let now = useHub.getState().courses.find((c) => c.id === course.id)!;
+    expect(now.outcome).toBe("passed");
+    expect(now.completed).toBe(true);
+    expect(graduationStats(useHub.getState()).completed).toBe(base.completed + 4);
+
+    useHub.getState().setCourseOutcome(course.id, "failed");
+    now = useHub.getState().courses.find((c) => c.id === course.id)!;
+    expect(now.outcome).toBe("failed");
+    expect(now.completed).toBe(false);
+    const failedStats = graduationStats(useHub.getState());
+    expect(failedStats.completed).toBe(base.completed);
+    // A failed class isn't "in progress" either — it needs a retake decision.
+    expect(failedStats.inProgress).toBe(base.inProgress - 4);
+
+    useHub.getState().setCourseOutcome(course.id, "in_progress");
+    now = useHub.getState().courses.find((c) => c.id === course.id)!;
+    expect(now.outcome).toBeUndefined();
+    expect(graduationStats(useHub.getState()).inProgress).toBe(base.inProgress);
   });
 });
 

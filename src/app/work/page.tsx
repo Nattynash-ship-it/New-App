@@ -6,6 +6,7 @@ import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
 import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
+import { PlannerBoard } from "@/components/PlannerBoard";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 import type { ProjectStatus } from "@/core/types";
@@ -400,6 +401,8 @@ function AddProject() {
 export default function WorkPage() {
   const hydrated = useHydrated();
   const projectIds = useHub((s) => s.projects).map((p) => p.id);
+  // Notion-style: the same tasks, two views — project list or Planner board.
+  const [view, setView] = useState<"list" | "board">("list");
 
   if (!hydrated) return <Skeleton />;
 
@@ -418,11 +421,37 @@ export default function WorkPage() {
         <TopThree />
         <MeetingList />
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        {projectIds.map((id) => (
-          <ProjectCard key={id} projectId={id} />
+
+      <div className="flex items-center gap-1.5">
+        {(
+          [
+            { id: "list", label: "☰ Projects" },
+            { id: "board", label: "🗂 Board" },
+          ] as const
+        ).map((v) => (
+          <button
+            key={v.id}
+            onClick={() => setView(v.id)}
+            aria-pressed={view === v.id}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === v.id ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:border-ink/25"
+            }`}
+          >
+            {v.label}
+          </button>
         ))}
+        <span className="ml-1 text-[11px] text-muted">same tasks, two views</span>
       </div>
+
+      {view === "board" ? (
+        <PlannerBoard />
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {projectIds.map((id) => (
+            <ProjectCard key={id} projectId={id} />
+          ))}
+        </div>
+      )}
       <AddProject />
     </div>
   );

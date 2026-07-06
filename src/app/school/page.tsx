@@ -283,50 +283,61 @@ function AssignmentList() {
   );
 }
 
+const OUTCOME_META = {
+  in_progress: { label: "in progress", chip: "border border-line text-muted" },
+  passed: { label: "passed ✓", chip: "bg-school-soft text-school-bright" },
+  failed: { label: "failed ✗", chip: "bg-fitness-soft text-fitness-bright" },
+} as const;
+type OutcomeKey = keyof typeof OUTCOME_META;
+
 function CourseCard({ courseId }: { courseId: string }) {
   const course = useHub((s) => s.courses.find((c) => c.id === courseId));
   const toggleTopic = useHub((s) => s.toggleTopic);
   const addTopic = useHub((s) => s.addTopic);
   const addUnit = useHub((s) => s.addUnit);
   const removeCourse = useHub((s) => s.removeCourse);
-  const toggleCourseCompleted = useHub((s) => s.toggleCourseCompleted);
+  const setCourseOutcome = useHub((s) => s.setCourseOutcome);
   const [openUnit, setOpenUnit] = useState<string | null>(null);
 
   if (!course) return null;
   const { done, total, pct } = courseProgress(course);
   const isDone = Boolean(course.completed);
+  const isFailed = course.outcome === "failed";
+  const outcome: OutcomeKey = course.outcome ?? "in_progress";
 
   return (
-    <Card className={isDone ? "opacity-80" : ""}>
+    <Card className={isDone || isFailed ? "opacity-80" : ""}>
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <div className="flex items-start gap-2.5">
-          <button
-            onClick={() => toggleCourseCompleted(course.id)}
-            role="checkbox"
-            aria-checked={isDone}
-            aria-label={isDone ? `Mark ${course.name} not completed` : `Mark ${course.name} completed`}
-            title={isDone ? "Completed — tap to reopen" : "Tap when you've completed this class"}
-            className={`mt-0.5 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-              isDone ? "border-school bg-school text-white" : "border-ink/25 bg-surface hover:border-school"
-            }`}
-          >
-            {isDone ? (
-              <svg width="11" height="9" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            ) : null}
-          </button>
-          <div>
-            <h3 className={`text-sm font-semibold ${isDone ? "text-muted line-through" : ""}`}>{course.name}</h3>
-            <p className="text-xs text-muted">
-              {course.code} · {course.credits} credits
-              {isDone ? " · completed ✓" : ` · ${course.units.length} units`}
-              {!isDone && course.targetDate ? ` · target ${formatShort(course.targetDate)}` : ""}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <h3 className={`text-sm font-semibold ${isDone ? "text-muted line-through" : ""}`}>{course.name}</h3>
+          <p className="text-xs text-muted">
+            {course.code} · {course.credits} credits
+            {isDone ? " · credits earned" : isFailed ? " · no credit — retake when ready" : ` · ${course.units.length} units`}
+            {!isDone && !isFailed && course.targetDate ? ` · target ${formatShort(course.targetDate)}` : ""}
+          </p>
         </div>
-        <span className="flex items-center gap-1.5">
-          <span className="font-display text-xl text-school-bright">{pct}%</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="relative inline-flex items-center">
+            <span className={`chip ${OUTCOME_META[outcome].chip}`}>
+              {OUTCOME_META[outcome].label}
+              <span aria-hidden className="ml-0.5 opacity-60">▾</span>
+            </span>
+            <select
+              value={outcome}
+              onChange={(e) => setCourseOutcome(course.id, e.target.value as OutcomeKey)}
+              aria-label={`Outcome for ${course.name}`}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            >
+              {(Object.keys(OUTCOME_META) as OutcomeKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {OUTCOME_META[k].label}
+                </option>
+              ))}
+            </select>
+          </span>
+          {!isDone && !isFailed ? (
+            <span className="font-display text-xl text-school-bright">{pct}%</span>
+          ) : null}
           <button
             onClick={() => removeCourse(course.id)}
             aria-label={`Delete course ${course.name}`}
@@ -336,7 +347,7 @@ function CourseCard({ courseId }: { courseId: string }) {
           </button>
         </span>
       </div>
-      {isDone ? null : (
+      {isDone || isFailed ? null : (
         <>
       <ProgressBar pct={pct} colorClass="bg-school" />
       <p className="mt-1.5 text-xs text-muted">

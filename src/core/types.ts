@@ -55,11 +55,16 @@ export interface ScheduledEvent {
 
 export type ProjectStatus = "active" | "waiting" | "blocked" | "done";
 
+/** Planner-style bucket a task sits in. Legacy tasks without one derive it
+ *  from `done` (done → "done", else "todo"). */
+export type TaskStatus = "todo" | "doing" | "done";
+
 export interface WorkTask {
   id: Id;
   title: string;
   done: boolean;
   dueDate?: ISODate;
+  status?: TaskStatus;
 }
 
 /** Project planning: a dated milestone on the project roadmap. */
@@ -145,6 +150,9 @@ export interface Course {
    *  in-progress courses (false/undefined) get a checkbox to tick when done. */
   completed?: boolean;
   completedAt?: ISODateTime;
+  /** How the class ended: passed earns the credits, failed doesn't (retake it —
+   *  flip back to in progress). Unset = still in progress. */
+  outcome?: "passed" | "failed";
 }
 
 export interface Assignment {
@@ -375,6 +383,8 @@ export interface Note {
   title: string;
   body: string;
   pinned: boolean;
+  /** Notion-style labels for filtering (e.g. "school", "kids", "ideas"). */
+  tags?: string[];
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }

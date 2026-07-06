@@ -25,15 +25,35 @@ export async function extractPdfText(file: File): Promise<string> {
 
   const data = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data }).promise;
-  const parts: string[] = [];
+  const lines: string[] = [];
   try {
     for (let page = 1; page <= doc.numPages; page++) {
       const content = await (await doc.getPage(page)).getTextContent();
-      parts.push(content.items.map((it) => ("str" in it ? it.str : "")).join(" "));
+      // Rebuild real lines: a vertical position change or an explicit EOL marks
+      // a line break. Keeping rows intact matters — transcript parsing reads
+      // the grade column per row.
+      let line = "";
+      let lastY: number | null = null;
+      for (const it of content.items) {
+        if (!("str" in it)) continue;
+        const y = it.transform?.[5];
+        if (lastY !== null && typeof y === "number" && Math.abs(y - lastY) > 2 && line) {
+          lines.push(line);
+          line = "";
+        }
+        if (typeof y === "number") lastY = y;
+        line += (line ? " " : "") + it.str;
+        if (it.hasEOL && line) {
+          lines.push(line);
+          line = "";
+        }
+      }
+      if (line) lines.push(line);
+      lastY = null;
     }
   } finally {
     await doc.destroy();
   }
   // Collapse the runs of spaces pdf.js leaves between glyph groups.
-  return parts.join("\n").replace(/[ \t]+/g, " ").trim();
+  return lines.join("\n").replace(/[ \t]+/g, " ").trim();
 }

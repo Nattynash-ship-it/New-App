@@ -68,6 +68,7 @@ import type {
   ScheduledEvent,
   StoreReward,
   StudyBlock,
+  TaskStatus,
   Todo,
   Urgency,
   WaterLog,
@@ -182,6 +183,7 @@ export interface HubState {
   removeProject: (id: string) => void;
   setProjectStatus: (id: string, status: ProjectStatus) => void;
   toggleWorkTask: (projectId: string, taskId: string) => void;
+  setWorkTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => void;
   addWorkTask: (projectId: string, title: string) => void;
   removeWorkTask: (projectId: string, taskId: string) => void;
   addMeeting: (m: Omit<Meeting, "id">) => void;
@@ -196,6 +198,9 @@ export interface HubState {
   addCourse: (code: string, name: string, credits: number, completed?: boolean) => void;
   removeCourse: (id: string) => void;
   toggleCourseCompleted: (id: string) => void;
+  /** Record how a class ended: passed (earns credits), failed (doesn't —
+   *  retake), or back to in progress. */
+  setCourseOutcome: (id: string, outcome: "passed" | "failed" | "in_progress") => void;
   /** Add a batch of template courses as in-progress, skipping ones already on
    *  the plan (matched by name). Returns how many were newly added. */
   loadDegreeTemplate: (
@@ -256,7 +261,7 @@ export interface HubState {
 
   // --- Notes & journal ---
   addNote: (title: string, body: string) => void;
-  updateNote: (id: string, patch: { title?: string; body?: string }) => void;
+  updateNote: (id: string, patch: { title?: string; body?: string; tags?: string[] }) => void;
   removeNote: (id: string) => void;
   togglePinNote: (id: string) => void;
 
@@ -489,7 +494,24 @@ export const useHub = create<HubState>()(
               ? p
               : {
                   ...p,
-                  tasks: p.tasks.map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)),
+                  tasks: p.tasks.map((t) =>
+                    t.id === taskId
+                      ? { ...t, done: !t.done, status: (!t.done ? "done" : "todo") as TaskStatus }
+                      : t,
+                  ),
+                },
+          ),
+        })),
+      setWorkTaskStatus: (projectId, taskId, status) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id !== projectId
+              ? p
+              : {
+                  ...p,
+                  tasks: p.tasks.map((t) =>
+                    t.id === taskId ? { ...t, status, done: status === "done" } : t,
+                  ),
                 },
           ),
         })),
@@ -554,7 +576,7 @@ export const useHub = create<HubState>()(
               credits,
               units: [{ id: newId("unit"), name: "Unit 1", topics: [] }],
               completed,
-              ...(completed ? { completedAt: nowISO() } : {}),
+              ...(completed ? { completedAt: nowISO(), outcome: "passed" as const } : {}),
             },
           ],
         })),
@@ -562,9 +584,27 @@ export const useHub = create<HubState>()(
         set((s) => ({
           courses: s.courses.map((c) =>
             c.id === id
-              ? { ...c, completed: !c.completed, completedAt: c.completed ? undefined : nowISO() }
+              ? {
+                  ...c,
+                  completed: !c.completed,
+                  completedAt: c.completed ? undefined : nowISO(),
+                  outcome: c.completed ? undefined : ("passed" as const),
+                }
               : c,
           ),
+        })),
+      setCourseOutcome: (id, outcome) =>
+        set((s) => ({
+          courses: s.courses.map((c) => {
+            if (c.id !== id) return c;
+            if (outcome === "passed") {
+              return { ...c, completed: true, completedAt: nowISO(), outcome: "passed" as const };
+            }
+            if (outcome === "failed") {
+              return { ...c, completed: false, completedAt: undefined, outcome: "failed" as const };
+            }
+            return { ...c, completed: false, completedAt: undefined, outcome: undefined };
+          }),
         })),
       loadDegreeTemplate: (programName, totalCredits, courses) => {
         const s = get();

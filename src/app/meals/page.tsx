@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { RecipeSearch } from "@/components/RecipeSearch";
 import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
 import { matchRecipes, recipeVideoUrl } from "@/core/selectors";
@@ -425,6 +426,7 @@ export default function MealsPage() {
         title="Meals & groceries"
         subtitle="Vegan, high-volume defaults. Check what you have — the engine does the rest."
       />
+      <RecipeSearch />
       <CookFromKitchen />
       <ReverseRecipeEngine />
       <WeekPlanner />

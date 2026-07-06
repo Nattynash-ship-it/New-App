@@ -51,6 +51,18 @@ describe("selectDayBlocks (time-block calendar)", () => {
   });
 });
 
+describe("habitBestStreak", () => {
+  it("finds the longest run anywhere in history", async () => {
+    const { habitBestStreak } = await import("../selectors");
+    expect(habitBestStreak([])).toBe(0);
+    expect(habitBestStreak(["2026-07-01"])).toBe(1);
+    // 3-day run beats the current 2-day run.
+    expect(
+      habitBestStreak(["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-10", "2026-06-11"]),
+    ).toBe(3);
+  });
+});
+
 /** Minimal state slice; selectTimeline only reads the data arrays. */
 function makeState(overrides: Partial<HubState>): HubState {
   return {

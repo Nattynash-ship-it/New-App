@@ -340,10 +340,13 @@ export interface GraduationStats {
 
 export function graduationStats(s: HubState): GraduationStats {
   const { programName, totalCredits, completedCredits, targetGraduation } = s.degreePlan;
-  // Completed courses (e.g. from a transcript) add to earned credits; the rest
-  // are still in progress.
+  // Passed courses (e.g. from a transcript) add to earned credits; failed ones
+  // earn nothing and don't count as in-progress either (they need a retake).
   const completedFromCourses = s.courses.reduce((n, c) => n + (c.completed ? c.credits : 0), 0);
-  const inProgress = s.courses.reduce((n, c) => n + (c.completed ? 0 : c.credits), 0);
+  const inProgress = s.courses.reduce(
+    (n, c) => n + (c.completed || c.outcome === "failed" ? 0 : c.credits),
+    0,
+  );
   const completed = completedCredits + completedFromCourses;
   return {
     programName,
@@ -419,6 +422,20 @@ export function habitStreak(history: ISODate[]): number {
 
 export function habitDoneToday(history: ISODate[]): boolean {
   return history.includes(todayISO());
+}
+
+/** Longest run of consecutive days anywhere in the history. */
+export function habitBestStreak(history: ISODate[]): number {
+  const days = [...new Set(history)].sort();
+  let best = 0;
+  let run = 0;
+  let prev: ISODate | null = null;
+  for (const d of days) {
+    run = prev !== null && addDays(prev, 1) === d ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = d;
+  }
+  return best;
 }
 
 export function waterToday(s: HubState): number {

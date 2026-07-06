@@ -23,6 +23,11 @@ function DocumentsVault() {
   );
 }
 
+/** "school, kids" → ["school", "kids"] — trimmed, lowercased, deduped. */
+function parseTags(raw: string): string[] {
+  return [...new Set(raw.split(/[,;]/).map((t) => t.trim().toLowerCase()).filter(Boolean))];
+}
+
 function NoteCard({ note }: { note: Note }) {
   const updateNote = useHub((s) => s.updateNote);
   const removeNote = useHub((s) => s.removeNote);
@@ -30,9 +35,14 @@ function NoteCard({ note }: { note: Note }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
+  const [tags, setTags] = useState((note.tags ?? []).join(", "));
 
   function save() {
-    updateNote(note.id, { title: title.trim() || "Untitled note", body: body.trim() });
+    updateNote(note.id, {
+      title: title.trim() || "Untitled note",
+      body: body.trim(),
+      tags: parseTags(tags),
+    });
     setEditing(false);
   }
 
@@ -53,6 +63,13 @@ function NoteCard({ note }: { note: Note }) {
             className="input resize-y text-sm"
             placeholder="Write it down…"
           />
+          <input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            className="input !py-1.5 text-xs"
+            placeholder="Tags, comma-separated (school, kids, ideas)"
+            aria-label="Tags"
+          />
           <div className="flex items-center gap-2">
             <button onClick={save} className="btn-primary !px-3 !py-1.5 text-xs">
               Save
@@ -61,6 +78,7 @@ function NoteCard({ note }: { note: Note }) {
               onClick={() => {
                 setTitle(note.title);
                 setBody(note.body);
+                setTags((note.tags ?? []).join(", "));
                 setEditing(false);
               }}
               className="text-xs text-muted hover:text-ink"
@@ -106,6 +124,15 @@ function NoteCard({ note }: { note: Note }) {
           ) : (
             <p className="text-sm italic text-muted/70">Empty — tap ✎ to add details.</p>
           )}
+          {note.tags && note.tags.length > 0 ? (
+            <p className="mt-2 flex flex-wrap gap-1">
+              {note.tags.map((t) => (
+                <span key={t} className="chip bg-accent-soft !text-[10px] text-accent">
+                  #{t}
+                </span>
+              ))}
+            </p>
+          ) : null}
           <p className="mt-2 text-[10px] uppercase tracking-wider text-muted/70">
             Updated {formatFriendly(note.updatedAt.slice(0, 10))}
           </p>
@@ -172,10 +199,13 @@ function AddNote() {
 export default function NotesPage() {
   const hydrated = useHydrated();
   const notes = useHub((s) => s.notes);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   if (!hydrated) return <Skeleton />;
 
-  const sorted = [...notes].sort(
+  const allTags = [...new Set(notes.flatMap((n) => n.tags ?? []))].sort();
+  const visible = tagFilter ? notes.filter((n) => n.tags?.includes(tagFilter)) : notes;
+  const sorted = [...visible].sort(
     (a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt.localeCompare(a.updatedAt),
   );
 
@@ -193,6 +223,27 @@ export default function NotesPage() {
         <SectionTitle right={<span className="text-xs text-muted">{notes.length} saved</span>}>
           Notes & journal
         </SectionTitle>
+        {allTags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setTagFilter(null)}
+              aria-pressed={tagFilter === null}
+              className={`chip !text-[11px] ${tagFilter === null ? "bg-accent-soft text-accent" : "border border-line text-muted"}`}
+            >
+              All
+            </button>
+            {allTags.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTagFilter(tagFilter === t ? null : t)}
+                aria-pressed={tagFilter === t}
+                className={`chip !text-[11px] ${tagFilter === t ? "bg-accent-soft text-accent" : "border border-line text-muted"}`}
+              >
+                #{t}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <AddNote />
         {sorted.length === 0 ? (
           <EmptyState>No notes yet — jot down anything you don&apos;t want to hold in your head.</EmptyState>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { EnergyPlan } from "@/components/EnergyPlan";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { HomeHero, dayGreeting } from "@/components/HomeHero";
@@ -186,6 +187,9 @@ export default function CompassPage() {
 
       {/* Energy-aware plan — right-size today in one tap */}
       <EnergyPlan />
+
+      {/* A daily affirmation + themed 10-minute sessions */}
+      <AffirmationsCard />
 
       <QuickAdd />
 

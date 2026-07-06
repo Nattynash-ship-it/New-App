@@ -179,6 +179,21 @@ describe("groceries from planned meals", () => {
     }
   });
 
+  it("bulk-adds grocery items, skipping ones already listed or on hand", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.setState({
+      groceryList: [],
+      pantry: [{ id: "p1", name: "Tofu", category: "protein", onHand: true }] as never,
+    });
+    const added = useHub.getState().addGroceryItems(["Tofu", "Soy sauce", "Brown rice", "soy sauce"]);
+    // Tofu (on hand) and the duplicate "soy sauce" are skipped.
+    expect(added).toBe(2);
+    const names = useHub.getState().groceryList.map((g) => g.name);
+    expect(names).toContain("Soy sauce");
+    expect(names).toContain("Brown rice");
+    expect(names).not.toContain("Tofu");
+  });
+
   it("restores a removed grocery item without duplicating it", async () => {
     const { useHub } = await import("../store/hub");
     useHub.setState({ groceryList: [] });

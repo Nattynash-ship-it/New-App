@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { EnergyPlan } from "@/components/EnergyPlan";
+import { HomeQuickLinks } from "@/components/HomeQuickLinks";
+import { PlannerBoard } from "@/components/PlannerBoard";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { HomeHero, dayGreeting } from "@/components/HomeHero";
 import { LifeBalance } from "@/components/LifeBalance";
@@ -182,6 +184,9 @@ export default function CompassPage() {
     <div className="space-y-5">
       <HomeHero />
 
+      {/* One-tap jumps: school portal + Outlook */}
+      <HomeQuickLinks />
+
       {/* Whole life at a glance */}
       <OverviewStrip />
 
@@ -195,6 +200,17 @@ export default function CompassPage() {
 
       {/* General to-do list with urgency levels */}
       <TodoList />
+
+      {/* Planner-style planning guide: capture → bucket → move to done */}
+      <div>
+        <p className="mb-2 rounded-xl bg-accent-soft/50 px-3.5 py-2 text-xs text-muted">
+          <span className="font-semibold text-ink">Plan it like Planner:</span> put every task in{" "}
+          <span className="font-medium text-ink">To do</span>, pull today&apos;s into{" "}
+          <span className="font-medium text-ink">In progress</span> (keep it to 2–3), and slide them
+          to <span className="font-medium text-ink">Done</span> as you finish — ‹ › moves a card.
+        </p>
+        <PlannerBoard />
+      </div>
 
       {/* One glance: is any part of life being dropped? */}
       <LifeBalance />

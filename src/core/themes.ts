@@ -17,7 +17,12 @@ export const THEMES: ThemeMeta[] = [
   { id: "glass", label: "Glass", bg: "#E4EAF8", accent: "#786CF6", mode: "light" },
   { id: "cartoon", label: "Cartoon", bg: "#FFF9EE", accent: "#7C52FF", mode: "light" },
   { id: "bubblegum", label: "Bubblegum", bg: "#FFEEF7", accent: "#F05AA5", mode: "light" },
+  { id: "sunset", label: "Sunset", bg: "#FFF7F0", accent: "#EC583A", mode: "light" },
+  { id: "ocean", label: "Ocean", bg: "#EEF8FA", accent: "#0E8AA6", mode: "light" },
+  { id: "meadow", label: "Meadow", bg: "#F3F9F0", accent: "#389452", mode: "light" },
+  { id: "lavender", label: "Lavender", bg: "#F7F5FF", accent: "#8A64E4", mode: "light" },
   { id: "daylight", label: "Daylight", bg: "#F7F8FA", accent: "#4056D8", mode: "light" },
+  { id: "galaxy", label: "Galaxy", bg: "#110D22", accent: "#C07CFF", mode: "dark" },
   { id: "nocturne", label: "Nocturne", bg: "#0E0F1B", accent: "#968CFA", mode: "dark" },
   { id: "midnight", label: "Midnight", bg: "#0B0F13", accent: "#C8F04D", mode: "dark" },
 ];

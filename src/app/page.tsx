@@ -5,6 +5,7 @@ import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { EnergyPlan } from "@/components/EnergyPlan";
 import { HomeQuickLinks } from "@/components/HomeQuickLinks";
 import { PlannerBoard } from "@/components/PlannerBoard";
+import { WeatherCard } from "@/components/WeatherCard";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { HomeHero, dayGreeting } from "@/components/HomeHero";
 import { LifeBalance } from "@/components/LifeBalance";
@@ -186,6 +187,9 @@ export default function CompassPage() {
 
       {/* One-tap jumps: school portal + Outlook */}
       <HomeQuickLinks />
+
+      {/* Live weather for the saved zip */}
+      <WeatherCard />
 
       {/* Whole life at a glance */}
       <OverviewStrip />

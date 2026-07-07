@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 
 // Apply the saved theme before first paint, migrating anyone on a removed
 // theme (bloom/meadow/aurora/ember/velvet) to the current default.
-const themeInit = `(function(){try{var v=["glass","cartoon","bubblegum","daylight","nocturne","midnight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="glass";if(t)localStorage.setItem("hub-theme","glass")}}catch(e){}})()`;
+const themeInit = `(function(){try{var v=["glass","cartoon","bubblegum","sunset","ocean","meadow","lavender","daylight","galaxy","nocturne","midnight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="glass";if(t)localStorage.setItem("hub-theme","glass")}}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

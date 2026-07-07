@@ -23,7 +23,11 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
-      className={compact ? "flex items-center gap-1.5" : "flex flex-wrap items-center gap-2"}
+      className={
+        compact
+          ? "flex max-w-[52vw] items-center gap-1.5 overflow-x-auto sm:max-w-none"
+          : "flex flex-wrap items-center gap-2"
+      }
       role="radiogroup"
       aria-label="App theme"
     >
@@ -37,7 +41,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
             applyTheme(t.id);
             setActive(t.id);
           }}
-          className={`group flex items-center gap-1.5 rounded-full border p-1 transition-all ${
+          className={`group flex shrink-0 items-center gap-1.5 rounded-full border p-1 transition-all ${
             active === t.id ? "border-accent" : "border-line hover:border-ink/30"
           } ${compact ? "" : "pr-2.5"}`}
         >

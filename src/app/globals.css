@@ -131,6 +131,131 @@
   --selection: rgba(120, 108, 246, 0.24);
 }
 
+/* Sunset — golden hour: warm cream canvas, coral accent, peach/rose glow. */
+[data-theme="sunset"] {
+  color-scheme: light;
+  --paper: 255 247 240;
+  --surface: 255 255 255;
+  --ink: 56 32 36;
+  --muted: 128 90 86;
+  --line: rgba(120, 60, 40, 0.13);
+  --accent: 236 88 58;
+  --accent-dark: 216 70 42;
+  --accent-ink: 255 255 255;
+  --work-bright: 46 96 202;
+  --school-bright: 178 88 18;
+  --meals-bright: 22 126 74;
+  --fitness-bright: 208 54 96;
+  --family-bright: 152 76 200;
+  --compass-bright: 214 88 58;
+  --page-glow: radial-gradient(860px 420px at 12% -10%, rgba(255, 178, 110, 0.5), transparent 55%),
+    radial-gradient(760px 400px at 100% -4%, rgba(255, 132, 150, 0.35), transparent 55%),
+    radial-gradient(700px 420px at 55% 115%, rgba(255, 206, 150, 0.4), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(160, 80, 40, 0.06), 0 6px 20px rgba(160, 80, 40, 0.1);
+  --shadow-lift: 0 2px 6px rgba(160, 80, 40, 0.1), 0 14px 36px rgba(160, 80, 40, 0.16);
+  --selection: rgba(236, 88, 58, 0.22);
+}
+
+/* Ocean — sea air: cool aqua canvas, deep teal accent, surf glow. */
+[data-theme="ocean"] {
+  color-scheme: light;
+  --paper: 238 248 250;
+  --surface: 255 255 255;
+  --ink: 18 42 52;
+  --muted: 80 106 116;
+  --line: rgba(20, 80, 100, 0.13);
+  --accent: 14 138 166;
+  --accent-dark: 10 118 144;
+  --accent-ink: 255 255 255;
+  --work-bright: 42 92 206;
+  --school-bright: 166 92 24;
+  --meals-bright: 18 128 80;
+  --fitness-bright: 202 52 104;
+  --family-bright: 128 78 208;
+  --compass-bright: 16 126 150;
+  --page-glow: radial-gradient(860px 420px at 10% -10%, rgba(120, 214, 232, 0.5), transparent 55%),
+    radial-gradient(760px 400px at 100% -4%, rgba(110, 190, 255, 0.32), transparent 55%),
+    radial-gradient(700px 420px at 55% 115%, rgba(150, 232, 210, 0.38), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(20, 90, 110, 0.06), 0 6px 20px rgba(20, 90, 110, 0.1);
+  --shadow-lift: 0 2px 6px rgba(20, 90, 110, 0.1), 0 14px 36px rgba(20, 90, 110, 0.16);
+  --selection: rgba(14, 138, 166, 0.2);
+}
+
+/* Meadow — fresh greens: soft sage canvas, leafy accent, morning-field glow. */
+[data-theme="meadow"] {
+  color-scheme: light;
+  --paper: 243 249 240;
+  --surface: 255 255 255;
+  --ink: 28 42 28;
+  --muted: 92 110 92;
+  --line: rgba(40, 90, 40, 0.13);
+  --accent: 56 148 82;
+  --accent-dark: 44 128 68;
+  --accent-ink: 255 255 255;
+  --work-bright: 44 92 204;
+  --school-bright: 168 94 22;
+  --meals-bright: 22 128 74;
+  --fitness-bright: 200 54 100;
+  --family-bright: 132 78 204;
+  --compass-bright: 62 128 62;
+  --page-glow: radial-gradient(860px 420px at 10% -10%, rgba(178, 230, 150, 0.45), transparent 55%),
+    radial-gradient(760px 400px at 100% -4%, rgba(150, 226, 196, 0.35), transparent 55%),
+    radial-gradient(700px 420px at 55% 115%, rgba(214, 240, 160, 0.35), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(40, 100, 50, 0.06), 0 6px 20px rgba(40, 100, 50, 0.1);
+  --shadow-lift: 0 2px 6px rgba(40, 100, 50, 0.1), 0 14px 36px rgba(40, 100, 50, 0.16);
+  --selection: rgba(56, 148, 82, 0.2);
+}
+
+/* Lavender — calm lilac: airy violet canvas, soft purple accent, dreamy glow. */
+[data-theme="lavender"] {
+  color-scheme: light;
+  --paper: 247 245 255;
+  --surface: 255 255 255;
+  --ink: 42 34 62;
+  --muted: 104 96 128;
+  --line: rgba(80, 60, 140, 0.13);
+  --accent: 138 100 228;
+  --accent-dark: 120 84 210;
+  --accent-ink: 255 255 255;
+  --work-bright: 54 88 210;
+  --school-bright: 170 92 26;
+  --meals-bright: 22 128 80;
+  --fitness-bright: 204 54 110;
+  --family-bright: 140 80 214;
+  --compass-bright: 128 96 214;
+  --page-glow: radial-gradient(860px 420px at 10% -10%, rgba(198, 172, 255, 0.45), transparent 55%),
+    radial-gradient(760px 400px at 100% -4%, rgba(255, 172, 226, 0.28), transparent 55%),
+    radial-gradient(700px 420px at 55% 115%, rgba(178, 196, 255, 0.35), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(90, 60, 160, 0.06), 0 6px 20px rgba(90, 60, 160, 0.1);
+  --shadow-lift: 0 2px 6px rgba(90, 60, 160, 0.1), 0 14px 36px rgba(90, 60, 160, 0.16);
+  --selection: rgba(138, 100, 228, 0.22);
+}
+
+/* Galaxy — deep-space dark: indigo-violet night, nebula glow, orchid accent. */
+[data-theme="galaxy"] {
+  color-scheme: dark;
+  --paper: 17 13 34;
+  --surface: 30 24 56;
+  --ink: 238 234 250;
+  --muted: 178 170 206;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: 192 124 255;
+  --accent-dark: 172 104 238;
+  --accent-ink: 26 12 44;
+  --work-bright: 150 178 250;
+  --school-bright: 238 160 96;
+  --meals-bright: 96 210 148;
+  --fitness-bright: 246 146 182;
+  --family-bright: 198 162 246;
+  --compass-bright: 206 156 252;
+  --page-glow: radial-gradient(900px 460px at 15% -12%, rgba(150, 90, 255, 0.22), transparent 55%),
+    radial-gradient(800px 420px at 100% -6%, rgba(255, 110, 190, 0.14), transparent 55%),
+    radial-gradient(760px 440px at 50% 118%, rgba(80, 130, 255, 0.16), transparent 55%);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(10, 4, 30, 0.5);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 44px rgba(10, 4, 30, 0.55);
+  --selection: rgba(192, 124, 255, 0.3);
+}
+
 /* Cartoon — playful comic look: bright canvas, a vivid pop accent, bold ink
  * outlines and hard offset shadows (scoped rules below add the outlines). */
 [data-theme="cartoon"] {

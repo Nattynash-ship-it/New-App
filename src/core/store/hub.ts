@@ -12,6 +12,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO } from "../dates";
+import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
 import {
   seedActivities,
@@ -84,7 +85,7 @@ export const DATA_KEYS = [
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
-  "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled",
+  "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -159,6 +160,8 @@ export interface HubState {
   schoolPortalUrl: string;
   /** Opted into browser alerts (e.g. for new school email once connected). */
   alertsEnabled: boolean;
+  /** Where the weather card looks — zip + resolved coordinates. */
+  weatherLocation: WeatherLocation;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -301,6 +304,7 @@ export interface HubState {
   setKidMeal: (kidId: string, day: number, slot: MealSlot, title: string, calories: number) => void;
   setSchoolPortalUrl: (url: string) => void;
   setAlertsEnabled: (on: boolean) => void;
+  setWeatherLocation: (loc: WeatherLocation) => void;
 }
 
 function initialState() {
@@ -347,6 +351,7 @@ function initialState() {
     kidMeals: seedKidMeals(),
     schoolPortalUrl: "",
     alertsEnabled: false,
+    weatherLocation: DEFAULT_WEATHER_LOCATION,
   };
 }
 
@@ -1090,6 +1095,7 @@ export const useHub = create<HubState>()(
         }),
       setSchoolPortalUrl: (url) => set({ schoolPortalUrl: url.trim() }),
       setAlertsEnabled: (alertsEnabled) => set({ alertsEnabled }),
+      setWeatherLocation: (weatherLocation) => set({ weatherLocation }),
     }),
     {
       name: "life-hub-v1",

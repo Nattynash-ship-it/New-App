@@ -2,11 +2,10 @@
 
 import { useRef, useState } from "react";
 import { newId, useHub } from "@/core/store/hub";
-import { deleteFile, getFileURL, putFile } from "@/lib/fileStore";
+import { deleteFile, getFile, getFileURL, putFile } from "@/lib/fileStore";
 import { extractFromFile } from "@/core/ai/autoExtract";
-import { formatFriendly } from "@/core/dates";
-import type { ParsedCourse } from "@/core/nlp/courses";
-import type { AttachmentOwner, ParsedIntent } from "@/core/types";
+import { ExtractionReview, type Findings } from "./ExtractionReview";
+import type { AttachmentOwner } from "@/core/types";
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB per file
 const DEFAULT_ACCEPT = "application/pdf,image/*,.doc,.docx,.txt";
@@ -24,25 +23,20 @@ function fileIcon(mime: string): string {
   return "📎";
 }
 
-interface ClassRow extends ParsedCourse {
-  include: boolean;
-}
-interface ItemRow extends ParsedIntent {
-  include: boolean;
-}
-interface Findings {
-  fileName: string;
-  classes: ClassRow[];
-  items: ItemRow[];
-  note?: string;
+/** Roll one file's extraction into an accumulating Findings object. */
+function mergeFindings(into: Findings, name: string, found: Awaited<ReturnType<typeof extractFromFile>>) {
+  into.fileName = into.fileName || found.fileName || name;
+  into.classes.push(...found.classes.map((c) => ({ ...c, include: true })));
+  into.items.push(...found.items.map((i) => ({ ...i, include: true })));
+  if (found.note && !into.note) into.note = found.note;
 }
 
 /**
  * Drop-in "upload a file to this section" widget. Metadata goes in the store;
- * bytes go to on-device blob storage. Every upload is also mined on the spot —
- * classes and dates found inside are offered for one-tap adding, so uploading
- * a transcript or schedule actually DOES something. Reused across courses,
- * units, projects, and the documents vault — pass the owner it belongs to.
+ * bytes go to on-device blob storage. Every upload is mined on the spot, and
+ * every already-uploaded file gets an "✨ Extract" button to re-run it — so
+ * classes and dates inside any attachment can always be pulled out. Reused
+ * across courses, units, projects, and the documents vault.
  */
 export function Attachments({
   ownerType,
@@ -60,13 +54,17 @@ export function Attachments({
   );
   const addAttachment = useHub((s) => s.addAttachment);
   const removeAttachment = useHub((s) => s.removeAttachment);
-  const addCourse = useHub((s) => s.addCourse);
-  const addFromIntent = useHub((s) => s.addFromIntent);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [extractingId, setExtractingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [findings, setFindings] = useState<Findings | null>(null);
   const [addedMsg, setAddedMsg] = useState<string | null>(null);
+
+  function flash(msg: string | null) {
+    setAddedMsg(msg);
+    if (msg) setTimeout(() => setAddedMsg(null), 5000);
+  }
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -92,12 +90,7 @@ export function Attachments({
           size: file.size,
           addedAt: new Date().toISOString(),
         });
-        // Mine the file for classes + dates right away.
-        const found = await extractFromFile(file);
-        merged.fileName = merged.fileName || found.fileName;
-        merged.classes.push(...found.classes.map((c) => ({ ...c, include: true })));
-        merged.items.push(...found.items.map((i) => ({ ...i, include: true })));
-        if (found.note && !merged.note) merged.note = found.note;
+        mergeFindings(merged, file.name, await extractFromFile(file));
       }
       if (merged.classes.length > 0 || merged.items.length > 0 || merged.note) {
         setFindings(merged);
@@ -107,6 +100,30 @@ export function Attachments({
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function reExtract(id: string) {
+    setError(null);
+    setFindings(null);
+    setAddedMsg(null);
+    setExtractingId(id);
+    try {
+      const file = await getFile(id);
+      if (!file) {
+        setError("That file isn't on this device anymore.");
+        return;
+      }
+      const merged: Findings = { fileName: "", classes: [], items: [] };
+      mergeFindings(merged, file.name, await extractFromFile(file));
+      if (merged.classes.length === 0 && merged.items.length === 0 && !merged.note) {
+        merged.note = "Nothing to pull out of this file.";
+      }
+      setFindings(merged);
+    } catch {
+      setError("Couldn't read that file to extract from it.");
+    } finally {
+      setExtractingId(null);
     }
   }
 
@@ -124,40 +141,6 @@ export function Attachments({
     await deleteFile(id);
     removeAttachment(id);
   }
-
-  function addSelected() {
-    if (!findings) return;
-    const classes = findings.classes.filter((c) => c.include && c.name.trim());
-    const items = findings.items.filter((i) => i.include);
-    classes.forEach((c) =>
-      addCourse(c.code.trim() || "COURSE", c.name.trim(), c.credits, c.completed ?? false),
-    );
-    items.forEach((i) =>
-      addFromIntent({ kind: i.kind, title: i.title, date: i.date, time: i.time, confidence: i.confidence }),
-    );
-    const parts = [
-      classes.length ? `${classes.length} ${classes.length === 1 ? "class" : "classes"}` : "",
-      items.length ? `${items.length} ${items.length === 1 ? "date" : "dates"}` : "",
-    ].filter(Boolean);
-    setAddedMsg(parts.length ? `Added ${parts.join(" & ")} ✓` : null);
-    setFindings(null);
-    setTimeout(() => setAddedMsg(null), 5000);
-  }
-
-  function patchClass(idx: number, include: boolean) {
-    setFindings((f) =>
-      f ? { ...f, classes: f.classes.map((c, i) => (i === idx ? { ...c, include } : c)) } : f,
-    );
-  }
-  function patchItem(idx: number, include: boolean) {
-    setFindings((f) =>
-      f ? { ...f, items: f.items.map((it, i) => (i === idx ? { ...it, include } : it)) } : f,
-    );
-  }
-
-  const selectedCount = findings
-    ? findings.classes.filter((c) => c.include).length + findings.items.filter((i) => i.include).length
-    : 0;
 
   return (
     <div className="mt-3 rounded-xl border border-dashed border-line p-2.5">
@@ -200,13 +183,23 @@ export function Attachments({
                 <span className="min-w-0 truncate font-medium hover:text-accent">{a.name}</span>
                 <span className="shrink-0 text-muted">{humanSize(a.size)}</span>
               </button>
-              <button
-                onClick={() => remove(a.id)}
-                aria-label={`Remove ${a.name}`}
-                className="shrink-0 rounded-full px-1.5 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
-              >
-                ×
-              </button>
+              <span className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={() => reExtract(a.id)}
+                  disabled={extractingId === a.id}
+                  className="rounded-full px-1.5 py-0.5 text-[11px] font-semibold text-accent hover:bg-accent-soft disabled:opacity-50"
+                  title="Pull classes & dates out of this file"
+                >
+                  {extractingId === a.id ? "…" : "✨ Extract"}
+                </button>
+                <button
+                  onClick={() => remove(a.id)}
+                  aria-label={`Remove ${a.name}`}
+                  className="rounded-full px-1.5 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                >
+                  ×
+                </button>
+              </span>
             </li>
           ))}
         </ul>
@@ -220,78 +213,13 @@ export function Attachments({
       {addedMsg ? <p className="mt-1.5 text-[11px] text-meals-bright">{addedMsg}</p> : null}
 
       {findings ? (
-        <div className="animate-slide-in mt-2 rounded-lg border border-accent/30 bg-accent-soft/40 p-2.5">
-          <p className="text-[11px] font-semibold">
-            ✨ Found in {findings.fileName || "your upload"}
-            {findings.classes.length || findings.items.length
-              ? ` — ${[
-                  findings.classes.length
-                    ? `${findings.classes.length} ${findings.classes.length === 1 ? "class" : "classes"}`
-                    : "",
-                  findings.items.length
-                    ? `${findings.items.length} ${findings.items.length === 1 ? "date" : "dates"}`
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}`
-              : ""}
-          </p>
-          {findings.note ? <p className="mt-1 text-[11px] text-muted">{findings.note}</p> : null}
-
-          {findings.classes.length > 0 ? (
-            <ul className="mt-1.5 space-y-1">
-              {findings.classes.map((c, i) => (
-                <li key={`c${i}`} className="flex items-center gap-2 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={c.include}
-                    onChange={(e) => patchClass(i, e.target.checked)}
-                    aria-label={`Include ${c.name}`}
-                  />
-                  <span className="min-w-0 flex-1 truncate">
-                    <span className="font-mono text-[11px] text-muted">{c.code}</span>{" "}
-                    <span className="font-medium">{c.name}</span>
-                  </span>
-                  <span className={`chip shrink-0 !text-[10px] ${c.completed ? "bg-school-soft text-school-bright" : "border border-line text-muted"}`}>
-                    {c.completed ? "✓ done" : "in progress"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {findings.items.length > 0 ? (
-            <ul className="mt-1.5 space-y-1">
-              {findings.items.map((it, i) => (
-                <li key={`i${i}`} className="flex items-center gap-2 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={it.include}
-                    onChange={(e) => patchItem(i, e.target.checked)}
-                    aria-label={`Include ${it.title}`}
-                  />
-                  <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
-                  <span className="shrink-0 text-[11px] text-muted">{formatFriendly(it.date)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {findings.classes.length > 0 || findings.items.length > 0 ? (
-            <div className="mt-2 flex items-center gap-2">
-              <button onClick={addSelected} disabled={selectedCount === 0} className="btn-primary !px-3 !py-1 text-xs">
-                Add {selectedCount} selected
-              </button>
-              <button onClick={() => setFindings(null)} className="text-[11px] text-muted hover:text-ink">
-                Dismiss
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setFindings(null)} className="mt-1.5 text-[11px] text-muted hover:text-ink">
-              Dismiss
-            </button>
-          )}
-        </div>
+        <ExtractionReview
+          findings={findings}
+          onDone={(msg) => {
+            setFindings(null);
+            flash(msg);
+          }}
+        />
       ) : null}
 
       {error ? <p className="mt-1.5 text-[11px] text-fitness-bright">{error}</p> : null}

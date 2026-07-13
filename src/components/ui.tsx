@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { MicButton } from "./MicButton";
+import { ExtractionReview, type Findings } from "./ExtractionReview";
+import { extractFromFile } from "@/core/ai/autoExtract";
 import type { Domain } from "@/core/types";
 
 export const DOMAIN_STYLES: Record<Domain, { text: string; soft: string; dot: string; label: string }> = {
@@ -137,40 +139,114 @@ export function Checkbox({
   );
 }
 
-/** Compact inline add form used across all modules. */
+/**
+ * Compact inline add form used across all modules. Every add-bar can also take
+ * a file (📎): drop a PDF/photo/doc and Vela pulls out any classes or dates and
+ * offers them for one-tap adding — the same extraction uploads get. Pass
+ * `attach={false}` to hide it where a file makes no sense.
+ */
 export function InlineAdd({
   placeholder,
   onAdd,
   extra,
+  attach = true,
 }: {
   placeholder: string;
   onAdd: (value: string) => void;
   extra?: ReactNode;
+  attach?: boolean;
 }) {
   const [value, setValue] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [findings, setFindings] = useState<Findings | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function onFile(file: File) {
+    setBusy(true);
+    setMsg(null);
+    setFindings(null);
+    try {
+      const found = await extractFromFile(file);
+      if (found.classes.length || found.items.length || found.note) {
+        setFindings({
+          fileName: found.fileName,
+          classes: found.classes.map((c) => ({ ...c, include: true })),
+          items: found.items.map((i) => ({ ...i, include: true })),
+          note: found.note,
+        });
+      } else {
+        setMsg("Nothing to pull out of that file.");
+        setTimeout(() => setMsg(null), 4000);
+      }
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   return (
-    <form
-      className="mt-2 flex flex-wrap items-center gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (value.trim()) {
-          onAdd(value.trim());
-          setValue("");
-        }
-      }}
-    >
-      <input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="input min-w-[140px] flex-1 !py-1.5 text-xs"
-      />
-      <MicButton value={value} onChange={setValue} />
-      {extra}
-      <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!value.trim()}>
-        Add
-      </button>
-    </form>
+    <div>
+      <form
+        className="mt-2 flex flex-wrap items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (value.trim()) {
+            onAdd(value.trim());
+            setValue("");
+          }
+        }}
+      >
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="input min-w-[140px] flex-1 !py-1.5 text-xs"
+        />
+        <MicButton value={value} onChange={setValue} />
+        {attach ? (
+          <>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+              aria-label="Attach a file to extract from"
+              title="Attach a PDF/photo/doc — Vela pulls out classes & dates"
+              className="btn-ghost shrink-0 !px-2.5 !py-1.5 text-xs"
+            >
+              {busy ? "…" : "📎"}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,image/*,.doc,.docx,.txt"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void onFile(f);
+              }}
+            />
+          </>
+        ) : null}
+        {extra}
+        <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!value.trim()}>
+          Add
+        </button>
+      </form>
+      {msg ? <p className="mt-1.5 text-[11px] text-muted">{msg}</p> : null}
+      {findings ? (
+        <ExtractionReview
+          findings={findings}
+          onDone={(m) => {
+            setFindings(null);
+            if (m) {
+              setMsg(m);
+              setTimeout(() => setMsg(null), 5000);
+            }
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 

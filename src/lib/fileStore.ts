@@ -65,6 +65,14 @@ export async function getFileURL(id: string): Promise<string | null> {
   return URL.createObjectURL(rec.blob);
 }
 
+/** Fetch a stored file back as a File — for re-running extraction on it. */
+export async function getFile(id: string): Promise<File | null> {
+  if (!hasIDB()) return null;
+  const rec = await tx<StoredFile | undefined>("readonly", (store) => store.get(id));
+  if (!rec) return null;
+  return new File([rec.blob], rec.name, { type: rec.mime });
+}
+
 /** Remove a stored file's bytes. Safe to call even if it's already gone. */
 export async function deleteFile(id: string): Promise<void> {
   if (!hasIDB()) return;

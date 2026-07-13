@@ -79,11 +79,13 @@ export async function extractFromFile(file: File): Promise<ExtractionFindings> {
         : empty;
     }
 
-    return {
-      fileName: file.name,
-      classes: parseCourses(text),
-      items: extractItems(text),
-    };
+    const classes = parseCourses(text);
+    // A transcript is a wall of classes — surfacing "dates" from it (term years,
+    // GPA rows) is just noise. When we clearly have a class list, return ONLY
+    // the classes. Flyers/emails (no classes) still get their dated items.
+    const items = classes.length >= 2 ? [] : extractItems(text);
+
+    return { fileName: file.name, classes, items };
   } catch {
     return empty;
   }

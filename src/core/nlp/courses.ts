@@ -50,6 +50,12 @@ function tidyName(s: string): string {
   return clean;
 }
 
+// Tokens that look like a course code but are really term/summary headers.
+const NON_DEPARTMENT = new Set([
+  "FALL", "SPRING", "SUMMER", "WINTER", "TERM", "YEAR", "PAGE", "TOTAL", "SEM",
+  "GPA", "SESSION", "CREDITS", "UNITS",
+]);
+
 export function parseCourses(text: string): ParsedCourse[] {
   const out: ParsedCourse[] = [];
   const seen = new Set<string>();
@@ -65,6 +71,8 @@ export function parseCourses(text: string): ParsedCourse[] {
       line.match(/\b([A-Z]{2,4})\s?-?\s?(\d{2,4}[A-Z]?)\b/) ||
       line.match(/\b([A-Z])(\d{2,4}[A-Z]?)\b/);
     if (!codeM || codeM.index === undefined) continue;
+    // Skip "FALL 2024", "TERM 3", "TOTAL 90" and friends — not classes.
+    if (NON_DEPARTMENT.has(codeM[1]!.toUpperCase())) continue;
     // Single-letter WGU codes read best glued ("D278"); others get a space.
     const code = codeM[1]!.length === 1 ? `${codeM[1]}${codeM[2]}` : `${codeM[1]} ${codeM[2]}`;
 
@@ -75,15 +83,21 @@ export function parseCourses(text: string): ParsedCourse[] {
     const credM = rest.match(/\b([1-6](?:\.\d{1,2})?)\b/);
     if (credM?.[1]) credits = Math.max(1, Math.round(Number(credM[1])));
 
-    // Name: everything before that number, minus separators and trailing
-    // grade/status noise.
+    // Name: everything before the first number, minus separators and trailing
+    // grade/status/section noise, capped so a run-on line can't bleed in.
     const name = tidyName(
       rest
-        .replace(/^[\s:–-]+/, "")
-        .replace(/\s*\b\d+(?:\.\d+)?\b.*$/, "")
-        .replace(/\b(A|B|C|D|F|W|P|IP|CR|NC|Pass|Fail|In Progress|Credit|Units?|Grade|GPA)\b.*$/i, ""),
+        .replace(/^[\s:–—\-|.]+/, "")
+        .replace(/\s*\b\d+(?:\.\d+)?\b.*$/, "") // cut at the first number (credits/grade/section)
+        .replace(
+          /\b(A|B|C|D|F|W|P|IP|CR|NC|Pass(ed)?|Fail(ed)?|Competent|Transferred|In Progress|Credit|Units?|Grade|GPA|Term|Section)\b.*$/i,
+          "",
+        )
+        .replace(/[\s:–—\-|.]+$/, "")
+        .slice(0, 64),
     );
-    if (name.length < 3) continue;
+    // Must read like a real title: ≥3 chars and at least one lowercase/vowel run.
+    if (name.length < 3 || !/[a-z]/i.test(name)) continue;
 
     const key = code.toLowerCase();
     if (seen.has(key)) continue;

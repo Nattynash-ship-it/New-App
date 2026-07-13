@@ -39,4 +39,19 @@ PHYS 201 Physics I 4 Pass`;
     const courses = parseCourses("PHIL 200  Ethics");
     expect(courses[0]?.credits).toBe(3);
   });
+
+  it("reads WGU single-letter codes and Pass/Competent status", () => {
+    const text = `D278 Scripting and Programming Foundations 3.00 PASS
+C949 Data Structures and Algorithms I 4.00 Competent
+C182 Introduction to IT 4 Transferred
+D426 Data Management Foundations 3.00 In Progress`;
+    const courses = parseCourses(text);
+    expect(courses.map((c) => c.code)).toEqual(["D278", "C949", "C182", "D426"]);
+    expect(courses[0]?.name).toContain("Scripting and Programming");
+    expect(courses[0]?.completed).toBe(true); // PASS
+    expect(courses[1]?.completed).toBe(true); // Competent
+    expect(courses[2]?.completed).toBe(true); // Transferred
+    expect(courses[3]?.completed).toBe(false); // In Progress
+    expect(courses[1]?.credits).toBe(4);
+  });
 });

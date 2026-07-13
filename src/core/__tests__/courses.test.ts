@@ -40,6 +40,24 @@ PHYS 201 Physics I 4 Pass`;
     expect(courses[0]?.credits).toBe(3);
   });
 
+  it("handles a real WGU-style transcript blob: Title-case dept, colon, percent+grade", () => {
+    const blob =
+      "Date Issued: 04/13/2026 Birthdate: 12/21/1984 " +
+      "04/13/2026 Math 108: Discrete Mathematics 87 %, B+ " +
+      "01/26/2026 Comp 210: Data Structures 91 %, A- " +
+      "03/24/2026 Bio 120: Intro Biology In Progress " +
+      "04/10/2026 Phys 201: Physics I 55 %, F";
+    const courses = parseCourses(blob);
+    const byCode = Object.fromEntries(courses.map((c) => [c.code, c]));
+    expect(byCode["MATH 108"]?.name).toBe("Discrete Mathematics");
+    expect(byCode["MATH 108"]?.completed).toBe(true); // 87% B+
+    expect(byCode["COMP 210"]?.completed).toBe(true); // 91% A-
+    expect(byCode["BIO 120"]?.completed).toBe(false); // In Progress
+    expect(byCode["PHYS 201"]?.completed).toBe(false); // 55% F — failed
+    // The Date Issued / Birthdate rows are NOT read as classes.
+    expect(courses.some((c) => /issued|birth/i.test(c.name))).toBe(false);
+  });
+
   it("skips term/summary header rows that look like codes", () => {
     const text = `FALL 2024
 D278 Scripting and Programming Foundations 3.00 PASS

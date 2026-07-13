@@ -14,13 +14,24 @@ export interface ParsedCourse {
   completed?: boolean;
 }
 
-/** Read a transcript row's grade column: a passing grade → done, an
+/** Read a transcript row's grade/status column: a passing grade → done, an
  *  in-progress marker → not done, anything else → unknown. */
 function detectCompleted(line: string): boolean | undefined {
-  if (/\b(in\s*progress|in-progress|\bIP\b|registered|enrolled|current|not\s*started|planned|withdrawn|\bW\b)\b/i.test(line)) {
+  if (
+    /\b(in\s*progress|in-progress|\bIP\b|registered|enrolled|current|not\s*started|not\s*yet\s*started|planned|remaining|withdrawn|\bW\b)\b/i.test(
+      line,
+    )
+  ) {
     return false;
   }
-  if (/\b(A|B|C|D|A[-+]|B[-+]|C[-+]|Pass|Passed|Credit|\bCR\b|Complete[d]?|Transferred|\bT\b)\b/.test(line)) {
+  // Word-based passing signals — case-insensitive (covers WGU "PASS",
+  // "Competent", "Transferred", etc.).
+  if (/\b(pass(ed)?|competent|complete[d]?|credit|\bCR\b|transferred|\bTR\b|satisfactory)\b/i.test(line)) {
+    return true;
+  }
+  // Single-letter grades (A–D, with +/-) — case-SENSITIVE so a stray lowercase
+  // letter in a course name doesn't read as a grade.
+  if (/(?:^|\s)([ABCD][-+]?)(?:\s|$)/.test(line)) {
     return true;
   }
   return undefined;
@@ -47,10 +58,15 @@ export function parseCourses(text: string): ParsedCourse[] {
     const line = raw.trim();
     if (line.length < 5) continue;
 
-    // Course code like "MATH 232", "CS310", "BIOL 101L".
-    const codeM = line.match(/\b([A-Z]{2,4})\s?-?\s?(\d{2,4}[A-Z]?)\b/);
+    // Course code — two shapes:
+    //  • traditional "MATH 232", "CS310", "BIOL 101L" (2–4 letters + number)
+    //  • WGU-style "D278", "C949", "C182" (single letter glued to a number)
+    const codeM =
+      line.match(/\b([A-Z]{2,4})\s?-?\s?(\d{2,4}[A-Z]?)\b/) ||
+      line.match(/\b([A-Z])(\d{2,4}[A-Z]?)\b/);
     if (!codeM || codeM.index === undefined) continue;
-    const code = `${codeM[1]} ${codeM[2]}`;
+    // Single-letter WGU codes read best glued ("D278"); others get a space.
+    const code = codeM[1]!.length === 1 ? `${codeM[1]}${codeM[2]}` : `${codeM[1]} ${codeM[2]}`;
 
     const rest = line.slice(codeM.index + codeM[0].length).trim();
 

@@ -77,7 +77,7 @@ export function ExtractionReview({
                 }
                 aria-label={`Include ${c.name}`}
               />
-              <span className="min-w-0 flex-1 truncate">
+              <span className="min-w-0 flex-1 leading-snug">
                 <span className="font-mono text-[11px] text-muted">{c.code}</span>{" "}
                 <span className="font-medium">{c.name}</span>
               </span>

@@ -43,6 +43,7 @@ import type {
   Course,
   DegreePlan,
   DeliveryService,
+  Domain,
   EnergyLevel,
   EnergyLog,
   Equipment,
@@ -269,7 +270,7 @@ export interface HubState {
   togglePinNote: (id: string) => void;
 
   // --- General to-do list ---
-  addTodo: (title: string, urgency: Urgency) => void;
+  addTodo: (title: string, urgency: Urgency, domain?: Domain) => void;
   toggleTodo: (id: string) => void;
   removeTodo: (id: string) => void;
   setTodoUrgency: (id: string, urgency: Urgency) => void;
@@ -946,10 +947,17 @@ export const useHub = create<HubState>()(
         })),
 
       // --- General to-do list ---
-      addTodo: (title, urgency) =>
+      addTodo: (title, urgency, domain) =>
         set((s) => ({
           todos: [
-            { id: newId("todo"), title: title.trim(), urgency, done: false, createdAt: nowISO() },
+            {
+              id: newId("todo"),
+              title: title.trim(),
+              urgency,
+              done: false,
+              createdAt: nowISO(),
+              ...(domain ? { domain } : {}),
+            },
             ...s.todos,
           ],
         })),

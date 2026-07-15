@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Checkbox, EmptyState, SectionTitle } from "./ui";
+import { Card, Checkbox, DOMAIN_STYLES, EmptyState, SectionTitle } from "./ui";
 import { MicButton } from "./MicButton";
 import { useHub } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
@@ -96,6 +96,7 @@ export function TodoList() {
                   }}
                   onRemove={() => removeTodo(t.id)}
                   label={t.title}
+                  sub={t.domain && t.domain !== "compass" ? DOMAIN_STYLES[t.domain].label : undefined}
                   vanish
                 />
               </div>

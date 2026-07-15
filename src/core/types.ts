@@ -364,13 +364,15 @@ export interface Attachment {
 
 export type Urgency = "high" | "medium" | "low";
 
-/** A free-standing to-do item with an urgency level (not tied to a module). */
+/** A free-standing to-do item with an urgency level. `domain` tags which part
+ *  of life it came from (set when added from a section); undefined = general. */
 export interface Todo {
   id: Id;
   title: string;
   urgency: Urgency;
   done: boolean;
   createdAt: ISODateTime;
+  domain?: Domain;
 }
 
 // ---------------------------------------------------------------------------

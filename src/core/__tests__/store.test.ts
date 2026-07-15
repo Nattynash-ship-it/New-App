@@ -157,6 +157,16 @@ describe("to-do list", () => {
     useHub.getState().removeTodo(todo!.id);
     expect(useHub.getState().todos.some((t) => t.id === todo!.id)).toBe(false);
   });
+
+  it("tags a task with the section it was added from", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addTodo("Email professor", "high", "school");
+    const tagged = useHub.getState().todos.find((t) => t.title === "Email professor");
+    expect(tagged?.domain).toBe("school");
+    // No domain → general (undefined), not a bogus value.
+    useHub.getState().addTodo("General errand", "low");
+    expect(useHub.getState().todos.find((t) => t.title === "General errand")?.domain).toBeUndefined();
+  });
 });
 
 describe("groceries from planned meals", () => {

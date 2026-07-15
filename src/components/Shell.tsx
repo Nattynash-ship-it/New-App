@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { Onboarding } from "./Onboarding";
+import { AddTaskButton } from "./AddTaskButton";
 
 const NAV = [
   { href: "/", label: "Today", icon: "✦" },
@@ -22,6 +23,7 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh md:flex">
       <Onboarding />
+      <AddTaskButton />
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:border-line md:bg-surface/60 md:px-4 md:py-8 md:sticky md:top-0 md:h-dvh">
         <Link href="/" className="group px-3">

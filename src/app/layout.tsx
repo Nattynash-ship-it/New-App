@@ -3,6 +3,7 @@ import "./globals.css";
 import { Shell } from "@/components/Shell";
 import { RegisterSW } from "@/components/RegisterSW";
 import { UndoToast } from "@/components/UndoToast";
+import { LockGate } from "@/components/LockGate";
 
 export const metadata: Metadata = {
   title: "Vela — Your life, under sail",
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <RegisterSW />
-        <Shell>{children}</Shell>
+        <LockGate>
+          <Shell>{children}</Shell>
+        </LockGate>
         <UndoToast />
       </body>
     </html>

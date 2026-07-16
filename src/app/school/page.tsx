@@ -17,6 +17,7 @@ import { ClassImporter } from "@/components/ClassImporter";
 import { SmartCapture } from "@/components/SmartCapture";
 import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
+import { SectionTasks } from "@/components/SectionTasks";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 
@@ -486,6 +487,7 @@ export default function SchoolPage() {
         subtitle="Credits, deadlines, study blocks, and review — the whole degree in one place."
       />
       <SchoolQuickLinks />
+      <SectionTasks domain="school" title="School tasks" />
       <GraduationTracker />
       <Card>
         <SectionTitle right={<span className="text-xs text-muted">private · on this device</span>}>

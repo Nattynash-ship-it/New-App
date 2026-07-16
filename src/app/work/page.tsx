@@ -7,6 +7,7 @@ import { MicButton } from "@/components/MicButton";
 import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
 import { PlannerBoard } from "@/components/PlannerBoard";
+import { SectionTasks } from "@/components/SectionTasks";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 import type { ProjectStatus } from "@/core/types";
@@ -421,6 +422,8 @@ export default function WorkPage() {
         <TopThree />
         <MeetingList />
       </div>
+
+      <SectionTasks domain="work" title="Work tasks" />
 
       <div className="flex items-center gap-1.5">
         {(

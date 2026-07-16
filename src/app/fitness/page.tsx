@@ -6,6 +6,7 @@ import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { FoolproofPlan } from "@/components/FoolproofPlan";
+import { SectionTasks } from "@/components/SectionTasks";
 import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
 import { formatFriendly, todayISO, addDays } from "@/core/dates";
@@ -366,6 +367,8 @@ export default function FitnessPage() {
         <GoalsCard />
         <WeekPlanCard />
       </div>
+
+      <SectionTasks domain="fitness" title="Fitness tasks" />
 
       {/* The foolproof plan — workouts + meal prep + groceries for your goal */}
       <FoolproofPlan />

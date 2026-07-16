@@ -52,7 +52,7 @@ export function RecipeSearch() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder='Search anything — "mushroom risotto", "tofu", "high protein"…'
+          placeholder='Search anything — "salmon", "shrimp tacos", "tofu", "high protein"…'
           className="input flex-1 !py-2 text-sm"
           aria-label="Search recipes"
         />

@@ -226,8 +226,8 @@ function ReverseRecipeEngine() {
         Reverse Recipe Engine
       </SectionTitle>
       <p className="text-xs text-muted">
-        Builds a vegan, high-volume / low-calorie meal from the {onHand.length} ingredients you have
-        checked off.
+        Builds a seafood or plant-based meal (no meat, no dairy) from the {onHand.length} ingredients
+        you have checked off.
       </p>
       <button className="btn-primary mt-3" onClick={() => void generate()} disabled={busy || onHand.length === 0}>
         {busy ? "Cooking up ideas…" : "Generate a meal from my pantry"}
@@ -425,7 +425,7 @@ export default function MealsPage() {
       <PageHeader
         eyebrow="Nutrition"
         title="Meals & groceries"
-        subtitle="Vegan, high-volume defaults. Check what you have — the engine does the rest."
+        subtitle="Seafood & plant-based · no meat, no dairy. Check what you have — the engine does the rest."
       />
       <RecipeSearch />
       <CookFromKitchen />

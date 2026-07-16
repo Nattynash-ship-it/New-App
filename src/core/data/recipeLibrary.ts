@@ -1,7 +1,8 @@
 /**
- * Built-in vegan recipe library powering "cook with what you have"
- * (SuperCook-style ingredient matching). All entries follow the user's
- * dietary defaults: vegan, high-volume, moderate calories.
+ * Built-in recipe library powering "cook with what you have" (SuperCook-style
+ * ingredient matching). All entries follow the user's diet: PESCATARIAN &
+ * DAIRY-FREE — seafood + plant-based, no meat (poultry/beef/pork) and no dairy
+ * (butter/cheese/cream/milk swapped for olive oil, coconut milk, etc.).
  */
 
 export interface LibraryRecipe {
@@ -181,6 +182,96 @@ export const RECIPE_LIBRARY: LibraryRecipe[] = [
     calories: 340,
     timeMin: 5,
     ingredients: ["whole grain bread", "avocado", "white beans", "cherry tomatoes", "lemon"],
+  },
+
+  // --- Seafood (pescatarian, dairy-free) ---
+  {
+    id: "lib_lemon_herb_salmon",
+    title: "Lemon-Herb Baked Salmon",
+    description: "Sheet-pan salmon with greens — 20 minutes, no dairy.",
+    calories: 460,
+    timeMin: 20,
+    ingredients: ["salmon", "lemon", "asparagus", "olive oil", "garlic"],
+  },
+  {
+    id: "lib_garlic_shrimp_zoodles",
+    title: "Garlic Shrimp Zoodles",
+    description: "Fast, light shrimp over zucchini noodles.",
+    calories: 380,
+    timeMin: 18,
+    ingredients: ["shrimp", "zucchini", "garlic", "cherry tomatoes", "olive oil"],
+  },
+  {
+    id: "lib_tuna_poke_bowl",
+    title: "Tuna Poke Bowl",
+    description: "No-cook bowl over rice with edamame and avocado.",
+    calories: 480,
+    timeMin: 15,
+    ingredients: ["tuna", "brown rice", "frozen edamame", "avocado", "soy sauce"],
+  },
+  {
+    id: "lib_cajun_shrimp_rice",
+    title: "Cajun Shrimp & Rice",
+    description: "One-pan, smoky and satisfying.",
+    calories: 470,
+    timeMin: 25,
+    ingredients: ["shrimp", "brown rice", "bell peppers", "smoked paprika", "onion"],
+  },
+  {
+    id: "lib_miso_cod",
+    title: "Miso-Glazed Cod",
+    description: "Weeknight-easy flaky cod with a savory glaze.",
+    calories: 420,
+    timeMin: 22,
+    ingredients: ["cod", "miso", "soy sauce", "brown rice", "bok choy"],
+  },
+  {
+    id: "lib_shrimp_tacos",
+    title: "Dairy-Free Shrimp Tacos",
+    description: "Charred shrimp with cabbage slaw and lime.",
+    calories: 440,
+    timeMin: 20,
+    ingredients: ["shrimp", "corn tortillas", "cabbage", "lime", "avocado"],
+  },
+  {
+    id: "lib_salmon_sweet_potato",
+    title: "Salmon & Sweet Potato Bowl",
+    description: "Roasted sweet potato, greens, and flaky salmon.",
+    calories: 500,
+    timeMin: 30,
+    ingredients: ["salmon", "sweet potatoes", "kale", "olive oil", "lemon"],
+  },
+  {
+    id: "lib_coconut_fish_curry",
+    title: "Coconut Fish Curry",
+    description: "Creamy dairy-free curry over rice — batch-friendly.",
+    calories: 490,
+    timeMin: 30,
+    ingredients: ["white fish", "coconut milk", "spinach", "onion", "brown rice"],
+  },
+  {
+    id: "lib_tuna_white_bean_salad",
+    title: "Tuna & White Bean Salad",
+    description: "No-cook, high-protein lunch in 10 minutes.",
+    calories: 390,
+    timeMin: 10,
+    ingredients: ["tuna", "white beans", "cherry tomatoes", "lemon", "olive oil"],
+  },
+  {
+    id: "lib_smoked_salmon_toast",
+    title: "Smoked Salmon Avocado Toast",
+    description: "5-minute breakfast, dairy-free and filling.",
+    calories: 360,
+    timeMin: 5,
+    ingredients: ["smoked salmon", "whole grain bread", "avocado", "lemon", "cherry tomatoes"],
+  },
+  {
+    id: "lib_shrimp_garlic_pasta",
+    title: "Garlic Shrimp Pasta (Dairy-Free)",
+    description: "Olive-oil garlic sauce, no cream needed.",
+    calories: 520,
+    timeMin: 22,
+    ingredients: ["shrimp", "pasta", "garlic", "cherry tomatoes", "olive oil"],
   },
 ];
 

@@ -414,6 +414,9 @@ export default function WorkPage() {
         title="Professional projects"
         subtitle="Plan the projects, protect the focus, join the meetings — one place."
       />
+      {/* Quick add front and center */}
+      <SectionTasks domain="work" title="Work tasks" />
+
       <SmartCapture
         title="Capture from an email or notes"
         blurb="Paste a meeting invite, a screenshot, or notes — Vela pulls out the meetings and deadlines and files them under Work for you to confirm."
@@ -422,8 +425,6 @@ export default function WorkPage() {
         <TopThree />
         <MeetingList />
       </div>
-
-      <SectionTasks domain="work" title="Work tasks" />
 
       <div className="flex items-center gap-1.5">
         {(

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Checkbox, DOMAIN_STYLES, EmptyState, SectionTitle } from "./ui";
 import { MicButton } from "./MicButton";
+import { formatShort } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 import type { Urgency } from "@/core/types";
@@ -96,7 +97,14 @@ export function TodoList() {
                   }}
                   onRemove={() => removeTodo(t.id)}
                   label={t.title}
-                  sub={t.domain && t.domain !== "compass" ? DOMAIN_STYLES[t.domain].label : undefined}
+                  sub={
+                    [
+                      t.domain && t.domain !== "compass" ? DOMAIN_STYLES[t.domain].label : "",
+                      t.dueDate ? `${t.alert ? "🔔 " : ""}due ${formatShort(t.dueDate)}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || undefined
+                  }
                   vanish
                 />
               </div>

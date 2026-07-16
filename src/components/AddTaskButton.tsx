@@ -34,6 +34,8 @@ export function AddTaskButton() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [urgency, setUrgency] = useState<Urgency>("medium");
+  const [due, setDue] = useState("");
+  const [alert, setAlert] = useState(false);
   const [added, setAdded] = useState(false);
 
   const domain = domainForPath(pathname);
@@ -42,8 +44,10 @@ export function AddTaskButton() {
   function submit() {
     const t = title.trim();
     if (!t) return;
-    addTodo(t, urgency, domain);
+    addTodo(t, urgency, domain, due || undefined, alert);
     setTitle("");
+    setDue("");
+    setAlert(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   }
@@ -105,6 +109,28 @@ export function AddTaskButton() {
                   {u.label}
                 </button>
               ))}
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5 text-[11px] text-muted">
+                Due
+                <input
+                  type="date"
+                  value={due}
+                  onChange={(e) => setDue(e.target.value)}
+                  className="input !w-auto !py-1 text-xs"
+                  aria-label="Due date (optional)"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setAlert((v) => !v)}
+                aria-pressed={alert}
+                title="Remind me when it's due"
+                className={`chip cursor-pointer ${alert ? "bg-accent-soft text-accent" : "border border-line text-muted"}`}
+              >
+                🔔 {alert ? "Alert on" : "Alert off"}
+              </button>
               <button
                 onClick={submit}
                 disabled={!title.trim()}

@@ -167,6 +167,26 @@ describe("to-do list", () => {
     useHub.getState().addTodo("General errand", "low");
     expect(useHub.getState().todos.find((t) => t.title === "General errand")?.domain).toBeUndefined();
   });
+
+  it("carries an optional due date + alert, editable later", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.getState().addTodo("Submit lab", "high", "school", "2026-08-01", true);
+    const task = () => useHub.getState().todos.find((t) => t.title === "Submit lab")!;
+    expect(task().dueDate).toBe("2026-08-01");
+    expect(task().alert).toBe(true);
+
+    useHub.getState().toggleTodoAlert(task().id);
+    expect(task().alert).toBe(false);
+
+    useHub.getState().setTodoDue(task().id, undefined);
+    expect(task().dueDate).toBeUndefined();
+
+    // No due/alert given → both absent.
+    useHub.getState().addTodo("Plain task", "low", "work");
+    const plain = useHub.getState().todos.find((t) => t.title === "Plain task")!;
+    expect(plain.dueDate).toBeUndefined();
+    expect(plain.alert).toBeUndefined();
+  });
 });
 
 describe("groceries from planned meals", () => {

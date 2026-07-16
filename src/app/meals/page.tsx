@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { RecipeSearch } from "@/components/RecipeSearch";
+import { SectionTasks } from "@/components/SectionTasks";
 import { WeekPlanner } from "@/components/WeekPlanner";
 import { nowISO, todayISO } from "@/core/dates";
 import { matchRecipes, recipeVideoUrl } from "@/core/selectors";
@@ -432,6 +433,7 @@ export default function MealsPage() {
       <WeekPlanner />
       <Groceries />
       <Pantry />
+      <SectionTasks domain="meals" title="Meal & grocery tasks" />
     </div>
   );
 }

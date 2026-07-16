@@ -61,7 +61,7 @@ export function AddTaskButton() {
 
       {open ? (
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/30 p-4 sm:items-center"
+          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-ink/30 p-4 pt-[12vh]"
           onClick={() => setOpen(false)}
         >
           <div

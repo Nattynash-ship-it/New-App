@@ -1,8 +1,8 @@
 /**
  * Deterministic on-device fallback for the Reverse Recipe Engine.
  * Used when ANTHROPIC_API_KEY isn't configured (or the API call fails), so
- * the feature always works. Biases vegan, high-volume / low-calorie, matching
- * the user's dietary defaults.
+ * the feature always works. Builds plant-based, dairy-free meals from the
+ * pantry — matching the user's pescatarian, no-dairy diet.
  */
 
 import type { Recipe, RecipeIngredient } from "../types";

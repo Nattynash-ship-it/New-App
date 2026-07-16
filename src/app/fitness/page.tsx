@@ -353,6 +353,9 @@ export default function FitnessPage() {
         subtitle="Pick goals once — the plan, targets, streaks, and habits follow automatically."
       />
 
+      {/* Quick add front and center */}
+      <SectionTasks domain="fitness" title="Fitness tasks" />
+
       {/* Everyday wellness — habits & hydration */}
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="lg:col-span-3">
@@ -367,8 +370,6 @@ export default function FitnessPage() {
         <GoalsCard />
         <WeekPlanCard />
       </div>
-
-      <SectionTasks domain="fitness" title="Fitness tasks" />
 
       {/* The foolproof plan — workouts + meal prep + groceries for your goal */}
       <FoolproofPlan />

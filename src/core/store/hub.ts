@@ -270,7 +270,15 @@ export interface HubState {
   togglePinNote: (id: string) => void;
 
   // --- General to-do list ---
-  addTodo: (title: string, urgency: Urgency, domain?: Domain) => void;
+  addTodo: (
+    title: string,
+    urgency: Urgency,
+    domain?: Domain,
+    dueDate?: string,
+    alert?: boolean,
+  ) => void;
+  setTodoDue: (id: string, dueDate?: string) => void;
+  toggleTodoAlert: (id: string) => void;
   toggleTodo: (id: string) => void;
   removeTodo: (id: string) => void;
   setTodoUrgency: (id: string, urgency: Urgency) => void;
@@ -947,7 +955,7 @@ export const useHub = create<HubState>()(
         })),
 
       // --- General to-do list ---
-      addTodo: (title, urgency, domain) =>
+      addTodo: (title, urgency, domain, dueDate, alert) =>
         set((s) => ({
           todos: [
             {
@@ -957,9 +965,21 @@ export const useHub = create<HubState>()(
               done: false,
               createdAt: nowISO(),
               ...(domain ? { domain } : {}),
+              ...(dueDate ? { dueDate } : {}),
+              ...(alert ? { alert: true } : {}),
             },
             ...s.todos,
           ],
+        })),
+      setTodoDue: (id, dueDate) =>
+        set((s) => ({
+          todos: s.todos.map((t) =>
+            t.id === id ? { ...t, dueDate: dueDate || undefined } : t,
+          ),
+        })),
+      toggleTodoAlert: (id) =>
+        set((s) => ({
+          todos: s.todos.map((t) => (t.id === id ? { ...t, alert: !t.alert } : t)),
         })),
       toggleTodo: (id) =>
         set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })),

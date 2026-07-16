@@ -373,6 +373,10 @@ export interface Todo {
   done: boolean;
   createdAt: ISODateTime;
   domain?: Domain;
+  /** Optional deadline. */
+  dueDate?: ISODate;
+  /** When true, Vela reminds you (a browser notification) once it's due. */
+  alert?: boolean;
 }
 
 // ---------------------------------------------------------------------------

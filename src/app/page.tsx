@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AffirmationsCard } from "@/components/AffirmationsCard";
+import { Collapsible } from "@/components/Collapsible";
 import { EnergyPlan } from "@/components/EnergyPlan";
 import { HomeQuickLinks } from "@/components/HomeQuickLinks";
 import { PlannerBoard } from "@/components/PlannerBoard";
@@ -183,72 +184,52 @@ export default function CompassPage() {
 
   return (
     <div className="space-y-5">
+      {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
       <HomeHero />
 
-      {/* One-tap jumps: school portal + Outlook */}
       <HomeQuickLinks />
 
-      {/* Live weather for the saved zip */}
       <WeatherCard />
 
-      {/* Whole life at a glance */}
-      <OverviewStrip />
-
-      {/* Energy-aware plan — right-size today in one tap */}
+      {/* Right-size today in one tap */}
       <EnergyPlan />
 
-      {/* A daily affirmation + themed 10-minute sessions */}
-      <AffirmationsCard />
+      {/* The single most important view: what's happening today */}
+      <Timeline />
 
-      <QuickAdd />
-
-      {/* General to-do list with urgency levels */}
+      {/* Your tasks */}
       <TodoList />
 
-      {/* Planner-style planning guide: capture → bucket → move to done */}
-      <div>
-        <p className="mb-2 rounded-xl bg-accent-soft/50 px-3.5 py-2 text-xs text-muted">
-          <span className="font-semibold text-ink">Plan it like Planner:</span> put every task in{" "}
-          <span className="font-medium text-ink">To do</span>, pull today&apos;s into{" "}
-          <span className="font-medium text-ink">In progress</span> (keep it to 2–3), and slide them
-          to <span className="font-medium text-ink">Done</span> as you finish — ‹ › moves a card.
-        </p>
+      {/* ── Everything else, one tap away (progressive disclosure) ── */}
+      <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, board & quick capture">
+        <TimeBlockCalendar />
+        <QuickAdd />
         <PlannerBoard />
-      </div>
+        <SmartCapture />
+      </Collapsible>
 
-      {/* One glance: is any part of life being dropped? */}
-      <LifeBalance />
-
-      {/* Bulk capture — paste an email, snap a flyer, or dictate */}
-      <SmartCapture />
-
-      {/* Wellness at a glance — habits + hydration */}
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <HabitStreaks />
+      <Collapsible icon="🌿" title="Wellness" hint="Affirmation, habits, water & a check-in">
+        <AffirmationsCard />
+        <div className="grid gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <HabitStreaks />
+          </div>
+          <div className="lg:col-span-2">
+            <WaterCard />
+          </div>
         </div>
-        <div className="lg:col-span-2">
-          <WaterCard />
-        </div>
-      </div>
+        <CheckInCard />
+      </Collapsible>
 
-      {/* Time-block calendar — the day laid out on an hour grid */}
-      <TimeBlockCalendar />
-
-      {/* Nothing sneaks up overnight */}
-      <TomorrowHeadsUp />
-
-      {/* Today + the week ahead, side by side */}
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="space-y-5 lg:col-span-3">
-          <Timeline />
-          <CheckInCard />
-        </div>
-        <div className="space-y-5 lg:col-span-2">
+      <Collapsible icon="📊" title="Insights" hint="Life balance, the week ahead & mood">
+        <OverviewStrip />
+        <LifeBalance />
+        <TomorrowHeadsUp />
+        <div className="grid gap-4 lg:grid-cols-2">
           <WeekRadar />
           <MoodTrend />
         </div>
-      </div>
+      </Collapsible>
 
       <MotivationBanner />
     </div>

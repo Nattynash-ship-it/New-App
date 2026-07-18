@@ -11,8 +11,8 @@ export const runtime = "nodejs";
  * cart-creation APIs today, so this endpoint:
  *   1. validates + normalizes the payload into a stable schema, and
  *   2. forwards it to a configurable webhook URL per service
- *      (WHOLE_FOODS_WEBHOOK_URL / ALDI_WEBHOOK_URL — e.g. a Zapier/Make
- *      automation or a future partner API) when configured.
+ *      (WHOLE_FOODS_WEBHOOK_URL / ALDI_WEBHOOK_URL / INSTACART_WEBHOOK_URL —
+ *      e.g. a Zapier/Make automation or a future partner API) when configured.
  *
  * The payload shape is the integration contract; swapping in a real partner
  * API later only changes the forwarding step.

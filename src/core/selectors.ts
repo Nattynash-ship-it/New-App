@@ -734,6 +734,86 @@ export function fitnessWeek(s: HubState): FitnessWeek {
 }
 
 // ---------------------------------------------------------------------------
+// Weight-loss accountability
+// ---------------------------------------------------------------------------
+
+export interface WeightStats {
+  unit: string;
+  /** Most recent reading, or null if nothing logged yet. */
+  latest: number | null;
+  /** First reading (the starting point), or null. */
+  start: number | null;
+  goal: number | null;
+  /** latest − start (negative = lost weight). null until ≥1 entry. */
+  changeFromStart: number | null;
+  /** latest − goal (positive = still to lose). null without both. */
+  toGoal: number | null;
+  /** 0–100: how far from start → goal the latest reading is. null if N/A. */
+  goalPct: number | null;
+  entryCount: number;
+}
+
+/** Body-weight progress: start, latest, goal, and how far along. Entries are
+ *  assumed date-sorted ascending (the store keeps them that way). */
+export function weightStats(s: HubState): WeightStats {
+  const log = s.weightLog;
+  const latest = log.length ? log[log.length - 1]!.weight : null;
+  const start = log.length ? log[0]!.weight : null;
+  const goal = s.weightGoal;
+  const changeFromStart = latest !== null && start !== null ? Math.round((latest - start) * 10) / 10 : null;
+  const toGoal = latest !== null && goal !== null ? Math.round((latest - goal) * 10) / 10 : null;
+
+  let goalPct: number | null = null;
+  if (latest !== null && start !== null && goal !== null && start !== goal) {
+    const raw = ((start - latest) / (start - goal)) * 100;
+    goalPct = Math.max(0, Math.min(100, Math.round(raw)));
+  }
+
+  return {
+    unit: s.weightUnit,
+    latest,
+    start,
+    goal,
+    changeFromStart,
+    toGoal,
+    goalPct,
+    entryCount: log.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Food / calorie counting
+// ---------------------------------------------------------------------------
+
+export interface FoodDay {
+  entries: HubState["foodLog"];
+  calories: number;
+  protein: number;
+  calorieGoal: number;
+  proteinGoal: number;
+  /** calorieGoal − calories (negative = over budget). */
+  caloriesLeft: number;
+  /** proteinGoal − protein (negative = goal met/exceeded). */
+  proteinLeft: number;
+}
+
+/** Everything logged for a day plus totals against the calorie & protein goals. */
+export function foodDay(s: HubState, date: ISODate = todayISO()): FoodDay {
+  const entries = s.foodLog.filter((f) => f.date === date);
+  const calories = entries.reduce((sum, f) => sum + f.calories, 0);
+  const protein = entries.reduce((sum, f) => sum + (f.protein ?? 0), 0);
+  return {
+    entries,
+    calories,
+    protein,
+    calorieGoal: s.calorieGoal,
+    proteinGoal: s.proteinGoal,
+    caloriesLeft: s.calorieGoal - calories,
+    proteinLeft: s.proteinGoal - protein,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Meals: SuperCook-style "cook with what you have"
 // ---------------------------------------------------------------------------
 

@@ -74,9 +74,13 @@ import type {
   Todo,
   Urgency,
   WaterLog,
+  WeightEntry,
+  WeightUnit,
+  FoodEntry,
   WorkoutLog,
   WorkProject,
 } from "../types";
+import { programCellKey } from "../fitness/program";
 
 /** Canonical list of persisted data slices (no action fns). Export/import walk
  *  this so a newly-added slice can never be silently dropped from a backup. */
@@ -84,6 +88,8 @@ export const DATA_KEYS = [
   "profile", "checkIns", "events", "projects", "meetings", "courses", "assignments",
   "studyBlocks", "degreePlan", "pantry", "recipes", "plannedMeals", "groceryList",
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
+  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek",
+  "foodLog", "calorieGoal", "proteinGoal",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
@@ -130,6 +136,17 @@ export interface HubState {
   fitnessGoals: FitnessGoal[];
   weeklySessionTarget: number;
   equipment: Equipment[];
+  /** Weight-loss accountability: body-weight entries, goal, and unit. */
+  weightLog: WeightEntry[];
+  weightGoal: number | null;
+  weightUnit: WeightUnit;
+  /** 8-Week Glute program: which cells (week,day) are done + the active week. */
+  programProgress: Record<string, boolean>;
+  programWeek: number;
+  /** Food/calorie counting: logged foods + daily calorie & protein targets. */
+  foodLog: FoodEntry[];
+  calorieGoal: number;
+  proteinGoal: number;
   // Attachments (files uploaded to any section)
   attachments: Attachment[];
   // Notes & journal
@@ -258,6 +275,26 @@ export interface HubState {
   setWeeklySessionTarget: (n: number) => void;
   setEquipment: (equipment: Equipment[]) => void;
 
+  // --- Weight tracking ---
+  /** Record a weight for a day (one entry per day — a repeat replaces it). */
+  logWeight: (weight: number, date?: string) => void;
+  removeWeightEntry: (id: string) => void;
+  setWeightGoal: (goal: number | null) => void;
+  /** Switch lb/kg, converting every stored weight + goal to the new unit. */
+  setWeightUnit: (unit: WeightUnit) => void;
+
+  // --- 8-Week Glute program ---
+  /** Check/uncheck a training day for a given program week. */
+  toggleProgramDay: (week: number, day: number) => void;
+  /** Set the active program week (1–8). */
+  setProgramWeek: (week: number) => void;
+
+  // --- Food / calorie counting ---
+  logFood: (name: string, calories: number, protein?: number, date?: string) => void;
+  removeFoodEntry: (id: string) => void;
+  setCalorieGoal: (n: number) => void;
+  setProteinGoal: (n: number) => void;
+
   // --- Attachments ---
   /** Record uploaded-file metadata (bytes are stored on-device separately). */
   addAttachment: (att: Attachment) => void;
@@ -342,6 +379,14 @@ function initialState() {
     fitnessGoals: ["sculpt", "strength"] as FitnessGoal[],
     weeklySessionTarget: 4,
     equipment: seedEquipment(),
+    weightLog: [] as WeightEntry[],
+    weightGoal: null as number | null,
+    weightUnit: "lb" as WeightUnit,
+    programProgress: {} as Record<string, boolean>,
+    programWeek: 1,
+    foodLog: [] as FoodEntry[],
+    calorieGoal: 1500,
+    proteinGoal: 100,
     attachments: [] as Attachment[],
     notes: seedNotes(),
     todos: seedTodos(),
@@ -915,6 +960,72 @@ export const useHub = create<HubState>()(
       setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
       setEquipment: (equipment) => set({ equipment }),
 
+      // --- Weight tracking ---
+      logWeight: (weight, date) =>
+        set((s) => {
+          const w = Math.round(Math.max(0, weight) * 10) / 10;
+          if (!w) return s;
+          const day = date ?? todayISO();
+          // One entry per day — a new reading for the same day replaces it.
+          const rest = s.weightLog.filter((e) => e.date !== day);
+          return {
+            weightLog: [...rest, { id: newId("wt"), date: day, weight: w }].sort((a, b) =>
+              a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+            ),
+          };
+        }),
+      removeWeightEntry: (id) =>
+        set((s) => ({ weightLog: s.weightLog.filter((e) => e.id !== id) })),
+      setWeightGoal: (goal) =>
+        set({ weightGoal: goal === null ? null : Math.round(Math.max(0, goal) * 10) / 10 }),
+      setWeightUnit: (unit) =>
+        set((s) => {
+          if (unit === s.weightUnit) return s;
+          const LB_PER_KG = 2.2046226218;
+          const convert = (v: number) =>
+            Math.round((unit === "kg" ? v / LB_PER_KG : v * LB_PER_KG) * 10) / 10;
+          return {
+            weightUnit: unit,
+            weightGoal: s.weightGoal === null ? null : convert(s.weightGoal),
+            weightLog: s.weightLog.map((e) => ({ ...e, weight: convert(e.weight) })),
+          };
+        }),
+
+      // --- 8-Week Glute program ---
+      toggleProgramDay: (week, day) =>
+        set((s) => {
+          const key = programCellKey(week, day);
+          const next = { ...s.programProgress };
+          if (next[key]) delete next[key];
+          else next[key] = true;
+          return { programProgress: next };
+        }),
+      setProgramWeek: (week) => set({ programWeek: Math.min(8, Math.max(1, Math.round(week))) }),
+
+      // --- Food / calorie counting ---
+      logFood: (name, calories, protein, date) =>
+        set((s) => {
+          const clean = name.trim();
+          if (!clean) return s;
+          return {
+            foodLog: [
+              {
+                id: newId("food"),
+                date: date ?? todayISO(),
+                name: clean,
+                calories: Math.max(0, Math.round(calories) || 0),
+                ...(protein != null && protein > 0
+                  ? { protein: Math.max(0, Math.round(protein)) }
+                  : {}),
+              },
+              ...s.foodLog,
+            ],
+          };
+        }),
+      removeFoodEntry: (id) => set((s) => ({ foodLog: s.foodLog.filter((f) => f.id !== id) })),
+      setCalorieGoal: (n) => set({ calorieGoal: Math.min(6000, Math.max(0, Math.round(n) || 0)) }),
+      setProteinGoal: (n) => set({ proteinGoal: Math.min(400, Math.max(0, Math.round(n) || 0)) }),
+
       // --- Attachments ---
       addAttachment: (att) => set((s) => ({ attachments: [att, ...s.attachments] })),
       removeAttachment: (id) =>
@@ -1152,6 +1263,14 @@ export const useHub = create<HubState>()(
           fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
           weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
           equipment: p.equipment ?? current.equipment,
+          weightLog: p.weightLog ?? current.weightLog,
+          weightGoal: p.weightGoal ?? current.weightGoal,
+          weightUnit: p.weightUnit ?? current.weightUnit,
+          programProgress: p.programProgress ?? current.programProgress,
+          programWeek: p.programWeek ?? current.programWeek,
+          foodLog: p.foodLog ?? current.foodLog,
+          calorieGoal: p.calorieGoal ?? current.calorieGoal,
+          proteinGoal: p.proteinGoal ?? current.proteinGoal,
           attachments: p.attachments ?? current.attachments,
           notes: p.notes ?? current.notes,
           todos: p.todos ?? current.todos,

@@ -258,6 +258,27 @@ export interface WorkoutLog {
   note: string;
 }
 
+/** Unit weights are stored and displayed in. */
+export type WeightUnit = "lb" | "kg";
+
+/** A body-weight measurement on a given day (one kept per day — latest wins). */
+export interface WeightEntry {
+  id: Id;
+  date: ISODate;
+  /** In the user's current `weightUnit`. */
+  weight: number;
+}
+
+/** A logged food/meal for calorie + protein counting, keyed to a day. */
+export interface FoodEntry {
+  id: Id;
+  date: ISODate;
+  name: string;
+  calories: number;
+  /** Grams of protein, if entered (the program leans on hitting a protein goal). */
+  protein?: number;
+}
+
 /** Daily habit with one-tap check-ins and streak history. */
 export interface Habit {
   id: Id;

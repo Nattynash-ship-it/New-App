@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
+import { CalorieTracker } from "@/components/CalorieTracker";
 import { RecipeSearch } from "@/components/RecipeSearch";
 import { SectionTasks } from "@/components/SectionTasks";
 import { WeekPlanner } from "@/components/WeekPlanner";
@@ -427,6 +428,7 @@ export default function MealsPage() {
         title="Meals & groceries"
         subtitle="Seafood & plant-based · no meat, no dairy. Check what you have — the engine does the rest."
       />
+      <CalorieTracker />
       <RecipeSearch />
       <CookFromKitchen />
       <ReverseRecipeEngine />

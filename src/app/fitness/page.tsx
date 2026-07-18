@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Card, EmptyState, InlineAdd, PageHeader, ProgressBar, SectionTitle, Skeleton } from "@/components/ui";
 import { HabitStreaks } from "@/components/HabitStreaks";
 import { WaterCard } from "@/components/WaterCard";
+import { WeightTracker } from "@/components/WeightTracker";
+import { GluteProgram } from "@/components/GluteProgram";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { FoolproofPlan } from "@/components/FoolproofPlan";
 import { SectionTasks } from "@/components/SectionTasks";
@@ -371,10 +373,16 @@ export default function FitnessPage() {
         <WeekPlanCard />
       </div>
 
+      {/* Weight-loss accountability — log weight, set a goal, watch the trend */}
+      <WeightTracker />
+
       {/* The foolproof plan — workouts + meal prep + groceries for your goal */}
       <FoolproofPlan />
 
-      {/* Training plans — the 8-week glute tracker + your own uploads */}
+      {/* The 8-Week Glute program — every day labeled with its workouts, tracked */}
+      <GluteProgram />
+
+      {/* Training plans — the printable 8-week glute PDF + your own uploads */}
       <TrainingPlans />
 
       {/* At-home workout library — pick from full routines built for your gear */}

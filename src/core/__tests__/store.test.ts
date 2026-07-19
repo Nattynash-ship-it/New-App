@@ -409,6 +409,27 @@ describe("course pass/fail outcome", () => {
   });
 });
 
+describe("8-week program", () => {
+  it("marks days done and adds/removes app workouts per day", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.setState({ programDone: [], programExtras: {} });
+
+    useHub.getState().toggleProgramDay("2026-07-20");
+    expect(useHub.getState().programDone).toContain("2026-07-20");
+    useHub.getState().toggleProgramDay("2026-07-20");
+    expect(useHub.getState().programDone).not.toContain("2026-07-20");
+
+    useHub.getState().addProgramWorkout("2026-07-20", "lib_row_intervals");
+    expect(useHub.getState().programExtras["2026-07-20"]).toEqual(["lib_row_intervals"]);
+    // Adding the same one twice is a no-op.
+    useHub.getState().addProgramWorkout("2026-07-20", "lib_row_intervals");
+    expect(useHub.getState().programExtras["2026-07-20"]).toEqual(["lib_row_intervals"]);
+
+    useHub.getState().removeProgramWorkout("2026-07-20", "lib_row_intervals");
+    expect(useHub.getState().programExtras["2026-07-20"]).toBeUndefined();
+  });
+});
+
 describe("school portal & alerts", () => {
   it("saves the school portal URL and alert preference, and backs them up", async () => {
     const { useHub } = await import("../store/hub");

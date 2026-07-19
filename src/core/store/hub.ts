@@ -87,7 +87,7 @@ export const DATA_KEYS = [
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
-  "programStartDate", "programDone",
+  "programStartDate", "programDone", "programExtras",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -169,6 +169,8 @@ export interface HubState {
   programStartDate: string;
   /** ISO dates of completed program days. */
   programDone: string[];
+  /** Extra app workouts the user added to a program day: date → workout ids. */
+  programExtras: Record<string, string[]>;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -323,6 +325,8 @@ export interface HubState {
   /** (Re)start the 8-week program from a date (defaults to today) and clear done. */
   restartProgram: (startDate: string) => void;
   toggleProgramDay: (date: string) => void;
+  addProgramWorkout: (date: string, workoutId: string) => void;
+  removeProgramWorkout: (date: string, workoutId: string) => void;
 }
 
 function initialState() {
@@ -372,6 +376,7 @@ function initialState() {
     weatherLocation: DEFAULT_WEATHER_LOCATION,
     programStartDate: todayISO(),
     programDone: [] as string[],
+    programExtras: {} as Record<string, string[]>,
   };
 }
 
@@ -1142,6 +1147,20 @@ export const useHub = create<HubState>()(
             ? s.programDone.filter((d) => d !== date)
             : [...s.programDone, date],
         })),
+      addProgramWorkout: (date, workoutId) =>
+        set((s) => {
+          const cur = s.programExtras[date] ?? [];
+          if (cur.includes(workoutId)) return s;
+          return { programExtras: { ...s.programExtras, [date]: [...cur, workoutId] } };
+        }),
+      removeProgramWorkout: (date, workoutId) =>
+        set((s) => {
+          const cur = (s.programExtras[date] ?? []).filter((w) => w !== workoutId);
+          const next = { ...s.programExtras };
+          if (cur.length) next[date] = cur;
+          else delete next[date];
+          return { programExtras: next };
+        }),
     }),
     {
       name: "life-hub-v1",
@@ -1177,6 +1196,7 @@ export const useHub = create<HubState>()(
           groceryConnections: p.groceryConnections ?? current.groceryConnections,
           programStartDate: p.programStartDate ?? current.programStartDate,
           programDone: p.programDone ?? current.programDone,
+          programExtras: p.programExtras ?? current.programExtras,
         };
       },
     },

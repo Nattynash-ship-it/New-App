@@ -2,10 +2,50 @@
 
 import { useState } from "react";
 import { Card, ProgressBar, SectionTitle } from "./ui";
-import { buildGluteProgram, PROGRAM_WEEKS, type ProgramDay } from "@/core/fitness/program";
-import { formVideoUrl, LEVEL_META } from "@/core/fitness/library";
+import {
+  ADDABLE_WORKOUTS,
+  buildGluteProgram,
+  PROGRAM_WEEKS,
+  workoutById,
+  type ProgramDay,
+} from "@/core/fitness/program";
+import { formVideoUrl, LEVEL_META, type LibraryWorkout } from "@/core/fitness/library";
 import { formatShort, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+
+/** A small expandable block for an app workout added onto a day. */
+function ExtraWorkout({ workout, onRemove }: { workout: LibraryWorkout; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg border border-line bg-paper">
+      <div className="flex items-center gap-2 px-2.5 py-1.5">
+        <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left">
+          <span className="min-w-0">
+            <span className="block truncate text-xs font-medium">{workout.name}</span>
+            <span className="block text-[10px] text-muted">
+              {workout.durationMin} min · {LEVEL_META[workout.level].label}
+            </span>
+          </span>
+          <span className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`} aria-hidden>›</span>
+        </button>
+        <button onClick={onRemove} aria-label={`Remove ${workout.name}`} className="shrink-0 rounded-full px-1 text-muted hover:text-fitness-bright">×</button>
+      </div>
+      {open ? (
+        <ul className="space-y-1 border-t border-line px-2.5 py-2">
+          {workout.exercises.map((ex) => (
+            <li key={ex.name} className="flex items-start justify-between gap-2 text-[11px]">
+              <span className="min-w-0">
+                <span className="font-medium">{ex.name}</span>
+                <span className="text-muted"> · {ex.target}</span>
+              </span>
+              <a href={formVideoUrl(ex.name)} target="_blank" rel="noreferrer" className="shrink-0 font-semibold text-fitness-bright hover:underline">▶ Form</a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 /** A whole-workout video search (the day's session, done at home). */
 function workoutVideoUrl(name: string): string {
@@ -13,11 +53,14 @@ function workoutVideoUrl(name: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${clean} at home workout`)}`;
 }
 
-function DayRow({ day, done, isToday, onToggle }: {
+function DayRow({ day, done, isToday, onToggle, extras, onAdd, onRemoveExtra }: {
   day: ProgramDay;
   done: boolean;
   isToday: boolean;
   onToggle: () => void;
+  extras: string[];
+  onAdd: (workoutId: string) => void;
+  onRemoveExtra: (workoutId: string) => void;
 }) {
   const [open, setOpen] = useState(isToday);
   const title = day.workout.name.replace(/^Glute Program · Day \d+ — /, "");
@@ -97,18 +140,51 @@ function DayRow({ day, done, isToday, onToggle }: {
           >
             {done ? "✓ Completed — tap to undo" : "Mark this workout complete"}
           </button>
+
+          {/* App workouts added on top of the day */}
+          {extras.length > 0 ? (
+            <div className="mt-3 space-y-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Also on this day</p>
+              {extras.map((id) => {
+                const w = workoutById(id);
+                return w ? <ExtraWorkout key={id} workout={w} onRemove={() => onRemoveExtra(id)} /> : null;
+              })}
+            </div>
+          ) : null}
+
+          <label className="mt-2 flex items-center gap-2 text-[11px] text-muted">
+            ＋ Add an app workout
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) onAdd(e.target.value);
+              }}
+              className="input !w-auto flex-1 !py-1 text-xs"
+              aria-label="Add an app workout to this day"
+            >
+              <option value="">Choose a workout…</option>
+              {ADDABLE_WORKOUTS.filter((w) => !extras.includes(w.id)).map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name} · {w.durationMin}m
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       ) : null}
     </div>
   );
 }
 
-function WeekBlock({ week, days, done, today, onToggle, defaultOpen }: {
+function WeekBlock({ week, days, done, today, onToggle, extras, onAdd, onRemoveExtra, defaultOpen }: {
   week: number;
   days: ProgramDay[];
   done: Set<string>;
   today: string;
   onToggle: (date: string) => void;
+  extras: Record<string, string[]>;
+  onAdd: (date: string, workoutId: string) => void;
+  onRemoveExtra: (date: string, workoutId: string) => void;
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -141,6 +217,9 @@ function WeekBlock({ week, days, done, today, onToggle, defaultOpen }: {
               done={done.has(d.date)}
               isToday={d.date === today}
               onToggle={() => onToggle(d.date)}
+              extras={extras[d.date] ?? []}
+              onAdd={(id) => onAdd(d.date, id)}
+              onRemoveExtra={(id) => onRemoveExtra(d.date, id)}
             />
           ))}
         </div>
@@ -154,7 +233,10 @@ function WeekBlock({ week, days, done, today, onToggle, defaultOpen }: {
 export function EightWeekProgram() {
   const startDate = useHub((s) => s.programStartDate);
   const programDone = useHub((s) => s.programDone);
+  const programExtras = useHub((s) => s.programExtras);
   const toggleProgramDay = useHub((s) => s.toggleProgramDay);
+  const addProgramWorkout = useHub((s) => s.addProgramWorkout);
+  const removeProgramWorkout = useHub((s) => s.removeProgramWorkout);
   const restartProgram = useHub((s) => s.restartProgram);
   const [confirmRestart, setConfirmRestart] = useState(false);
 
@@ -197,6 +279,9 @@ export function EightWeekProgram() {
             done={done}
             today={today}
             onToggle={toggleProgramDay}
+            extras={programExtras}
+            onAdd={addProgramWorkout}
+            onRemoveExtra={removeProgramWorkout}
             defaultOpen={week === currentWeek}
           />
         ))}

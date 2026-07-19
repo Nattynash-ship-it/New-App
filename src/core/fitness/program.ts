@@ -24,6 +24,16 @@ const SPLIT: Record<number, string> = {
 
 const byId = new Map(WORKOUT_LIBRARY.map((w) => [w.id, w]));
 
+/** The 7 workout ids that make up the program itself (the daily split). */
+export const PROGRAM_DAY_IDS = new Set(Object.values(SPLIT));
+
+/** App workouts you can add on top of a program day (everything else). */
+export const ADDABLE_WORKOUTS = WORKOUT_LIBRARY.filter((w) => !PROGRAM_DAY_IDS.has(w.id));
+
+export function workoutById(id: string): LibraryWorkout | undefined {
+  return byId.get(id);
+}
+
 /** A weekly progression cue, keyed by week number (1-based). */
 function progressionNote(week: number): string {
   if (week === 1) return "Week 1 — set your baseline; focus on form and full range.";

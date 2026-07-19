@@ -87,6 +87,7 @@ export const DATA_KEYS = [
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
+  "programStartDate", "programDone",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -163,6 +164,11 @@ export interface HubState {
   alertsEnabled: boolean;
   /** Where the weather card looks — zip + resolved coordinates. */
   weatherLocation: WeatherLocation;
+  // Fitness program
+  /** Day the 8-week glute program started (ISO). */
+  programStartDate: string;
+  /** ISO dates of completed program days. */
+  programDone: string[];
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -314,6 +320,9 @@ export interface HubState {
   setSchoolPortalUrl: (url: string) => void;
   setAlertsEnabled: (on: boolean) => void;
   setWeatherLocation: (loc: WeatherLocation) => void;
+  /** (Re)start the 8-week program from a date (defaults to today) and clear done. */
+  restartProgram: (startDate: string) => void;
+  toggleProgramDay: (date: string) => void;
 }
 
 function initialState() {
@@ -361,6 +370,8 @@ function initialState() {
     schoolPortalUrl: "",
     alertsEnabled: false,
     weatherLocation: DEFAULT_WEATHER_LOCATION,
+    programStartDate: todayISO(),
+    programDone: [] as string[],
   };
 }
 
@@ -1124,6 +1135,13 @@ export const useHub = create<HubState>()(
       setSchoolPortalUrl: (url) => set({ schoolPortalUrl: url.trim() }),
       setAlertsEnabled: (alertsEnabled) => set({ alertsEnabled }),
       setWeatherLocation: (weatherLocation) => set({ weatherLocation }),
+      restartProgram: (startDate) => set({ programStartDate: startDate, programDone: [] }),
+      toggleProgramDay: (date) =>
+        set((s) => ({
+          programDone: s.programDone.includes(date)
+            ? s.programDone.filter((d) => d !== date)
+            : [...s.programDone, date],
+        })),
     }),
     {
       name: "life-hub-v1",
@@ -1157,6 +1175,8 @@ export const useHub = create<HubState>()(
           todos: p.todos ?? current.todos,
           kidMeals: p.kidMeals ?? current.kidMeals,
           groceryConnections: p.groceryConnections ?? current.groceryConnections,
+          programStartDate: p.programStartDate ?? current.programStartDate,
+          programDone: p.programDone ?? current.programDone,
         };
       },
     },

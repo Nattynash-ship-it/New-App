@@ -4,17 +4,25 @@ import { useState } from "react";
 import { Card, ProgressBar, SectionTitle } from "./ui";
 import { Collapsible } from "./Collapsible";
 import { formVideoUrl } from "@/core/fitness/library";
+import { formatShort, todayISO } from "@/core/dates";
 import {
   GLUTE_PROGRAM,
+  ORDERED_DAYS,
   PROGRAM_TOTAL_SESSIONS,
   PROGRAM_WEEKS,
   TRAINING_DAYS,
   programCellKey,
+  programCurrentWeek,
+  programDayDate,
+  programDaysUntilStart,
+  programEndDate,
+  programHasStarted,
+  programWeekRange,
   type ProgramDay,
 } from "@/core/fitness/program";
 import { useHub } from "@/core/store/hub";
 
-function DayRow({ day, week }: { day: ProgramDay; week: number }) {
+function DayRow({ day, week, date }: { day: ProgramDay; week: number; date: string }) {
   const progress = useHub((s) => s.programProgress);
   const toggleProgramDay = useHub((s) => s.toggleProgramDay);
   const addRoutineWithExercises = useHub((s) => s.addRoutineWithExercises);
@@ -22,7 +30,6 @@ function DayRow({ day, week }: { day: ProgramDay; week: number }) {
   const [added, setAdded] = useState(false);
 
   const done = !!progress[programCellKey(week, day.day)];
-  // How many of the 8 weeks this day has been completed.
   const weeksDone = Array.from({ length: PROGRAM_WEEKS }, (_, i) =>
     progress[programCellKey(i + 1, day.day)] ? 1 : 0,
   ).reduce((a: number, b) => a + b, 0);
@@ -45,8 +52,9 @@ function DayRow({ day, week }: { day: ProgramDay; week: number }) {
           ) : null}
         </button>
         <button onClick={() => setOpen((v) => !v)} className="min-w-0 flex-1 text-left" aria-expanded={open}>
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-x-2">
             <span className="text-sm font-semibold">{day.name}</span>
+            <span className="text-[11px] font-medium text-fitness-bright">{formatShort(date)}</span>
             <span className="text-[11px] text-muted">· {day.exercises.length} moves</span>
           </span>
           <span className="block text-xs text-muted">{day.focus}</span>
@@ -115,11 +123,21 @@ function DayRow({ day, week }: { day: ProgramDay; week: number }) {
 export function GluteProgram() {
   const progress = useHub((s) => s.programProgress);
   const week = useHub((s) => s.programWeek);
+  const startDate = useHub((s) => s.programStartDate);
   const setProgramWeek = useHub((s) => s.setProgramWeek);
+  const restartProgram = useHub((s) => s.restartProgram);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(startDate);
 
   const doneTotal = Object.values(progress).filter(Boolean).length;
   const weekDone = TRAINING_DAYS.filter((d) => progress[programCellKey(week, d.day)]).length;
-  const restDay = GLUTE_PROGRAM.days.find((d) => d.rest);
+  const [weekStart, weekEnd] = programWeekRange(startDate, week);
+  const endDate = programEndDate(startDate);
+  const today = todayISO();
+  const currentWeek = programCurrentWeek(startDate, today);
+  const started = programHasStarted(startDate, today);
+  const daysUntil = programDaysUntilStart(startDate, today);
 
   return (
     <Card>
@@ -132,12 +150,66 @@ export function GluteProgram() {
       >
         {GLUTE_PROGRAM.title}
       </SectionTitle>
-      <p className="-mt-1 mb-3 text-xs text-muted">{GLUTE_PROGRAM.subtitle}</p>
+      <p className="-mt-1 mb-2 text-xs text-muted">
+        6 days a week · at home · {formatShort(startDate)} → {formatShort(endDate)}
+      </p>
+
+      {/* Start date + restart control */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-paper px-3 py-2 text-[11px]">
+        <span className="text-muted">
+          {started ? (
+            <>Started Sun, {formatShort(startDate)}</>
+          ) : (
+            <>
+              Starts Sun, {formatShort(startDate)}
+              <span className="ml-1 text-fitness-bright">· in {daysUntil} day{daysUntil === 1 ? "" : "s"}</span>
+            </>
+          )}
+        </span>
+        <button
+          className="btn-ghost !px-2.5 !py-1 text-[11px]"
+          onClick={() => {
+            setDraft(startDate);
+            setEditing((v) => !v);
+          }}
+        >
+          {editing ? "Cancel" : "Restart…"}
+        </button>
+      </div>
+      {editing ? (
+        <form
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-line p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            restartProgram(draft);
+            setEditing(false);
+          }}
+        >
+          <label className="text-[11px] text-muted">
+            Start date
+            <input
+              type="date"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="input ml-2 !w-auto !py-1.5 text-xs"
+            />
+          </label>
+          <button type="submit" className="btn-primary !px-3 !py-1.5 text-[11px]">
+            Restart &amp; clear progress
+          </button>
+          <span className="text-[10px] text-muted">Clears every checkmark and re-anchors Week 1.</span>
+        </form>
+      ) : null}
 
       {/* Week selector + this-week progress */}
       <div className="rounded-xl border border-line bg-paper p-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted">Week</span>
+          <span className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Week</span>
+            {started && week === currentWeek ? (
+              <span className="chip bg-fitness-soft !py-0 text-[10px] text-fitness-bright">this week</span>
+            ) : null}
+          </span>
           <div className="flex items-center gap-1.5">
             <button
               className="btn-ghost !px-2 !py-0.5 text-xs"
@@ -160,6 +232,9 @@ export function GluteProgram() {
             </button>
           </div>
         </div>
+        <p className="mt-1 text-[11px] text-muted">
+          {formatShort(weekStart)} – {formatShort(weekEnd)}
+        </p>
         <div className="mt-2 flex items-center gap-2">
           <ProgressBar pct={(weekDone / TRAINING_DAYS.length) * 100} colorClass="bg-fitness" />
           <span className="shrink-0 text-[11px] text-muted tabular-nums">
@@ -168,17 +243,21 @@ export function GluteProgram() {
         </div>
       </div>
 
-      {/* The days, labeled, with their workouts */}
+      {/* The days, Sunday-first, labeled with their date + workouts */}
       <div className="mt-3 space-y-2">
-        {TRAINING_DAYS.map((day) => (
-          <DayRow key={day.day} day={day} week={week} />
-        ))}
-        {restDay ? (
-          <div className="rounded-xl border border-dashed border-line px-3 py-2.5">
-            <span className="text-sm font-semibold">{restDay.name}</span>
-            <span className="ml-2 text-xs text-muted">{restDay.note}</span>
-          </div>
-        ) : null}
+        {ORDERED_DAYS.map((day) => {
+          const date = programDayDate(startDate, week, day.day);
+          if (day.rest) {
+            return (
+              <div key={day.day} className="flex items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2.5">
+                <span className="text-sm font-semibold">{day.name}</span>
+                <span className="text-[11px] font-medium text-muted">{formatShort(date)}</span>
+                <span className="text-xs text-muted">· {day.note}</span>
+              </div>
+            );
+          }
+          return <DayRow key={day.day} day={day} week={week} date={date} />;
+        })}
       </div>
 
       {/* Equipment & rules, tucked away */}

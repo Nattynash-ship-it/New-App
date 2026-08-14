@@ -7,7 +7,13 @@
  * in the store (`programProgress` / `programWeek`).
  */
 
+import { addDays, fromISODate, todayISO } from "../dates";
+import type { ISODate } from "../types";
+
 export const PROGRAM_WEEKS = 8;
+
+/** Default calendar anchor for Week 1 — a Sunday (weeks run Sun → Sat). */
+export const PROGRAM_DEFAULT_START: ISODate = "2026-08-16";
 
 /** One movement in a day's workout. `scheme` is the sets × reps prescription. */
 export interface ProgramExercise {
@@ -179,4 +185,53 @@ export const PROGRAM_TOTAL_SESSIONS = TRAINING_DAYS.length * PROGRAM_WEEKS;
 /** Stable key for a (week, day) completion cell in `programProgress`. */
 export function programCellKey(week: number, day: number): string {
   return `w${week}d${day}`;
+}
+
+/**
+ * The program days ordered for a Sunday-start week: Sunday (rest) first, then
+ * Monday → Saturday. `day % 7` maps Sunday (7) → 0 and Mon..Sat (1..6) → 1..6.
+ */
+export const ORDERED_DAYS: ProgramDay[] = [...GLUTE_PROGRAM.days].sort(
+  (a, b) => (a.day % 7) - (b.day % 7),
+);
+
+function dayDiff(a: ISODate, b: ISODate): number {
+  return Math.round((fromISODate(a).getTime() - fromISODate(b).getTime()) / 86_400_000);
+}
+
+/**
+ * Calendar date of a program day. Weeks run Sunday → Saturday starting from
+ * `startDate` (itself a Sunday); day 1 = Monday … 7 = Sunday (the rest day,
+ * which opens the week).
+ */
+export function programDayDate(startDate: ISODate, week: number, day: number): ISODate {
+  return addDays(startDate, (week - 1) * 7 + (day % 7));
+}
+
+/** [start, end] dates (Sun … Sat) of a given program week. */
+export function programWeekRange(startDate: ISODate, week: number): [ISODate, ISODate] {
+  const start = addDays(startDate, (week - 1) * 7);
+  return [start, addDays(start, 6)];
+}
+
+/** Last training day of the whole block (Week 8, Saturday). */
+export function programEndDate(startDate: ISODate): ISODate {
+  return programDayDate(startDate, PROGRAM_WEEKS, 6);
+}
+
+/** Which program week `today` falls in (1–8, clamped). Before the start → 1. */
+export function programCurrentWeek(startDate: ISODate, today: ISODate = todayISO()): number {
+  const diff = dayDiff(today, startDate);
+  if (diff < 0) return 1;
+  return Math.min(PROGRAM_WEEKS, Math.floor(diff / 7) + 1);
+}
+
+/** True once the start date has arrived. */
+export function programHasStarted(startDate: ISODate, today: ISODate = todayISO()): boolean {
+  return dayDiff(today, startDate) >= 0;
+}
+
+/** Days until the program begins (0 once it has started). */
+export function programDaysUntilStart(startDate: ISODate, today: ISODate = todayISO()): number {
+  return Math.max(0, dayDiff(startDate, today));
 }

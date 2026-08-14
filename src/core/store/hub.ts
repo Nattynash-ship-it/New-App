@@ -80,7 +80,7 @@ import type {
   WorkoutLog,
   WorkProject,
 } from "../types";
-import { programCellKey } from "../fitness/program";
+import { PROGRAM_DEFAULT_START, programCellKey, programCurrentWeek } from "../fitness/program";
 
 /** Canonical list of persisted data slices (no action fns). Export/import walk
  *  this so a newly-added slice can never be silently dropped from a backup. */
@@ -88,7 +88,7 @@ export const DATA_KEYS = [
   "profile", "checkIns", "events", "projects", "meetings", "courses", "assignments",
   "studyBlocks", "degreePlan", "pantry", "recipes", "plannedMeals", "groceryList",
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
-  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek",
+  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek", "programStartDate",
   "foodLog", "calorieGoal", "proteinGoal",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
@@ -143,6 +143,8 @@ export interface HubState {
   /** 8-Week Glute program: which cells (week,day) are done + the active week. */
   programProgress: Record<string, boolean>;
   programWeek: number;
+  /** Calendar anchor: the Sunday Week 1 begins on (weeks run Sun → Sat). */
+  programStartDate: string;
   /** Food/calorie counting: logged foods + daily calorie & protein targets. */
   foodLog: FoodEntry[];
   calorieGoal: number;
@@ -288,6 +290,9 @@ export interface HubState {
   toggleProgramDay: (week: number, day: number) => void;
   /** Set the active program week (1–8). */
   setProgramWeek: (week: number) => void;
+  /** Restart the program on a new start date: clears all completion and jumps
+   *  the active week to wherever `today` falls in the fresh schedule. */
+  restartProgram: (startDate: string) => void;
 
   // --- Food / calorie counting ---
   logFood: (name: string, calories: number, protein?: number, date?: string) => void;
@@ -383,7 +388,8 @@ function initialState() {
     weightGoal: null as number | null,
     weightUnit: "lb" as WeightUnit,
     programProgress: {} as Record<string, boolean>,
-    programWeek: 1,
+    programWeek: programCurrentWeek(PROGRAM_DEFAULT_START),
+    programStartDate: PROGRAM_DEFAULT_START,
     foodLog: [] as FoodEntry[],
     calorieGoal: 1500,
     proteinGoal: 100,
@@ -1001,6 +1007,14 @@ export const useHub = create<HubState>()(
           return { programProgress: next };
         }),
       setProgramWeek: (week) => set({ programWeek: Math.min(8, Math.max(1, Math.round(week))) }),
+      restartProgram: (startDate) => {
+        const clean = (startDate || "").slice(0, 10) || PROGRAM_DEFAULT_START;
+        set({
+          programStartDate: clean,
+          programProgress: {},
+          programWeek: programCurrentWeek(clean),
+        });
+      },
 
       // --- Food / calorie counting ---
       logFood: (name, calories, protein, date) =>
@@ -1268,6 +1282,7 @@ export const useHub = create<HubState>()(
           weightUnit: p.weightUnit ?? current.weightUnit,
           programProgress: p.programProgress ?? current.programProgress,
           programWeek: p.programWeek ?? current.programWeek,
+          programStartDate: p.programStartDate ?? current.programStartDate,
           foodLog: p.foodLog ?? current.foodLog,
           calorieGoal: p.calorieGoal ?? current.calorieGoal,
           proteinGoal: p.proteinGoal ?? current.proteinGoal,

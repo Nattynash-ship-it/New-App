@@ -1,9 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   GLUTE_PROGRAM,
+  ORDERED_DAYS,
   PROGRAM_TOTAL_SESSIONS,
   TRAINING_DAYS,
   programCellKey,
+  programCurrentWeek,
+  programDayDate,
+  programEndDate,
+  programHasStarted,
+  programWeekRange,
 } from "../fitness/program";
 import { foodDay, weightStats } from "../selectors";
 
@@ -126,6 +132,43 @@ describe("8-week glute program tracking", () => {
       expect(d.exercises.length).toBeGreaterThan(0);
       expect(d.exercises.every((e) => e.name && e.scheme)).toBe(true);
     }
+  });
+
+  it("anchors the schedule to a Sunday start (Aug 16, 2026)", () => {
+    const start = "2026-08-16"; // a Sunday
+    // Sunday rest opens the week; Mon → Sat follow.
+    expect(programDayDate(start, 1, 7)).toBe("2026-08-16"); // Sunday (rest)
+    expect(programDayDate(start, 1, 1)).toBe("2026-08-17"); // Monday
+    expect(programDayDate(start, 1, 6)).toBe("2026-08-22"); // Saturday
+    expect(programDayDate(start, 2, 1)).toBe("2026-08-24"); // week 2 Monday
+    expect(programEndDate(start)).toBe("2026-10-10"); // week 8 Saturday
+    expect(programWeekRange(start, 1)).toEqual(["2026-08-16", "2026-08-22"]);
+    // Sunday-first display order.
+    expect(ORDERED_DAYS[0]!.day).toBe(7);
+    expect(ORDERED_DAYS.map((d) => d.day)).toEqual([7, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("computes the current week (and 'not started') from a date", () => {
+    const start = "2026-08-16";
+    expect(programHasStarted(start, "2026-08-14")).toBe(false);
+    expect(programCurrentWeek(start, "2026-08-14")).toBe(1); // before start → week 1
+    expect(programCurrentWeek(start, "2026-08-16")).toBe(1);
+    expect(programCurrentWeek(start, "2026-08-24")).toBe(2);
+    expect(programCurrentWeek(start, "2026-12-31")).toBe(8); // clamped
+  });
+
+  it("restarts on a new date, clearing all progress", async () => {
+    const { useHub } = await import("../store/hub");
+    const s = () => useHub.getState();
+    s().toggleProgramDay(1, 1);
+    s().toggleProgramDay(2, 3);
+    expect(Object.values(s().programProgress).filter(Boolean).length).toBe(2);
+
+    s().restartProgram("2026-08-16");
+    expect(s().programStartDate).toBe("2026-08-16");
+    expect(Object.values(s().programProgress).filter(Boolean).length).toBe(0);
+    expect(s().programWeek).toBeGreaterThanOrEqual(1);
+    expect(s().programWeek).toBeLessThanOrEqual(8);
   });
 
   it("toggles day completion per week and tracks the active week", async () => {

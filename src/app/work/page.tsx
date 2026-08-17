@@ -6,6 +6,7 @@ import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
 import { SmartCapture } from "@/components/SmartCapture";
 import { daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
+import { celebrationForToday } from "@/core/selectors";
 import { PlannerBoard } from "@/components/PlannerBoard";
 import { SectionTasks } from "@/components/SectionTasks";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -25,6 +26,7 @@ function TopThree() {
   const focus = useHub((s) => s.focus);
   const toggleFocusTask = useHub((s) => s.toggleFocusTask);
   const toggleWorkTask = useHub((s) => s.toggleWorkTask);
+  const removeWorkTaskWithUndo = useHub((s) => s.removeWorkTaskWithUndo);
   const pushUndo = useUndo((s) => s.push);
 
   const focusIds = focus.date === todayISO() ? focus.taskIds : [];
@@ -46,7 +48,7 @@ function TopThree() {
       {picked.length > 0 ? (
         <div className="mb-2 space-y-0.5">
           {picked.map((t) => (
-            <div key={t.id} className="flex items-center gap-1">
+            <div key={t.id} className="group flex items-center gap-1">
               <div className="flex-1">
                 <Checkbox
                   checked={t.done}
@@ -59,10 +61,27 @@ function TopThree() {
                   vanish
                 />
               </div>
+              {/* Two distinct outs: unpick keeps the task (it drops back to the
+                  chips below), × deletes it for good — with undo either way. */}
               <button
-                onClick={() => toggleFocusTask(t.id)}
-                className="shrink-0 rounded-full px-2 py-1 text-xs text-muted hover:text-fitness-bright"
-                aria-label={`Remove ${t.title} from focus`}
+                onClick={() => {
+                  toggleFocusTask(t.id);
+                  pushUndo(`Unpicked ${t.title}`, () => toggleFocusTask(t.id));
+                }}
+                className="shrink-0 rounded-full px-1.5 py-1 text-[11px] text-muted hover:text-work-bright"
+                aria-label={`Take ${t.title} out of today's top 3`}
+                title="Take out of today's top 3 (keeps the task)"
+              >
+                ↩
+              </button>
+              <button
+                onClick={() => {
+                  const restore = removeWorkTaskWithUndo(t.projectId, t.id);
+                  pushUndo(`Deleted ${t.title}`, restore);
+                }}
+                className="shrink-0 rounded-full px-1.5 py-1 text-sm text-muted hover:text-fitness-bright"
+                aria-label={`Delete task ${t.title}`}
+                title="Delete this task"
               >
                 ×
               </button>
@@ -83,7 +102,11 @@ function TopThree() {
           ))}
         </div>
       ) : null}
-      {allOpen.length === 0 ? <EmptyState>All tasks done — enjoy it.</EmptyState> : null}
+      {allOpen.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm font-medium text-accent">
+          {celebrationForToday("work")}
+        </p>
+      ) : null}
     </Card>
   );
 }

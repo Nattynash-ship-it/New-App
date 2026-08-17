@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, DOMAIN_STYLES, SectionTitle } from "./ui";
-import { ENERGY_META, todaysPlan } from "@/core/selectors";
+import { ENERGY_META, celebrationForToday, todaysPlan } from "@/core/selectors";
 import { formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
@@ -90,8 +90,8 @@ function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof
       <p className="mb-3 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent">{message}</p>
 
       {items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-          Nothing pressing today — a rare open day. Enjoy it. ✦
+        <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm font-medium text-accent">
+          {celebrationForToday("plan")}
         </p>
       ) : (
         <ol className="space-y-1.5">

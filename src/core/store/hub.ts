@@ -236,6 +236,8 @@ export interface HubState {
   setWorkTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => void;
   addWorkTask: (projectId: string, title: string) => void;
   removeWorkTask: (projectId: string, taskId: string) => void;
+  /** Delete a task and return a closure that puts it back (for undo). */
+  removeWorkTaskWithUndo: (projectId: string, taskId: string) => () => void;
   addMeeting: (m: Omit<Meeting, "id">) => void;
   removeMeeting: (id: string) => void;
   addMilestone: (projectId: string, title: string, targetDate?: string) => void;
@@ -667,6 +669,29 @@ export const useHub = create<HubState>()(
           ),
           focus: { ...s.focus, taskIds: s.focus.taskIds.filter((t) => t !== taskId) },
         })),
+      removeWorkTaskWithUndo: (projectId, taskId) => {
+        const s = get();
+        const project = s.projects.find((p) => p.id === projectId);
+        const task = project?.tasks.find((t) => t.id === taskId);
+        const wasFocused = s.focus.taskIds.includes(taskId);
+        if (!task) return () => {};
+        get().removeWorkTask(projectId, taskId);
+        // Restore the task at its original position, and re-pick it if it was
+        // one of today's top 3 when it was deleted.
+        const index = project!.tasks.findIndex((t) => t.id === taskId);
+        return () =>
+          set((st) => ({
+            projects: st.projects.map((p) => {
+              if (p.id !== projectId) return p;
+              const tasks = [...p.tasks];
+              tasks.splice(Math.min(index, tasks.length), 0, task);
+              return { ...p, tasks };
+            }),
+            focus: wasFocused
+              ? { ...st.focus, taskIds: [...st.focus.taskIds, taskId] }
+              : st.focus,
+          }));
+      },
       removeMilestone: (projectId, milestoneId) =>
         set((s) => ({
           projects: s.projects.map((p) =>

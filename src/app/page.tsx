@@ -23,7 +23,7 @@ import { WaterCard } from "@/components/WaterCard";
 import { WeekRadar } from "@/components/WeekRadar";
 import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
 import { formatTime, todayISO } from "@/core/dates";
-import { selectTimeline } from "@/core/selectors";
+import { celebrationForToday, selectTimeline } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 import type { Mood } from "@/core/types";
@@ -124,7 +124,7 @@ function Timeline() {
         </span>
       </SectionTitle>
       {entries.length === 0 ? (
-        <EmptyState>A clear day. Add something above, or enjoy the space.</EmptyState>
+        <EmptyState>{celebrationForToday("timeline")}</EmptyState>
       ) : (
         <ol className="relative ml-2 space-y-0">
           {entries.map((e, i) => {

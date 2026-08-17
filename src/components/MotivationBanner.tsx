@@ -11,7 +11,7 @@ export function MotivationBanner() {
           🌿
         </span>
         <div>
-          <p className="font-display text-base tracking-tight">{encouragementForToday()}</p>
+          <p className="font-display text-base tracking-tight">{encouragementForToday("banner")}</p>
           <p className="text-xs text-muted">A little each day adds up to a lot.</p>
         </div>
       </div>

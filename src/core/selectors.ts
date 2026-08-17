@@ -457,14 +457,66 @@ const ENCOURAGEMENTS = [
   "One thing at a time is enough.",
   "You're doing better than you think.",
   "Be kind to yourself today.",
+  "You don't have to do it all today.",
+  "Done is kinder than perfect.",
+  "The load is lighter when it's written down.",
+  "You've handled every hard day so far.",
+  "Start where you are — that's allowed.",
+  "Rest counts as progress too.",
+  "You're allowed to take up space today.",
+  "Your pace is the right pace.",
+  "Tiny steps still move the boat.",
+  "Nothing on this list defines you.",
+  "You are more than your to-do list.",
+  "One kind thing for yourself today.",
+  "It's okay if today is just maintenance.",
+  "Steady beats frantic, every time.",
+  "You showed up — that's the hard part.",
+  "Half-done still counts as started.",
+  "Let good enough be good enough today.",
+  "Breathe. The day will wait for you.",
+  "You are carrying a lot, and doing it well.",
+  "Choose the next right thing, not every thing.",
+  "Momentum starts with one small yes.",
+  "Future you will thank present you.",
+  "Nobody is keeping score but you.",
+  "You can start over at any hour.",
+  "Slow progress is still the right direction.",
+  "Your effort matters even when it's invisible.",
+  "Give yourself the grace you'd give a friend.",
+  "You've earned the space to breathe.",
+  "Trust the plan you made when you were calm.",
+  "Today only asks for today's share.",
 ];
 
-/** Deterministic per-day encouragement (stable through the day, rotates daily). */
-export function encouragementForToday(): string {
-  const iso = todayISO();
+/** Warm lines for the moment something is finished or cleared. */
+const CELEBRATIONS = [
+  "Everything's done — take the win. ✦",
+  "Clear list. Go enjoy the rest of it.",
+  "That's the whole plan, finished.",
+  "All wrapped up — you earned the quiet.",
+  "Nothing left today. Beautifully done.",
+  "You cleared it. Rest is the reward.",
+];
+
+/** Stable pick from a list for a given seed (same seed → same line). */
+function pick(list: string[], seed: string): string {
   let hash = 0;
-  for (let i = 0; i < iso.length; i++) hash = (hash * 31 + iso.charCodeAt(i)) >>> 0;
-  return ENCOURAGEMENTS[hash % ENCOURAGEMENTS.length]!;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return list[hash % list.length]!;
+}
+
+/**
+ * Deterministic encouragement (stable through the day, rotates daily). Pass a
+ * distinct `slot` per surface so two cards on screen never show the same line.
+ */
+export function encouragementForToday(slot = ""): string {
+  return pick(ENCOURAGEMENTS, todayISO() + slot);
+}
+
+/** A congratulation line for a finished list — rotates daily per surface. */
+export function celebrationForToday(slot = ""): string {
+  return pick(CELEBRATIONS, todayISO() + slot);
 }
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@ import { useHub } from "@/core/store/hub";
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS, eventColor, hexToRgba } from "@/core/eventColors";
 import type { ParsedIntentKind } from "@/core/types";
 
-const PX_PER_MIN = 0.8; // 60 min = 48px
+const PX_PER_MIN = 1; // 60 min = 60px — roomier blocks, easier to read & tap
 
 const ADD_KINDS: Array<{ value: ParsedIntentKind; label: string }> = [
   { value: "event", label: "Event" },
@@ -326,10 +326,11 @@ export function TimeBlockCalendar() {
             );
           })}
 
-          {/* Now indicator */}
+          {/* Now indicator — sits BEHIND event blocks (z-5 < blocks z-10) so it
+              never draws a line through a block's title. */}
           {showNow ? (
             <div
-              className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
+              className="pointer-events-none absolute inset-x-0 z-[5] flex items-center"
               style={{ top: (nowMin - startMin) * PX_PER_MIN }}
             >
               <span className="ml-11 h-1.5 w-1.5 rounded-full bg-fitness" />
@@ -337,13 +338,13 @@ export function TimeBlockCalendar() {
             </div>
           ) : null}
 
-          {/* Blocks */}
-          <div className="absolute inset-y-0 left-12 right-0">
+          {/* Blocks — z-10 keeps them above the hour grid and the now-line. */}
+          <div className="absolute inset-y-0 left-12 right-0 z-10">
             {positioned.map((b) => {
               const style = DOMAIN_STYLES[b.domain];
               const custom = eventColor(b.color);
               const top = (b.startMin - startMin) * PX_PER_MIN;
-              const h = Math.max(20, (b.endMin - b.startMin) * PX_PER_MIN - 2);
+              const h = Math.max(26, (b.endMin - b.startMin) * PX_PER_MIN - 2);
               const widthPct = 100 / b.lanes;
               const isSelected = selected === b.id;
               return (
@@ -375,7 +376,7 @@ export function TimeBlockCalendar() {
                     aria-hidden
                   />
                   <p
-                    className={`truncate pl-1.5 text-[11px] font-semibold leading-tight ${custom ? "" : style.text}`}
+                    className={`truncate pl-1.5 text-xs font-semibold leading-tight ${custom ? "" : style.text}`}
                     style={custom ? { color: custom.hex } : undefined}
                   >
                     {b.title}
@@ -394,7 +395,7 @@ export function TimeBlockCalendar() {
                         setSelected(null);
                       }}
                       aria-label={`Remove ${b.title}`}
-                      className={`absolute -right-1.5 -top-1.5 z-30 h-5 w-5 items-center justify-center rounded-full bg-fitness text-[11px] leading-none text-white shadow-card ${
+                      className={`absolute -right-2 -top-2 z-30 h-6 w-6 items-center justify-center rounded-full bg-fitness text-sm leading-none text-white shadow-card ${
                         isSelected ? "flex" : "hidden group-hover:flex"
                       }`}
                     >

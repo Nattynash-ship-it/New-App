@@ -844,6 +844,30 @@ export function recipeVideoUrl(title: string): string {
 }
 
 /**
+ * For wellness habits, a YouTube search that actually helps you do the habit —
+ * e.g. a "Meditate" habit links to guided meditations. Returns null for habits
+ * with no obvious video (so we don't show an irrelevant link).
+ */
+export function habitVideoUrl(name: string): { url: string; label: string } | null {
+  const n = name.toLowerCase();
+  const rules: Array<[RegExp, string, string]> = [
+    [/medit|mindful|calm|breath/, "guided meditation", "guided"],
+    [/yoga/, "yoga for beginners", "follow along"],
+    [/stretch|mobility/, "stretching routine", "follow along"],
+    [/workout|exercise|gym|hiit|strength/, "home workout follow along", "follow along"],
+    [/run|jog/, "beginner running guide", "watch"],
+    [/walk/, "indoor walking workout", "follow along"],
+    [/journal|gratitude/, "journaling prompts", "ideas"],
+  ];
+  for (const [re, q, label] of rules) {
+    if (re.test(n)) {
+      return { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label };
+    }
+  }
+  return null;
+}
+
+/**
  * Matches the built-in recipe library against what's actually available:
  * pantry items marked on-hand plus everything on the grocery list (it's
  * incoming). Returns ready-now first, then near-misses (≤2 missing).

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card, Checkbox, EmptyState, InlineAdd, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { CalorieTracker } from "@/components/CalorieTracker";
+import { AddRecipe } from "@/components/AddRecipe";
 import { RecipeSearch } from "@/components/RecipeSearch";
 import { SectionTasks } from "@/components/SectionTasks";
 import { WeekPlanner } from "@/components/WeekPlanner";
@@ -430,6 +431,7 @@ export default function MealsPage() {
       />
       <CalorieTracker />
       <RecipeSearch />
+      <AddRecipe />
       <CookFromKitchen />
       <ReverseRecipeEngine />
       <WeekPlanner />

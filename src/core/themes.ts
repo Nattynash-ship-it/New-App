@@ -22,8 +22,11 @@ export const THEMES: ThemeMeta[] = [
   { id: "meadow", label: "Meadow", bg: "#F3F9F0", accent: "#389452", mode: "light" },
   { id: "lavender", label: "Lavender", bg: "#F7F5FF", accent: "#8A64E4", mode: "light" },
   { id: "daylight", label: "Daylight", bg: "#F7F8FA", accent: "#4056D8", mode: "light" },
+  { id: "sand", label: "Sand", bg: "#F4EEE4", accent: "#B76236", mode: "light" },
   { id: "galaxy", label: "Galaxy", bg: "#110D22", accent: "#C07CFF", mode: "dark" },
   { id: "nocturne", label: "Nocturne", bg: "#0E0F1B", accent: "#968CFA", mode: "dark" },
+  { id: "forest", label: "Forest", bg: "#0C1612", accent: "#4AC88C", mode: "dark" },
+  { id: "slate", label: "Slate", bg: "#0F141A", accent: "#38BDD6", mode: "dark" },
   { id: "midnight", label: "Midnight", bg: "#0B0F13", accent: "#C8F04D", mode: "dark" },
 ];
 

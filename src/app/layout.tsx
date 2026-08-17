@@ -31,11 +31,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// Apply the saved theme before first paint, migrating anyone on a removed
-// theme (bloom/aurora/ember/velvet) to the current default. Keep the inline
-// theme-id list below in sync with src/core/themes.ts (this pre-paint script
-// runs before modules load, so it can't import THEME_IDS).
-const themeInit = `(function(){try{var v=["glass","cartoon","bubblegum","sunset","ocean","meadow","lavender","daylight","galaxy","nocturne","midnight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="glass";if(t)localStorage.setItem("hub-theme","glass")}}catch(e){}})()`;
+// Apply the saved theme + display preferences before first paint (no flash),
+// migrating anyone on a removed theme (bloom/aurora/ember/velvet) to the
+// default. Keep the inline theme-id list in sync with src/core/themes.ts and
+// the font/size maps with src/core/fonts.ts (this pre-paint script runs before
+// modules load, so it can't import them).
+const themeInit = `(function(){try{var el=document.documentElement;var v=["glass","cartoon","bubblegum","sunset","ocean","meadow","lavender","daylight","sand","galaxy","nocturne","forest","slate","midnight"];var t=localStorage.getItem("hub-theme");if(t&&v.indexOf(t)>=0){el.dataset.theme=t}else{el.dataset.theme="glass";if(t)localStorage.setItem("hub-theme","glass")}var sizes={small:0.92,default:1,large:1.12,xl:1.25};var sz=localStorage.getItem("hub-textsize");if(sz&&sizes[sz])el.style.setProperty("--font-scale",String(sizes[sz]));var fonts={rounded:'ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Nunito", system-ui, sans-serif',serif:'"Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif',humanist:'"Avenir Next", "Segoe UI", Optima, system-ui, sans-serif',mono:'ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace'};var f=localStorage.getItem("hub-font");if(f&&fonts[f])el.style.setProperty("--font-body-override",fonts[f]);}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

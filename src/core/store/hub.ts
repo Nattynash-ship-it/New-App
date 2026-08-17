@@ -203,6 +203,15 @@ export interface HubState {
 
   // --- Work actions ---
   addProject: (name: string, category: string) => void;
+  /** Create a fully-specified project in one step (professional add flow). */
+  createProject: (input: {
+    name: string;
+    category: string;
+    status?: ProjectStatus;
+    notes?: string;
+    trackingRefs?: string[];
+    firstMilestone?: { title: string; targetDate?: string };
+  }) => void;
   removeProject: (id: string) => void;
   setProjectStatus: (id: string, status: ProjectStatus) => void;
   toggleWorkTask: (projectId: string, taskId: string) => void;
@@ -539,6 +548,33 @@ export const useHub = create<HubState>()(
               milestones: [],
               trackingRefs: [],
               notes: "",
+            },
+          ],
+        })),
+      createProject: (input) =>
+        set((s) => ({
+          projects: [
+            ...s.projects,
+            {
+              id: newId("proj"),
+              name: input.name.trim(),
+              category: input.category.trim() || "General",
+              status: input.status ?? ("active" as const),
+              tasks: [],
+              milestones: input.firstMilestone?.title.trim()
+                ? [
+                    {
+                      id: newId("ms"),
+                      title: input.firstMilestone.title.trim(),
+                      targetDate: input.firstMilestone.targetDate || undefined,
+                      done: false,
+                    },
+                  ]
+                : [],
+              trackingRefs: (input.trackingRefs ?? [])
+                .map((r) => r.trim())
+                .filter(Boolean),
+              notes: input.notes?.trim() ?? "",
             },
           ],
         })),

@@ -371,29 +371,181 @@ function ProjectCard({ projectId }: { projectId: string }) {
   );
 }
 
+const PROJECT_CATEGORIES = [
+  "Client work",
+  "Internal",
+  "Research",
+  "Operations",
+  "Product",
+  "Personal",
+];
+
 function AddProject() {
-  const addProject = useHub((s) => s.addProject);
+  const createProject = useHub((s) => s.createProject);
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const [status, setStatus] = useState<ProjectStatus>("active");
+  const [refs, setRefs] = useState("");
+  const [notes, setNotes] = useState("");
+  const [milestone, setMilestone] = useState("");
+  const [milestoneDate, setMilestoneDate] = useState("");
+
+  function reset() {
+    setName("");
+    setCategory("");
+    setStatus("active");
+    setRefs("");
+    setNotes("");
+    setMilestone("");
+    setMilestoneDate("");
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="card flex w-full items-center justify-center gap-2 border-dashed p-3.5 text-sm font-medium text-muted transition-colors hover:border-work hover:text-work-bright"
+      >
+        ＋ New project
+      </button>
+    );
+  }
 
   return (
     <form
-      className="card flex flex-wrap items-center gap-2 border-dashed p-3"
+      className="card space-y-3 border-dashed p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (name.trim()) {
-          addProject(name.trim(), category.trim() || "General");
-          setName("");
-          setCategory("");
-        }
+        if (!name.trim()) return;
+        createProject({
+          name,
+          category,
+          status,
+          notes,
+          trackingRefs: refs ? refs.split(",") : [],
+          firstMilestone: milestone.trim()
+            ? { title: milestone, targetDate: milestoneDate || undefined }
+            : undefined,
+        });
+        reset();
+        setOpen(false);
       }}
     >
-      <span className="text-sm text-muted">New project</span>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" className="input min-w-[160px] flex-1 !py-1.5 text-xs" />
-      <MicButton value={name} onChange={setName} />
-      <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (optional)" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
-      <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!name.trim()}>
-        Create
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">New project</h3>
+        <button
+          type="button"
+          onClick={() => {
+            reset();
+            setOpen(false);
+          }}
+          className="text-xs text-muted hover:text-ink"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Project name
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Q3 policy review"
+            className="input !py-2 text-sm"
+          />
+          <MicButton value={name} onChange={setName} />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Category
+          </label>
+          <input
+            list="project-categories"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Client work, Internal…"
+            className="input !py-2 text-sm"
+          />
+          <datalist id="project-categories">
+            {PROJECT_CATEGORIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Status
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+            className="input !py-2 text-sm"
+          >
+            {PROJECT_STATUSES.map((st) => (
+              <option key={st} value={st}>
+                {st}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Tracking refs <span className="font-normal normal-case">(optional, comma-separated)</span>
+        </label>
+        <input
+          value={refs}
+          onChange={(e) => setRefs(e.target.value)}
+          placeholder="DOC-1042, PO-88"
+          className="input !py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Notes <span className="font-normal normal-case">(optional)</span>
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Scope, stakeholders, links…"
+          rows={2}
+          className="input !py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+          First milestone <span className="font-normal normal-case">(optional)</span>
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={milestone}
+            onChange={(e) => setMilestone(e.target.value)}
+            placeholder="e.g. Kickoff complete"
+            className="input min-w-[160px] flex-1 !py-2 text-sm"
+          />
+          <input
+            type="date"
+            value={milestoneDate}
+            onChange={(e) => setMilestoneDate(e.target.value)}
+            className="input !w-auto !py-2 text-sm"
+            aria-label="Milestone target date"
+          />
+        </div>
+      </div>
+
+      <button type="submit" className="btn-primary text-sm" disabled={!name.trim()}>
+        Create project
       </button>
     </form>
   );

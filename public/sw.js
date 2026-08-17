@@ -2,7 +2,7 @@
  * Network-first for navigations (fresh content when online, cached fallback
  * when not); cache-first for static assets. */
 
-const CACHE = "vela-v33";
+const CACHE = "vela-v34";
 const APP_SHELL = ["/", "/work", "/school", "/meals", "/fitness", "/family", "/notes", "/settings", "/connections"];
 
 self.addEventListener("install", (event) => {
@@ -10,6 +10,17 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).catch(() => {}),
   );
   self.skipWaiting();
+});
+
+// Let the page force an update (activate a waiting worker) or wipe caches on
+// demand — powers the "Update to the newest version" button in Settings.
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (data === "SKIP_WAITING") {
+    self.skipWaiting();
+  } else if (data === "CLEAR_CACHES") {
+    event.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))));
+  }
 });
 
 self.addEventListener("activate", (event) => {

@@ -15,13 +15,12 @@ import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
 import { ClassImporter } from "@/components/ClassImporter";
 import { SmartCapture } from "@/components/SmartCapture";
-import { addDays, daysUntil, formatFriendly, formatShort, formatTime, todayISO } from "@/core/dates";
+import { StudySchedule } from "@/components/StudySchedule";
+import { addDays, daysUntil, formatFriendly, formatShort, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
 import { SectionTasks } from "@/components/SectionTasks";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const formatDateInput = (offsetDays: number) => addDays(todayISO(), offsetDays);
 
@@ -99,74 +98,6 @@ function GraduationTracker() {
         {stats.inProgress} credits in progress now — finishing them puts you at{" "}
         <span className="font-semibold text-ink">{pctAfter}%</span> of the degree.
       </p>
-    </Card>
-  );
-}
-
-function StudySchedule() {
-  const studyBlocks = useHub((s) => s.studyBlocks);
-  const courses = useHub((s) => s.courses);
-  const addStudyBlock = useHub((s) => s.addStudyBlock);
-  const removeStudyBlock = useHub((s) => s.removeStudyBlock);
-
-  const [day, setDay] = useState(1);
-  const [time, setTime] = useState("20:00");
-  const [courseId, setCourseId] = useState<string>(courses[0]?.id ?? "");
-
-  const sorted = [...studyBlocks].sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.time.localeCompare(b.time));
-
-  return (
-    <Card>
-      <SectionTitle right={<span className="text-xs text-muted">shows on your daily timeline</span>}>
-        Study schedule
-      </SectionTitle>
-      {sorted.length === 0 ? (
-        <EmptyState>Block study time — deciding when to study is half the battle.</EmptyState>
-      ) : (
-        <ul className="space-y-1">
-          {sorted.map((b) => {
-            const course = courses.find((c) => c.id === b.courseId);
-            return (
-              <li key={b.id} className="group flex items-center justify-between gap-2 rounded-lg bg-paper px-2.5 py-1.5 text-xs">
-                <span>
-                  <span className="font-semibold">{DAY_NAMES[b.dayOfWeek]}</span>{" "}
-                  <span className="text-muted">{formatTime(b.time)} · {b.durationMin}m</span>{" "}
-                  {course?.name ?? "Focus session"}
-                </span>
-                <button
-                  onClick={() => removeStudyBlock(b.id)}
-                  className="text-muted opacity-0 hover:text-fitness-bright group-hover:opacity-100"
-                  aria-label="Remove study block"
-                >
-                  ×
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <form
-        className="mt-3 flex flex-wrap items-center gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          addStudyBlock({ courseId: courseId || undefined, dayOfWeek: day, time, durationMin: 60 });
-        }}
-      >
-        <select value={day} onChange={(e) => setDay(Number(e.target.value))} className="input !w-auto !py-1.5 text-xs" aria-label="Day">
-          {DAY_NAMES.map((d, i) => (
-            <option key={d} value={i}>{d}</option>
-          ))}
-        </select>
-        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Time" />
-        <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input !w-auto max-w-[160px] !py-1.5 text-xs" aria-label="Course">
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <button type="submit" className="btn-ghost !px-3 !py-1.5 text-xs">
-          Add block
-        </button>
-      </form>
     </Card>
   );
 }
@@ -270,10 +201,10 @@ function AssignmentList() {
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add assignment" className="input min-w-[140px] flex-1 !py-1.5 text-xs" />
         <MicButton value={title} onChange={setTitle} />
         <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input !w-auto !py-1.5 text-xs" aria-label="Due date" />
-        <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input !w-auto max-w-[140px] !py-1.5 text-xs" aria-label="Course">
+        <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input !w-auto min-w-[150px] !py-1.5 text-xs" aria-label="Course">
           <option value="">No course</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.code}</option>
+            <option key={c.id} value={c.id}>{c.code ? `${c.code} · ` : ""}{c.name}</option>
           ))}
         </select>
         <button type="submit" className="btn-ghost shrink-0 !px-3 !py-1.5 text-xs" disabled={!title.trim()}>

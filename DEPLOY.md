@@ -73,7 +73,7 @@ that's added, the Connect buttons will report the provider "isn't set up yet."
 - Add a custom domain in **Vercel → Domains** for a friendlier install name.
 - After each deploy the service worker cache version (`public/sw.js`, `CACHE`)
   should be bumped so returning users get fresh assets — it's currently
-  `vela-v33`. Bump it on any release that changes cached routes/assets.
+  `vela-v36`. Bump it on any release that changes cached routes/assets.
 - iOS installs use the `apple-touch-icon`; both are already wired in
   `src/app/layout.tsx` and `src/app/manifest.ts`.
 

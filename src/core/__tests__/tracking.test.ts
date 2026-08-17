@@ -10,7 +10,7 @@ import {
   programEndDate,
   programHasStarted,
   programWeekRange,
-} from "../fitness/program";
+} from "../fitness/pdfTracker";
 import { foodDay, weightStats } from "../selectors";
 
 // The persisted store touches localStorage at import — shim it first.
@@ -197,12 +197,12 @@ describe("8-week glute program tracking", () => {
   it("restarts on a new date, clearing all progress", async () => {
     const { useHub } = await import("../store/hub");
     const s = () => useHub.getState();
-    s().toggleProgramDay(1, 1);
-    s().toggleProgramDay(2, 3);
+    s().toggleTrackerDay(1, 1);
+    s().toggleTrackerDay(2, 3);
     expect(Object.values(s().programProgress).filter(Boolean).length).toBe(2);
 
-    s().restartProgram("2026-08-16");
-    expect(s().programStartDate).toBe("2026-08-16");
+    s().restartTracker("2026-08-16");
+    expect(s().trackerStartDate).toBe("2026-08-16");
     expect(Object.values(s().programProgress).filter(Boolean).length).toBe(0);
     expect(s().programWeek).toBeGreaterThanOrEqual(1);
     expect(s().programWeek).toBeLessThanOrEqual(8);
@@ -212,13 +212,13 @@ describe("8-week glute program tracking", () => {
     const { useHub } = await import("../store/hub");
     const s = () => useHub.getState();
 
-    s().toggleProgramDay(1, 1);
-    s().toggleProgramDay(1, 2);
+    s().toggleTrackerDay(1, 1);
+    s().toggleTrackerDay(1, 2);
     expect(s().programProgress[programCellKey(1, 1)]).toBe(true);
     expect(Object.values(s().programProgress).filter(Boolean)).toHaveLength(2);
 
     // Toggling off removes it.
-    s().toggleProgramDay(1, 1);
+    s().toggleTrackerDay(1, 1);
     expect(s().programProgress[programCellKey(1, 1)]).toBeUndefined();
     expect(Object.values(s().programProgress).filter(Boolean)).toHaveLength(1);
 

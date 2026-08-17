@@ -19,12 +19,12 @@ import {
   programHasStarted,
   programWeekRange,
   type ProgramDay,
-} from "@/core/fitness/program";
+} from "@/core/fitness/pdfTracker";
 import { useHub } from "@/core/store/hub";
 
 function DayRow({ day, week, date }: { day: ProgramDay; week: number; date: string }) {
   const progress = useHub((s) => s.programProgress);
-  const toggleProgramDay = useHub((s) => s.toggleProgramDay);
+  const toggleTrackerDay = useHub((s) => s.toggleTrackerDay);
   const addRoutineWithExercises = useHub((s) => s.addRoutineWithExercises);
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState(false);
@@ -38,7 +38,7 @@ function DayRow({ day, week, date }: { day: ProgramDay; week: number; date: stri
     <div className={`rounded-xl border transition-colors ${done ? "border-fitness bg-fitness-soft" : "border-line bg-paper"}`}>
       <div className="flex items-start gap-2 p-3">
         <button
-          onClick={() => toggleProgramDay(week, day.day)}
+          onClick={() => toggleTrackerDay(week, day.day)}
           aria-pressed={done}
           aria-label={`Mark ${day.name} week ${week} ${done ? "not done" : "done"}`}
           className={`mt-0.5 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-md border transition-colors ${
@@ -123,9 +123,9 @@ function DayRow({ day, week, date }: { day: ProgramDay; week: number; date: stri
 export function GluteProgram() {
   const progress = useHub((s) => s.programProgress);
   const week = useHub((s) => s.programWeek);
-  const startDate = useHub((s) => s.programStartDate);
+  const startDate = useHub((s) => s.trackerStartDate);
   const setProgramWeek = useHub((s) => s.setProgramWeek);
-  const restartProgram = useHub((s) => s.restartProgram);
+  const restartTracker = useHub((s) => s.restartTracker);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(startDate);
@@ -181,7 +181,7 @@ export function GluteProgram() {
           className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-line p-3"
           onSubmit={(e) => {
             e.preventDefault();
-            restartProgram(draft);
+            restartTracker(draft);
             setEditing(false);
           }}
         >

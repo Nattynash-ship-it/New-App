@@ -80,7 +80,7 @@ import type {
   WorkoutLog,
   WorkProject,
 } from "../types";
-import { PROGRAM_DEFAULT_START, programCellKey, programCurrentWeek } from "../fitness/program";
+import { PROGRAM_DEFAULT_START, programCellKey, programCurrentWeek } from "../fitness/pdfTracker";
 
 /** Canonical list of persisted data slices (no action fns). Export/import walk
  *  this so a newly-added slice can never be silently dropped from a backup. */
@@ -88,11 +88,12 @@ export const DATA_KEYS = [
   "profile", "checkIns", "events", "projects", "meetings", "courses", "assignments",
   "studyBlocks", "degreePlan", "pantry", "recipes", "plannedMeals", "groceryList",
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
-  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek", "programStartDate",
+  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek", "trackerStartDate",
   "foodLog", "calorieGoal", "proteinGoal",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
+  "programStartDate", "programDone", "programExtras",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -140,11 +141,13 @@ export interface HubState {
   weightLog: WeightEntry[];
   weightGoal: number | null;
   weightUnit: WeightUnit;
-  /** 8-Week Glute program: which cells (week,day) are done + the active week. */
+  /** PDF tracker (src/core/fitness/pdfTracker.ts): which (week,day) cells are
+   *  done + the active week. Kept separate from the day-by-day program's
+   *  `programDone`/`programExtras` so the two trackers never mix progress. */
   programProgress: Record<string, boolean>;
   programWeek: number;
-  /** Calendar anchor: the Sunday Week 1 begins on (weeks run Sun → Sat). */
-  programStartDate: string;
+  /** PDF tracker's calendar anchor: the Sunday Week 1 begins on (Sun → Sat). */
+  trackerStartDate: string;
   /** Food/calorie counting: logged foods + daily calorie & protein targets. */
   foodLog: FoodEntry[];
   calorieGoal: number;
@@ -182,6 +185,13 @@ export interface HubState {
   alertsEnabled: boolean;
   /** Where the weather card looks — zip + resolved coordinates. */
   weatherLocation: WeatherLocation;
+  // Fitness program
+  /** Day the 8-week glute program started (ISO). */
+  programStartDate: string;
+  /** ISO dates of completed program days. */
+  programDone: string[];
+  /** Extra app workouts the user added to a program day: date → workout ids. */
+  programExtras: Record<string, string[]>;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -297,14 +307,14 @@ export interface HubState {
   /** Switch lb/kg, converting every stored weight + goal to the new unit. */
   setWeightUnit: (unit: WeightUnit) => void;
 
-  // --- 8-Week Glute program ---
-  /** Check/uncheck a training day for a given program week. */
-  toggleProgramDay: (week: number, day: number) => void;
-  /** Set the active program week (1–8). */
+  // --- PDF tracker (W1–W8 grid, Sunday rest) ---
+  /** Check/uncheck a training day for a given tracker week. */
+  toggleTrackerDay: (week: number, day: number) => void;
+  /** Set the active tracker week (1–8). */
   setProgramWeek: (week: number) => void;
-  /** Restart the program on a new start date: clears all completion and jumps
+  /** Restart the tracker on a new start date: clears all completion and jumps
    *  the active week to wherever `today` falls in the fresh schedule. */
-  restartProgram: (startDate: string) => void;
+  restartTracker: (startDate: string) => void;
 
   // --- Food / calorie counting ---
   logFood: (name: string, calories: number, protein?: number, date?: string) => void;
@@ -368,6 +378,11 @@ export interface HubState {
   setSchoolPortalUrl: (url: string) => void;
   setAlertsEnabled: (on: boolean) => void;
   setWeatherLocation: (loc: WeatherLocation) => void;
+  /** (Re)start the 8-week program from a date (defaults to today) and clear done. */
+  restartProgram: (startDate: string) => void;
+  toggleProgramDay: (date: string) => void;
+  addProgramWorkout: (date: string, workoutId: string) => void;
+  removeProgramWorkout: (date: string, workoutId: string) => void;
 }
 
 function initialState() {
@@ -401,7 +416,7 @@ function initialState() {
     weightUnit: "lb" as WeightUnit,
     programProgress: {} as Record<string, boolean>,
     programWeek: programCurrentWeek(PROGRAM_DEFAULT_START),
-    programStartDate: PROGRAM_DEFAULT_START,
+    trackerStartDate: PROGRAM_DEFAULT_START,
     foodLog: [] as FoodEntry[],
     calorieGoal: 1500,
     proteinGoal: 100,
@@ -424,6 +439,9 @@ function initialState() {
     schoolPortalUrl: "",
     alertsEnabled: false,
     weatherLocation: DEFAULT_WEATHER_LOCATION,
+    programStartDate: todayISO(),
+    programDone: [] as string[],
+    programExtras: {} as Record<string, string[]>,
   };
 }
 
@@ -1080,8 +1098,8 @@ export const useHub = create<HubState>()(
           };
         }),
 
-      // --- 8-Week Glute program ---
-      toggleProgramDay: (week, day) =>
+      // --- PDF tracker (W1–W8 grid, Sunday rest) ---
+      toggleTrackerDay: (week, day) =>
         set((s) => {
           const key = programCellKey(week, day);
           const next = { ...s.programProgress };
@@ -1090,10 +1108,10 @@ export const useHub = create<HubState>()(
           return { programProgress: next };
         }),
       setProgramWeek: (week) => set({ programWeek: Math.min(8, Math.max(1, Math.round(week))) }),
-      restartProgram: (startDate) => {
+      restartTracker: (startDate) => {
         const clean = (startDate || "").slice(0, 10) || PROGRAM_DEFAULT_START;
         set({
-          programStartDate: clean,
+          trackerStartDate: clean,
           programProgress: {},
           programWeek: programCurrentWeek(clean),
         });
@@ -1332,6 +1350,27 @@ export const useHub = create<HubState>()(
       setSchoolPortalUrl: (url) => set({ schoolPortalUrl: url.trim() }),
       setAlertsEnabled: (alertsEnabled) => set({ alertsEnabled }),
       setWeatherLocation: (weatherLocation) => set({ weatherLocation }),
+      restartProgram: (startDate) => set({ programStartDate: startDate, programDone: [] }),
+      toggleProgramDay: (date) =>
+        set((s) => ({
+          programDone: s.programDone.includes(date)
+            ? s.programDone.filter((d) => d !== date)
+            : [...s.programDone, date],
+        })),
+      addProgramWorkout: (date, workoutId) =>
+        set((s) => {
+          const cur = s.programExtras[date] ?? [];
+          if (cur.includes(workoutId)) return s;
+          return { programExtras: { ...s.programExtras, [date]: [...cur, workoutId] } };
+        }),
+      removeProgramWorkout: (date, workoutId) =>
+        set((s) => {
+          const cur = (s.programExtras[date] ?? []).filter((w) => w !== workoutId);
+          const next = { ...s.programExtras };
+          if (cur.length) next[date] = cur;
+          else delete next[date];
+          return { programExtras: next };
+        }),
     }),
     {
       name: "life-hub-v1",
@@ -1365,7 +1404,7 @@ export const useHub = create<HubState>()(
           weightUnit: p.weightUnit ?? current.weightUnit,
           programProgress: p.programProgress ?? current.programProgress,
           programWeek: p.programWeek ?? current.programWeek,
-          programStartDate: p.programStartDate ?? current.programStartDate,
+          trackerStartDate: p.trackerStartDate ?? current.trackerStartDate,
           foodLog: p.foodLog ?? current.foodLog,
           calorieGoal: p.calorieGoal ?? current.calorieGoal,
           proteinGoal: p.proteinGoal ?? current.proteinGoal,
@@ -1374,6 +1413,9 @@ export const useHub = create<HubState>()(
           todos: p.todos ?? current.todos,
           kidMeals: p.kidMeals ?? current.kidMeals,
           groceryConnections: p.groceryConnections ?? current.groceryConnections,
+          programStartDate: p.programStartDate ?? current.programStartDate,
+          programDone: p.programDone ?? current.programDone,
+          programExtras: p.programExtras ?? current.programExtras,
         };
       },
     },

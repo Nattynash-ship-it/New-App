@@ -356,6 +356,26 @@ export const WORKOUT_LIBRARY: LibraryWorkout[] = [
       { name: "Core Circuit: mtn climbers / rev crunches / plank / bicycles", target: "3 rounds × 30 sec each" },
     ],
   },
+  {
+    id: "lib_glute_sun",
+    name: "Glute Program · Day 7 — Stretch, Mobility & Glute Pump",
+    focus: "8-Week Tracker · active recovery — mobility, a light glute pump, and core",
+    goals: ["mobility", "sculpt"],
+    equipment: ["bands", "bodyweight"],
+    durationMin: 30,
+    level: "starter",
+    exercises: [
+      { name: "Glute Bridge March", target: "3 × 20 total" },
+      { name: "Banded Glute Bridge Hold + Pulses", target: "3 × 20" },
+      { name: "Clamshells (light band)", target: "3 × 20 / side" },
+      { name: "World's Greatest Stretch", target: "5 / side, slow" },
+      { name: "Hip Flexor Stretch", target: "60 sec / side" },
+      { name: "Figure-4 Glute Stretch", target: "60 sec / side" },
+      { name: "Cat–Cow + Thread the Needle", target: "2 min flow" },
+      { name: "Dead Bug", target: "3 × 12 / side" },
+      { name: "Side Plank", target: "2 × 30 sec / side" },
+    ],
+  },
 
   // --- More at-home routines ---
   {

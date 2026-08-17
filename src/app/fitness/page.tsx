@@ -8,6 +8,7 @@ import { WeightTracker } from "@/components/WeightTracker";
 import { GluteProgram } from "@/components/GluteProgram";
 import { EquipmentCard, WorkoutLibrary } from "@/components/WorkoutLibrary";
 import { FoolproofPlan } from "@/components/FoolproofPlan";
+import { EightWeekProgram } from "@/components/EightWeekProgram";
 import { SectionTasks } from "@/components/SectionTasks";
 import { Attachments } from "@/components/Attachments";
 import { MicButton } from "@/components/MicButton";
@@ -330,7 +331,7 @@ function TrainingPlans() {
   return (
     <Card>
       <SectionTitle right={<span className="text-xs text-muted">tap to open</span>}>
-        Training plans
+        Plans &amp; files
       </SectionTitle>
       <a
         href="/plans/8-week-glute-sculpt-tracker.pdf"
@@ -340,8 +341,8 @@ function TrainingPlans() {
       >
         <span className="text-xl" aria-hidden>📄</span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-medium">8-Week Glute &amp; Sculpt Tracker</span>
-          <span className="block text-xs text-muted">7-page PDF · progressive glute + sculpt program</span>
+          <span className="block text-sm font-medium">8-Week Glute &amp; Sculpt Tracker (PDF)</span>
+          <span className="block text-xs text-muted">The original 7-page plan</span>
         </span>
         <span className="shrink-0 text-xs font-medium text-accent">Open →</span>
       </a>
@@ -385,13 +386,17 @@ export default function FitnessPage() {
       {/* Weight-loss accountability — log weight, set a goal, watch the trend */}
       <WeightTracker />
 
+      {/* The 8-week glute program — day by day, expandable, with completion */}
+      <EightWeekProgram />
+
       {/* The foolproof plan — workouts + meal prep + groceries for your goal */}
       <FoolproofPlan />
 
-      {/* The 8-Week Glute program — every day labeled with its workouts, tracked */}
+      {/* The same program as the printable PDF tracker — each day's exact
+          exercises and sets × reps, checked off on a W1–W8 grid. */}
       <GluteProgram />
 
-      {/* Training plans — the printable 8-week glute PDF + your own uploads */}
+      {/* Plans & files — the original 8-week PDF + your own uploads */}
       <TrainingPlans />
 
       {/* At-home workout library — pick from full routines built for your gear */}

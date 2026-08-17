@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { useHub, useHydrated } from "@/core/store/hub";
+import { notifyBlocker, requestNotifyPermission, showNotification } from "@/lib/notify";
 import type { DeliveryService } from "@/core/types";
 
 const GROCERY: Array<{ id: DeliveryService; label: string; icon: string; hint: string }> = [
@@ -198,20 +199,24 @@ function AlertsRow() {
   const [status, setStatus] = useState("");
 
   async function enable() {
-    if (typeof Notification === "undefined") {
-      setStatus("This browser doesn't support notifications.");
+    const permission = await requestNotifyPermission();
+    if (permission === "unsupported") {
+      setStatus(notifyBlocker() ?? "This browser doesn't support notifications.");
       return;
     }
-    const permission = await Notification.requestPermission();
     if (permission === "granted") {
       setAlertsEnabled(true);
-      new Notification("Vela alerts are on ✓", {
+      const shown = await showNotification("Vela alerts are on ✓", {
         body: "You'll get a heads-up here when new school email arrives (once your inbox is connected).",
       });
-      setStatus("Alerts enabled — that test notification confirms they work.");
+      setStatus(
+        shown
+          ? "Alerts enabled — that test notification confirms they work."
+          : (notifyBlocker() ?? "Enabled, but the test notification couldn't be shown."),
+      );
     } else {
       setAlertsEnabled(false);
-      setStatus("Notifications are blocked. Allow them in your browser settings to get alerts.");
+      setStatus(notifyBlocker() ?? "Notifications are blocked. Allow them in your settings.");
     }
   }
 

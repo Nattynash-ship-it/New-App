@@ -7,6 +7,7 @@ import { selectDayBlocks, type DayBlock } from "@/core/selectors";
 import { addDays, formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS, eventColor, hexToRgba } from "@/core/eventColors";
+import { notifyBlocker, notifyPermission, requestNotifyPermission } from "@/lib/notify";
 import type { ParsedIntentKind } from "@/core/types";
 
 const PX_PER_MIN = 1; // 60 min = 60px — roomier blocks, easier to read & tap
@@ -112,22 +113,23 @@ export function TimeBlockCalendar() {
       setAlertMsg("");
       return;
     }
-    if (typeof Notification === "undefined") {
-      setAlertMsg("This browser doesn't support reminders.");
+    const blocker = notifyBlocker();
+    if (blocker && notifyPermission() !== "default") {
+      setAlertMsg(blocker);
       return;
     }
-    if (Notification.permission === "granted") {
+    if (notifyPermission() === "granted") {
       setDraftAlert(true);
-      setAlertMsg("");
+      setAlertMsg(notifyBlocker() ?? "");
       return;
     }
-    const perm = await Notification.requestPermission();
+    const perm = await requestNotifyPermission();
     if (perm === "granted") {
       setDraftAlert(true);
-      setAlertMsg("");
+      setAlertMsg(notifyBlocker() ?? "");
     } else {
       setDraftAlert(false);
-      setAlertMsg("Reminders are blocked — allow notifications in your browser to use them.");
+      setAlertMsg(notifyBlocker() ?? "Reminders are blocked — allow notifications to use them.");
     }
   }
 

@@ -1,24 +1,43 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+import { notifyPermission, showNotification } from "@/lib/notify";
 
 const GRACE_MS = 10 * 60 * 1000; // catch up on events that started ≤10 min ago
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Fires a browser reminder as an alert-enabled event starts. While the app is
- * open a timer pings at the exact start minute; if the app is (re)opened just
- * after a start, it catches up within a short grace window. Each event pings at
- * most once per day (tracked in sessionStorage). Local-first: like the rest of
- * Vela, it can only remind you while the app is open — the honest promise.
+ * Fires a reminder as an alert-enabled event starts. While the app is open a
+ * timer pings at the exact start minute; if the app is reopened (or brought
+ * back to the foreground) just after a start, it catches up within a short
+ * grace window — timers don't survive a backgrounded tab, so that re-check is
+ * what makes reminders feel reliable.
+ *
+ * Notifications go through the service worker (see src/lib/notify.ts) because
+ * iPhone/iPad can't show them any other way. Each event pings at most once per
+ * day, tracked in sessionStorage.
  */
 export function EventAlerts() {
   const events = useHub((s) => s.events);
+  // Bumped on focus/visibility so the effect re-runs and catches missed starts.
+  const [wake, setWake] = useState(0);
 
   useEffect(() => {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const bump = () => {
+      if (document.visibilityState === "visible") setWake((n) => n + 1);
+    };
+    document.addEventListener("visibilitychange", bump);
+    window.addEventListener("focus", bump);
+    return () => {
+      document.removeEventListener("visibilitychange", bump);
+      window.removeEventListener("focus", bump);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (notifyPermission() !== "granted") return;
     const today = todayISO();
 
     let seen: Set<string>;
@@ -32,11 +51,11 @@ export function EventAlerts() {
       try {
         sessionStorage.setItem("vela-event-alerted", JSON.stringify([...seen]));
       } catch {
-        /* storage blocked — the reminder just may repeat next open */
+        /* storage blocked — the reminder may just repeat next open */
       }
     };
     const fire = (title: string, time?: string, tag?: string) =>
-      new Notification("Starting now", {
+      void showNotification("Starting now", {
         body: time ? `${title} · ${formatTime(time)}` : title,
         tag,
       });
@@ -74,7 +93,7 @@ export function EventAlerts() {
     return () => {
       for (const id of timers) window.clearTimeout(id);
     };
-  }, [events]);
+  }, [events, wake]);
 
   return null;
 }

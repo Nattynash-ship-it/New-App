@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+import { notifyPermission, showNotification } from "@/lib/notify";
 
 /**
  * Fires a browser reminder for tasks marked with an alert once they're due
@@ -15,7 +16,7 @@ export function DueTaskAlerts() {
   const todos = useHub((s) => s.todos);
 
   useEffect(() => {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (notifyPermission() !== "granted") return;
     const today = todayISO();
     let seen: Set<string>;
     try {
@@ -30,7 +31,7 @@ export function DueTaskAlerts() {
 
     for (const t of due) {
       const overdue = (t.dueDate ?? today) < today;
-      new Notification(overdue ? "Task overdue" : "Task due today", {
+      void showNotification(overdue ? "Task overdue" : "Task due today", {
         body: t.title,
         tag: `vela-task-${t.id}`,
       });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { DisplaySettings } from "@/components/DisplaySettings";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { UpdateApp } from "@/components/UpdateApp";
 import { useHub, useHydrated } from "@/core/store/hub";
 import {
@@ -366,6 +367,7 @@ export default function SettingsPage() {
         <AppearanceCard />
       </div>
       <DisplaySettings />
+      <NotificationSettings />
       <PasscodeCard />
       <ConnectionsCard />
       <UpdateApp />

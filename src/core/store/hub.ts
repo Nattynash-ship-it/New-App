@@ -472,9 +472,20 @@ export const useHub = create<HubState>()(
         })),
 
       addFromIntent: (intent) => {
-        const { kind, title, date, time } = intent;
+        const { kind, title, date, time, endTime, color, alert } = intent;
+        // Minutes-of-day for a "HH:MM" string, or null.
+        const mins = (t?: string) => {
+          if (!t) return null;
+          const parts = t.split(":");
+          const h = Number(parts[0]);
+          const m = Number(parts[1] ?? 0);
+          return Number.isFinite(h) ? h * 60 + (Number.isFinite(m) ? m : 0) : null;
+        };
         if (kind === "meeting") {
-          get().addMeeting({ title, date, time: time ?? "09:00", durationMin: 30 });
+          const s = mins(time);
+          const e = mins(endTime);
+          const durationMin = s != null && e != null && e > s ? e - s : 30;
+          get().addMeeting({ title, date, time: time ?? "09:00", durationMin });
         } else if (kind === "assignment") {
           get().addAssignment({ title, dueDate: date, dueTime: time });
         } else if (kind === "family_activity") {
@@ -495,7 +506,10 @@ export const useHub = create<HubState>()(
                 title,
                 date,
                 time,
+                ...(endTime ? { endTime } : {}),
                 domain: kind === "workout" ? "fitness" : "compass",
+                ...(color ? { color } : {}),
+                ...(alert ? { alert: true } : {}),
                 createdAt: nowISO(),
               },
             ],

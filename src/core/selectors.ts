@@ -89,6 +89,8 @@ export interface DayBlock {
    * calendar (meetings, events, meals, activities). Assignments and recurring
    * study blocks are managed in their own sections, so they're left in place. */
   removable: boolean;
+  /** Custom colour swatch id (events only) — overrides the domain colour. */
+  color?: string;
 }
 
 export interface DaySchedule {
@@ -122,9 +124,10 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     dur: number,
     subtitle?: string,
     removable = true,
+    color?: string,
   ) => {
     if (start == null) allDay.push({ id, domain, title });
-    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable });
+    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable, color });
   };
 
   for (const m of s.meetings.filter((m) => m.date === date)) {
@@ -148,7 +151,12 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     add(meal.id, "meals", meal.title, start, dur, meal.slot);
   }
   for (const ev of s.events.filter((e) => e.date === date)) {
-    add(ev.id, ev.domain, ev.title, hmToMin(ev.time), 45);
+    const start = hmToMin(ev.time);
+    const end = hmToMin(ev.endTime);
+    const dur = start != null && end != null && end > start ? end - start : 45;
+    const subtitle =
+      start != null && end != null && end > start ? `until ${formatTime(ev.endTime!)}` : undefined;
+    add(ev.id, ev.domain, ev.title, start, dur, subtitle, true, ev.color);
   }
   const weekday = fromISODate(date).getDay();
   for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {

@@ -35,7 +35,7 @@ onboarding (your name + theme); everything else is editable from **Settings**
 
 | Route | Module | What it does |
 | --- | --- | --- |
-| `/` | **Daily Compass** | Morning/evening mood check-in (~20s), energy-aware daily plan, natural-language quick add, a time-block calendar (day view on an hour grid), a single aggregated timeline of today's meetings, deadlines, family activities, and meals, and a 14-day mood trend chart. |
+| `/` | **Daily Compass** | Morning/evening mood check-in (~20s), energy-aware daily plan, natural-language quick add, a time-block calendar (day view on an hour grid) with colour-coded start–end events and an optional start reminder, a single aggregated timeline of today's meetings, deadlines, family activities, and meals, and a 14-day mood trend chart. |
 | `/work` | **Work Hub** | Professional projects with document/correspondence tracking refs, task lists, the meeting schedule, and file attachments per project. |
 | `/school` | **School Hub** | Self-paced CS degree tracker. Courses → units → topics (e.g. the 7-unit Discrete Math course with Graph Theory), plus assignment deadlines. Attach syllabi, notes, and PDFs to any course or unit. |
 | `/meals` | **Nutrition & Grocery** | Seafood & plant-based (dairy-free), high-volume/low-calorie defaults. A daily **food & calorie tracker** (calories + protein logged against editable targets). Check off pantry ingredients → the Reverse Recipe Engine generates a meal from exactly those items. A 7-day × 3-slot week planner grid, plus grocery lists generated from planned meals + pantry gaps, routed to delivery-service webhooks (Whole Foods / Aldi / Instacart placeholders). |

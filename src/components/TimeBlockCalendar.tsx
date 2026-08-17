@@ -6,6 +6,7 @@ import { MicButton } from "./MicButton";
 import { selectDayBlocks, type DayBlock } from "@/core/selectors";
 import { addDays, formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+import { DEFAULT_EVENT_COLOR, EVENT_COLORS, eventColor, hexToRgba } from "@/core/eventColors";
 import type { ParsedIntentKind } from "@/core/types";
 
 const PX_PER_MIN = 0.8; // 60 min = 48px
@@ -68,7 +69,11 @@ export function TimeBlockCalendar() {
   const [adding, setAdding] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftTime, setDraftTime] = useState("09:00");
+  const [draftEnd, setDraftEnd] = useState("10:00");
   const [draftKind, setDraftKind] = useState<ParsedIntentKind>("event");
+  const [draftColor, setDraftColor] = useState<string>(DEFAULT_EVENT_COLOR);
+  const [draftAlert, setDraftAlert] = useState(false);
+  const [alertMsg, setAlertMsg] = useState("");
 
   // Grid bounds: 7am–9pm by default, widened to fit anything earlier/later.
   let startHour = 7;
@@ -91,9 +96,39 @@ export function TimeBlockCalendar() {
     const base = atMin ?? (isToday ? nowMin : 9 * 60);
     const snapped = Math.min(endHour * 60 - 15, Math.max(startMin, Math.round(base / 15) * 15));
     setDraftTime(minToHM(snapped));
+    setDraftEnd(minToHM(Math.min(24 * 60 - 1, snapped + 60)));
     setDraftTitle("");
     setDraftKind("event");
+    setDraftColor(DEFAULT_EVENT_COLOR);
+    setDraftAlert(false);
+    setAlertMsg("");
     setAdding(true);
+  }
+
+  // Ask for notification permission the moment the user turns a reminder on.
+  async function toggleReminder() {
+    if (draftAlert) {
+      setDraftAlert(false);
+      setAlertMsg("");
+      return;
+    }
+    if (typeof Notification === "undefined") {
+      setAlertMsg("This browser doesn't support reminders.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setDraftAlert(true);
+      setAlertMsg("");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      setDraftAlert(true);
+      setAlertMsg("");
+    } else {
+      setDraftAlert(false);
+      setAlertMsg("Reminders are blocked — allow notifications in your browser to use them.");
+    }
   }
 
   function onGridClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -106,7 +141,17 @@ export function TimeBlockCalendar() {
     e.preventDefault();
     const title = draftTitle.trim();
     if (!title) return;
-    addFromIntent({ kind: draftKind, title, date, time: draftTime, confidence: 1 });
+    const hasRange = draftEnd > draftTime;
+    const isEvent = draftKind === "event";
+    addFromIntent({
+      kind: draftKind,
+      title,
+      date,
+      time: draftTime,
+      ...(hasRange ? { endTime: draftEnd } : {}),
+      ...(isEvent ? { color: draftColor, alert: draftAlert } : {}),
+      confidence: 1,
+    });
     setAdding(false);
     setDraftTitle("");
   }
@@ -139,42 +184,104 @@ export function TimeBlockCalendar() {
 
       {adding ? (
         <form
-          className="animate-slide-in mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-paper p-2.5"
+          className="animate-slide-in mb-3 space-y-2 rounded-xl border border-line bg-paper p-2.5"
           onSubmit={save}
         >
-          <input
-            autoFocus
-            value={draftTitle}
-            onChange={(e) => setDraftTitle(e.target.value)}
-            placeholder="New event"
-            className="input min-w-[140px] flex-1 !py-1.5 text-xs"
-          />
-          <MicButton value={draftTitle} onChange={setDraftTitle} />
-          <input
-            type="time"
-            value={draftTime}
-            onChange={(e) => setDraftTime(e.target.value)}
-            className="input !w-auto !py-1.5 text-xs"
-            aria-label="Time"
-          />
-          <select
-            value={draftKind}
-            onChange={(e) => setDraftKind(e.target.value as ParsedIntentKind)}
-            className="input !w-auto !py-1.5 text-xs"
-            aria-label="Type"
-          >
-            {ADD_KINDS.map((k) => (
-              <option key={k.value} value={k.value}>
-                {k.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!draftTitle.trim()}>
-            Add
-          </button>
-          <button type="button" className="btn-ghost !px-2.5 !py-1.5 text-xs" onClick={() => setAdding(false)}>
-            Cancel
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              autoFocus
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              placeholder="New event"
+              className="input min-w-[140px] flex-1 !py-1.5 text-xs"
+            />
+            <MicButton value={draftTitle} onChange={setDraftTitle} />
+            <select
+              value={draftKind}
+              onChange={(e) => setDraftKind(e.target.value as ParsedIntentKind)}
+              className="input !w-auto !py-1.5 text-xs"
+              aria-label="Type"
+            >
+              {ADD_KINDS.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            <label className="flex items-center gap-1.5">
+              From
+              <input
+                type="time"
+                value={draftTime}
+                onChange={(e) => {
+                  setDraftTime(e.target.value);
+                  if (e.target.value >= draftEnd) setDraftEnd(minToHM(Math.min(24 * 60 - 1, hmToMin(e.target.value) + 60)));
+                }}
+                className="input !w-auto !py-1.5 text-xs"
+                aria-label="Start time"
+              />
+            </label>
+            <label className="flex items-center gap-1.5">
+              to
+              <input
+                type="time"
+                value={draftEnd}
+                min={draftTime}
+                onChange={(e) => setDraftEnd(e.target.value)}
+                className="input !w-auto !py-1.5 text-xs"
+                aria-label="End time"
+              />
+            </label>
+            {draftEnd <= draftTime ? (
+              <span className="text-[10px] text-fitness-bright">End must be after start</span>
+            ) : null}
+          </div>
+
+          {draftKind === "event" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted">Color</span>
+              <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Event color">
+                {EVENT_COLORS.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={draftColor === c.id}
+                    aria-label={c.label}
+                    title={c.label}
+                    onClick={() => setDraftColor(c.id)}
+                    className={`h-6 w-6 rounded-full border-2 transition-transform ${
+                      draftColor === c.id ? "scale-110 border-ink/40" : "border-transparent hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => void toggleReminder()}
+                aria-pressed={draftAlert}
+                title="Get a notification when this starts"
+                className={`chip ml-auto cursor-pointer ${draftAlert ? "bg-accent-soft text-accent" : "border border-line text-muted"}`}
+              >
+                🔔 {draftAlert ? "Reminder on" : "Remind me"}
+              </button>
+            </div>
+          ) : null}
+
+          {alertMsg ? <p className="text-[11px] text-fitness-bright">{alertMsg}</p> : null}
+
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="btn-ghost !px-2.5 !py-1.5 text-xs" onClick={() => setAdding(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary !px-3 !py-1.5 text-xs" disabled={!draftTitle.trim() || draftEnd <= draftTime}>
+              Add
+            </button>
+          </div>
         </form>
       ) : null}
 
@@ -234,6 +341,7 @@ export function TimeBlockCalendar() {
           <div className="absolute inset-y-0 left-12 right-0">
             {positioned.map((b) => {
               const style = DOMAIN_STYLES[b.domain];
+              const custom = eventColor(b.color);
               const top = (b.startMin - startMin) * PX_PER_MIN;
               const h = Math.max(20, (b.endMin - b.startMin) * PX_PER_MIN - 2);
               const widthPct = 100 / b.lanes;
@@ -245,7 +353,7 @@ export function TimeBlockCalendar() {
                     e.stopPropagation();
                     if (b.removable) setSelected(isSelected ? null : b.id);
                   }}
-                  className={`group absolute overflow-visible rounded-lg ${style.soft} px-2 py-1 ${
+                  className={`group absolute overflow-visible rounded-lg ${custom ? "" : style.soft} px-2 py-1 ${
                     b.removable ? "cursor-pointer" : "cursor-default"
                   } ${isSelected ? "ring-2 ring-fitness" : ""}`}
                   style={{
@@ -253,6 +361,7 @@ export function TimeBlockCalendar() {
                     height: h,
                     left: `calc(${b.lane * widthPct}% + 2px)`,
                     width: `calc(${widthPct}% - 4px)`,
+                    ...(custom ? { backgroundColor: hexToRgba(custom.hex, 0.16) } : {}),
                   }}
                   title={
                     b.removable
@@ -260,8 +369,15 @@ export function TimeBlockCalendar() {
                       : `${b.title} · ${formatTime(minToHM(b.startMin))}`
                   }
                 >
-                  <span className={`absolute inset-y-1 left-0 w-1 rounded-full ${style.dot}`} aria-hidden />
-                  <p className={`truncate pl-1.5 text-[11px] font-semibold leading-tight ${style.text}`}>
+                  <span
+                    className={`absolute inset-y-1 left-0 w-1 rounded-full ${custom ? "" : style.dot}`}
+                    style={custom ? { backgroundColor: custom.hex } : undefined}
+                    aria-hidden
+                  />
+                  <p
+                    className={`truncate pl-1.5 text-[11px] font-semibold leading-tight ${custom ? "" : style.text}`}
+                    style={custom ? { color: custom.hex } : undefined}
+                  >
                     {b.title}
                   </p>
                   {h > 30 ? (
@@ -299,4 +415,11 @@ function minToHM(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function hmToMin(t: string): number {
+  const parts = t.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1] ?? 0);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
 }

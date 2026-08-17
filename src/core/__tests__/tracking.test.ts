@@ -118,6 +118,43 @@ describe("calorie / food tracking", () => {
   });
 });
 
+describe("calendar events: range, color, reminder", () => {
+  it("stores end time, color, and alert on an event", async () => {
+    const { useHub } = await import("../store/hub");
+    const s = () => useHub.getState();
+    s().addFromIntent({
+      kind: "event",
+      title: "Focus block",
+      date: "2026-08-17",
+      time: "09:00",
+      endTime: "10:30",
+      color: "blue",
+      alert: true,
+      confidence: 1,
+    });
+    const ev = s().events.find((e) => e.title === "Focus block");
+    expect(ev).toBeTruthy();
+    expect(ev).toMatchObject({ time: "09:00", endTime: "10:30", color: "blue", alert: true });
+  });
+
+  it("derives a meeting's duration from the time range", async () => {
+    const { useHub } = await import("../store/hub");
+    const s = () => useHub.getState();
+    const before = s().meetings.length;
+    s().addFromIntent({
+      kind: "meeting",
+      title: "Standup",
+      date: "2026-08-17",
+      time: "09:00",
+      endTime: "09:45",
+      confidence: 1,
+    });
+    const mtg = s().meetings.find((m) => m.title === "Standup");
+    expect(s().meetings.length).toBe(before + 1);
+    expect(mtg?.durationMin).toBe(45);
+  });
+});
+
 describe("8-week glute program tracking", () => {
   it("has a faithful shape: 6 training days + Sunday rest, 48 sessions", () => {
     expect(GLUTE_PROGRAM.days).toHaveLength(7);

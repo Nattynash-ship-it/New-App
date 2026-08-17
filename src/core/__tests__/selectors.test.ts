@@ -49,6 +49,36 @@ describe("selectDayBlocks (time-block calendar)", () => {
     expect(meeting?.removable).toBe(true);
     expect(assignment?.removable).toBe(false);
   });
+
+  it("sizes an event from its start→end range and carries its color", () => {
+    const state = {
+      ...blockBase,
+      events: [
+        {
+          id: "e1",
+          title: "Deep work",
+          date: today,
+          time: "09:00",
+          endTime: "10:30",
+          domain: "compass",
+          color: "violet",
+          createdAt: "",
+        },
+      ],
+    } as unknown as HubState;
+    const { timed } = selectDayBlocks(state, today);
+    expect(timed[0]).toMatchObject({ startMin: 540, endMin: 630, color: "violet" });
+    expect(timed[0]?.subtitle).toContain("until"); // e.g. "until 10:30 AM"
+  });
+
+  it("falls back to a default length when an event has no end time", () => {
+    const state = {
+      ...blockBase,
+      events: [{ id: "e2", title: "Errand", date: today, time: "09:00", domain: "compass", createdAt: "" }],
+    } as unknown as HubState;
+    const { timed } = selectDayBlocks(state, today);
+    expect(timed[0]).toMatchObject({ startMin: 540, endMin: 585 }); // 45-min default
+  });
 });
 
 describe("habitBestStreak", () => {

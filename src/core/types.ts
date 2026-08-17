@@ -45,7 +45,13 @@ export interface ScheduledEvent {
   title: string;
   date: ISODate;
   time?: TimeHHMM;
+  /** Optional end time — gives the block a real length on the day grid. */
+  endTime?: TimeHHMM;
   domain: Domain;
+  /** Colour swatch id (see EVENT_COLORS) for colour-coding the day. */
+  color?: string;
+  /** When true, Vela fires a browser reminder as the event starts. */
+  alert?: boolean;
   createdAt: ISODateTime;
 }
 
@@ -433,6 +439,12 @@ export interface ParsedIntent {
   title: string;
   date: ISODate;
   time?: TimeHHMM;
+  /** Optional end time (used to size events/meetings on the calendar). */
+  endTime?: TimeHHMM;
+  /** Optional colour swatch id for events. */
+  color?: string;
+  /** Optional start reminder for events. */
+  alert?: boolean;
   /** 0–1: how confident the parser is. Low confidence can defer to the AI route. */
   confidence: number;
 }

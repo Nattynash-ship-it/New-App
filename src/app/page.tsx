@@ -188,6 +188,9 @@ export default function CompassPage() {
       {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
       <HomeHero />
 
+      {/* Your tasks — front and center */}
+      <TodoList />
+
       <HomeQuickLinks />
 
       <WeatherCard />
@@ -197,9 +200,6 @@ export default function CompassPage() {
 
       {/* The single most important view: what's happening today */}
       <Timeline />
-
-      {/* Your tasks */}
-      <TodoList />
 
       {/* ── Everything else, one tap away (progressive disclosure) ── */}
       <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, study blocks, board & quick capture">

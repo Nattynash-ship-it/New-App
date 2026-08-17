@@ -4,6 +4,7 @@ import { Card, DOMAIN_STYLES, EmptyState, SectionTitle } from "./ui";
 import { daysUntil, formatFriendly, formatTime } from "@/core/dates";
 import { selectUpcoming } from "@/core/selectors";
 import { useHub } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { RadarEntry } from "@/core/types";
 
 const BADGE_STYLE: Record<string, string> = {
@@ -24,6 +25,8 @@ const BADGE_LABEL: Record<string, string> = {
  */
 export function WeekRadar() {
   const state = useHub();
+  const removeScheduledItem = useHub((s) => s.removeScheduledItem);
+  const pushUndo = useUndo((s) => s.push);
   const upcoming = selectUpcoming(state, 7);
 
   const byDay = new Map<string, RadarEntry[]>();
@@ -68,7 +71,7 @@ export function WeekRadar() {
                   {entries.map((e) => {
                     const style = DOMAIN_STYLES[e.domain];
                     return (
-                      <li key={e.id} className="flex items-center gap-2.5 rounded-xl bg-paper px-2.5 py-2">
+                      <li key={e.id} className="group flex items-center gap-2.5 rounded-xl bg-paper px-2.5 py-2">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} aria-hidden />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13px] font-medium leading-snug">
@@ -89,6 +92,16 @@ export function WeekRadar() {
                             {BADGE_LABEL[e.badge] ?? e.badge}
                           </span>
                         ) : null}
+                        <button
+                          onClick={() => {
+                            const restore = removeScheduledItem(e.id);
+                            pushUndo(`Removed ${e.title}`, restore);
+                          }}
+                          aria-label={`Remove ${e.title}`}
+                          className="shrink-0 rounded-full px-1.5 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                        >
+                          ×
+                        </button>
                       </li>
                     );
                   })}

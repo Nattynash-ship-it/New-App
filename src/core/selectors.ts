@@ -508,6 +508,8 @@ export interface DailyPlan {
   items: PlanItem[];
   /** How many flexible items were left off today's plate given the capacity. */
   deferred: number;
+  /** How many items you took off today's plan yourself (the × button). */
+  dismissed: number;
   capacity: number;
   message: string;
 }
@@ -568,15 +570,22 @@ export function todaysPlan(s: HubState, energy: EnergyLevel): DailyPlan {
     flexible.push({ id: h.id, domain: "fitness", title: h.name, tag: "habit", fixed: false });
   }
 
-  fixed.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
+  // Anything taken off today's plan with × drops out here. Nothing is deleted —
+  // the meeting/assignment/task/habit still lives in its own section.
+  const dismissed = new Set(s.planDismissed?.[today] ?? []);
+  const keptFixed = fixed.filter((i) => !dismissed.has(i.id));
+  const keptFlexible = flexible.filter((i) => !dismissed.has(i.id));
 
-  const slots = Math.max(0, capacity - fixed.length);
-  const chosenFlexible = flexible.slice(0, slots);
-  const deferred = flexible.length - chosenFlexible.length;
+  keptFixed.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"));
+
+  const slots = Math.max(0, capacity - keptFixed.length);
+  const chosenFlexible = keptFlexible.slice(0, slots);
+  const deferred = keptFlexible.length - chosenFlexible.length;
 
   return {
-    items: [...fixed, ...chosenFlexible],
+    items: [...keptFixed, ...chosenFlexible],
     deferred,
+    dismissed: dismissed.size,
     capacity,
     message: ENERGY_MESSAGE[energy],
   };

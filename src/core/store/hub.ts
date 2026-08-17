@@ -90,7 +90,7 @@ export const DATA_KEYS = [
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
   "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek", "trackerStartDate",
   "foodLog", "calorieGoal", "proteinGoal",
-  "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
+  "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog", "planDismissed",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
   "programStartDate", "programDone", "programExtras",
@@ -164,6 +164,10 @@ export interface HubState {
   waterGoal: number;
   /** Self-reported daily energy — powers the capacity-scaled "today's plan". */
   energyLog: EnergyLog;
+  /** Items taken off *today's plan* with the × button, keyed by ISO date.
+   *  Deliberately non-destructive: the underlying meeting/assignment/task/habit
+   *  is untouched and still lives in its own section — this only shapes the day. */
+  planDismissed: Record<string, string[]>;
   // Meals
   preferredStore: DeliveryService;
   /** User-configured delivery webhook URLs per store (Connections). */
@@ -210,6 +214,10 @@ export interface HubState {
   addFromIntent: (intent: ParsedIntent) => void;
   /** Remove any removable timeline entry (meeting, event, meal, activity) by id. */
   removeTimelineItem: (id: string) => void;
+  /** Delete ANY scheduled item by id — meeting, event, meal, family activity,
+   *  assignment, or study block. Returns a function that restores exactly that
+   *  item, so callers can offer undo. */
+  removeScheduledItem: (id: string) => () => void;
 
   // --- Work actions ---
   addProject: (name: string, category: string) => void;
@@ -355,6 +363,12 @@ export interface HubState {
   setWaterGoal: (n: number) => void;
   /** Set today's energy level (drives the capacity-scaled plan). */
   setEnergy: (level: EnergyLevel) => void;
+  /** Take an item off today's plan (non-destructive — nothing is deleted). */
+  dismissFromPlan: (id: string) => void;
+  /** Put a dismissed item back on today's plan (powers undo). */
+  restoreToPlan: (id: string) => void;
+  /** Bring every item dismissed today back onto the plan. */
+  clearPlanDismissed: () => void;
 
   // --- Meals settings ---
   setPreferredStore: (s: DeliveryService) => void;
@@ -427,6 +441,7 @@ function initialState() {
     water: {} as WaterLog,
     waterGoal: 8,
     energyLog: {} as EnergyLog,
+    planDismissed: {} as Record<string, string[]>,
     preferredStore: "whole_foods" as DeliveryService,
     groceryConnections: {} as GroceryConnections,
     focus: { date: todayISO(), taskIds: [] as string[] },
@@ -554,6 +569,43 @@ export const useHub = create<HubState>()(
           plannedMeals: s.plannedMeals.filter((m) => m.id !== id),
           activities: s.activities.filter((a) => a.id !== id),
         })),
+
+      removeScheduledItem: (id) => {
+        const s = get();
+        // Find which slice owns this id, drop just that entry, and hand back a
+        // precise restore closure (so undo can't clobber unrelated edits).
+        const meeting = s.meetings.find((m) => m.id === id);
+        if (meeting) {
+          set((st) => ({ meetings: st.meetings.filter((m) => m.id !== id) }));
+          return () => set((st) => ({ meetings: [...st.meetings, meeting] }));
+        }
+        const event = s.events.find((e) => e.id === id);
+        if (event) {
+          set((st) => ({ events: st.events.filter((e) => e.id !== id) }));
+          return () => set((st) => ({ events: [...st.events, event] }));
+        }
+        const meal = s.plannedMeals.find((m) => m.id === id);
+        if (meal) {
+          set((st) => ({ plannedMeals: st.plannedMeals.filter((m) => m.id !== id) }));
+          return () => set((st) => ({ plannedMeals: [...st.plannedMeals, meal] }));
+        }
+        const activity = s.activities.find((a) => a.id === id);
+        if (activity) {
+          set((st) => ({ activities: st.activities.filter((a) => a.id !== id) }));
+          return () => set((st) => ({ activities: [...st.activities, activity] }));
+        }
+        const assignment = s.assignments.find((a) => a.id === id);
+        if (assignment) {
+          set((st) => ({ assignments: st.assignments.filter((a) => a.id !== id) }));
+          return () => set((st) => ({ assignments: [...st.assignments, assignment] }));
+        }
+        const block = s.studyBlocks.find((b) => b.id === id);
+        if (block) {
+          set((st) => ({ studyBlocks: st.studyBlocks.filter((b) => b.id !== id) }));
+          return () => set((st) => ({ studyBlocks: [...st.studyBlocks, block] }));
+        }
+        return () => {};
+      },
 
       // --- Work ---
       addProject: (name, category) =>
@@ -1244,6 +1296,29 @@ export const useHub = create<HubState>()(
       setWaterGoal: (n) => set({ waterGoal: Math.min(20, Math.max(1, n)) }),
       setEnergy: (level) =>
         set((s) => ({ energyLog: { ...s.energyLog, [todayISO()]: level } })),
+      dismissFromPlan: (id) =>
+        set((s) => {
+          const today = todayISO();
+          const cur = s.planDismissed[today] ?? [];
+          if (cur.includes(id)) return s;
+          return { planDismissed: { ...s.planDismissed, [today]: [...cur, id] } };
+        }),
+      restoreToPlan: (id) =>
+        set((s) => {
+          const today = todayISO();
+          const cur = s.planDismissed[today] ?? [];
+          const next = cur.filter((x) => x !== id);
+          const map = { ...s.planDismissed };
+          if (next.length) map[today] = next;
+          else delete map[today];
+          return { planDismissed: map };
+        }),
+      clearPlanDismissed: () =>
+        set((s) => {
+          const map = { ...s.planDismissed };
+          delete map[todayISO()];
+          return { planDismissed: map };
+        }),
 
       setPreferredStore: (preferredStore) => set({ preferredStore }),
       setGroceryConnection: (service, url) =>
@@ -1396,6 +1471,7 @@ export const useHub = create<HubState>()(
           water: p.water ?? current.water,
           waterGoal: p.waterGoal ?? current.waterGoal,
           energyLog: p.energyLog ?? current.energyLog,
+          planDismissed: p.planDismissed ?? current.planDismissed,
           fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
           weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
           equipment: p.equipment ?? current.equipment,

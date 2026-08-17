@@ -25,6 +25,7 @@ import { Card, DOMAIN_STYLES, EmptyState, SectionTitle, Skeleton } from "@/compo
 import { formatTime, todayISO } from "@/core/dates";
 import { selectTimeline } from "@/core/selectors";
 import { useHub, useHydrated } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { Mood } from "@/core/types";
 
 const MOODS: Array<{ value: Mood; face: string; label: string }> = [
@@ -110,16 +111,9 @@ function CheckInCard() {
 
 function Timeline() {
   const state = useHub();
-  const removeTimelineItem = useHub((s) => s.removeTimelineItem);
+  const removeScheduledItem = useHub((s) => s.removeScheduledItem);
+  const pushUndo = useUndo((s) => s.push);
   const entries = selectTimeline(state, todayISO());
-  // Assignments and study blocks are managed on their own pages; everything
-  // else on the timeline can be removed right here.
-  const removable = new Set([
-    ...state.meetings.map((m) => m.id),
-    ...state.events.map((e) => e.id),
-    ...state.plannedMeals.map((m) => m.id),
-    ...state.activities.map((a) => a.id),
-  ]);
 
   return (
     <Card>
@@ -158,15 +152,16 @@ function Timeline() {
                   </div>
                   <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted">
                     {e.time ? formatTime(e.time) : "All day"}
-                    {removable.has(e.id) ? (
-                      <button
-                        onClick={() => removeTimelineItem(e.id)}
-                        aria-label={`Remove ${e.title}`}
-                        className="rounded-full px-1 opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
-                      >
-                        ×
-                      </button>
-                    ) : null}
+                    <button
+                      onClick={() => {
+                        const restore = removeScheduledItem(e.id);
+                        pushUndo(`Removed ${e.title}`, restore);
+                      }}
+                      aria-label={`Remove ${e.title}`}
+                      className="rounded-full px-1.5 opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
                   </span>
                 </div>
               </li>

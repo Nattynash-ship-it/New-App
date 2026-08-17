@@ -4,6 +4,7 @@ import { Card, DOMAIN_STYLES, SectionTitle } from "./ui";
 import { ENERGY_META, todaysPlan } from "@/core/selectors";
 import { formatTime, todayISO } from "@/core/dates";
 import { useHub } from "@/core/store/hub";
+import { useUndo } from "@/core/store/undo";
 import type { EnergyLevel } from "@/core/types";
 
 const LEVELS: EnergyLevel[] = ["low", "steady", "high"];
@@ -78,16 +79,11 @@ export function EnergyPlan() {
 }
 
 function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof useHub.getState> }) {
-  const { items, deferred, message } = todaysPlan(state, energy);
-  const removeTimelineItem = useHub((s) => s.removeTimelineItem);
-  // Only one-off scheduled items can be removed straight from the plan;
-  // assignments, tasks, and habits are managed in their own sections.
-  const removable = new Set([
-    ...state.meetings.map((m) => m.id),
-    ...state.events.map((e) => e.id),
-    ...state.plannedMeals.map((m) => m.id),
-    ...state.activities.map((a) => a.id),
-  ]);
+  const { items, deferred, dismissed, message } = todaysPlan(state, energy);
+  const dismissFromPlan = useHub((s) => s.dismissFromPlan);
+  const restoreToPlan = useHub((s) => s.restoreToPlan);
+  const clearPlanDismissed = useHub((s) => s.clearPlanDismissed);
+  const pushUndo = useUndo((s) => s.push);
 
   return (
     <div>
@@ -112,15 +108,17 @@ function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof
                 {item.time ? (
                   <span className="shrink-0 text-xs tabular-nums text-muted">{formatTime(item.time)}</span>
                 ) : null}
-                {removable.has(item.id) ? (
-                  <button
-                    onClick={() => removeTimelineItem(item.id)}
-                    aria-label={`Remove ${item.title}`}
-                    className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
-                  >
-                    ×
-                  </button>
-                ) : null}
+                <button
+                  onClick={() => {
+                    dismissFromPlan(item.id);
+                    pushUndo(`Took “${item.title}” off today`, () => restoreToPlan(item.id));
+                  }}
+                  aria-label={`Take ${item.title} off today's plan`}
+                  title="Take this off today's plan (it isn't deleted)"
+                  className="shrink-0 rounded-full px-1.5 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                >
+                  ×
+                </button>
               </li>
             );
           })}
@@ -132,6 +130,18 @@ function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof
           <span className="font-medium text-ink">{deferred}</span> more{" "}
           {deferred === 1 ? "item is" : "items are"} waiting — they&apos;ll keep until you have room.
           {energy !== "high" ? " Feeling up for more? Bump your energy above." : ""}
+        </p>
+      ) : null}
+
+      {dismissed > 0 ? (
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+          <span>
+            You took <span className="font-medium text-ink">{dismissed}</span>{" "}
+            {dismissed === 1 ? "item" : "items"} off today — nothing was deleted.
+          </span>
+          <button onClick={clearPlanDismissed} className="btn-ghost !px-2.5 !py-1 text-[11px]">
+            Bring {dismissed === 1 ? "it" : "them"} back
+          </button>
         </p>
       ) : null}
     </div>

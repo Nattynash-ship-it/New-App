@@ -361,7 +361,7 @@ export function graduationStats(s: HubState): GraduationStats {
     completed,
     inProgress,
     total: totalCredits,
-    pct: totalCredits === 0 ? 0 : Math.round((completed / totalCredits) * 100),
+    pct: totalCredits === 0 ? 0 : Math.min(100, Math.round((completed / totalCredits) * 100)),
     targetGraduation,
   };
 }

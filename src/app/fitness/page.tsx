@@ -28,6 +28,14 @@ const EFFORTS: Array<{ value: WorkoutLog["effort"]; label: string }> = [
 
 const ALL_GOALS = Object.keys(GOAL_META) as FitnessGoal[];
 
+// Recommended-split lines reference the built-in routine ids; if the user has
+// deleted one, fall back to its name so a row never renders blank.
+const ROUTINE_FALLBACK_NAME: Record<string, string> = {
+  routine_strength: "Strength & Glutes",
+  routine_conditioning: "Cardio Conditioning",
+  routine_recovery: "Active Recovery",
+};
+
 function GoalsCard() {
   const goals = useHub((s) => s.fitnessGoals);
   const setFitnessGoals = useHub((s) => s.setFitnessGoals);
@@ -118,10 +126,11 @@ function WeekPlanCard() {
       <ul className="space-y-1">
         {plan.map((line) => {
           const routine = routines.find((r) => r.id === line.routineId);
+          const name = routine?.name ?? ROUTINE_FALLBACK_NAME[line.routineId] ?? "Routine";
           return (
             <li key={line.routineId} className="flex items-baseline justify-between gap-3 rounded-lg bg-paper px-2.5 py-1.5 text-xs">
               <span>
-                <span className="font-medium">{routine?.name}</span>
+                <span className="font-medium">{name}</span>
                 <span className="text-muted"> ×{line.sessions}</span>
               </span>
               <span className="shrink-0 text-[10px] text-muted">{line.reason}</span>

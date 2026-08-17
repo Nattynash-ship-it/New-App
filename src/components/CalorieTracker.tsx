@@ -181,7 +181,11 @@ export function CalorieTracker() {
           className="input !w-24 !py-1.5 text-xs"
           aria-label="Protein in grams"
         />
-        <button type="submit" className="btn-primary shrink-0 !px-3 !py-1.5 text-xs" disabled={!name.trim() || cals.trim() === ""}>
+        <button
+          type="submit"
+          className="btn-primary shrink-0 !px-3 !py-1.5 text-xs"
+          disabled={!name.trim() || !Number.isFinite(parseInt(cals, 10))}
+        >
           Add
         </button>
       </form>

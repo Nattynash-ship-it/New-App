@@ -16,6 +16,7 @@ import { useHub } from "@/core/store/hub";
 export function RecipeSearch() {
   const saved = useHub((s) => s.recipes);
   const planMeal = useHub((s) => s.planMeal);
+  const removeRecipe = useHub((s) => s.removeRecipe);
   const [q, setQ] = useState("");
   const [planned, setPlanned] = useState<string | null>(null);
 
@@ -27,12 +28,14 @@ export function RecipeSearch() {
           title: r.title,
           sub: `${r.calories} cal · ${r.timeMin} min`,
           hay: `${r.title} ${r.ingredients.join(" ")}`.toLowerCase(),
+          saved: false,
         })),
         ...saved.map((r) => ({
           id: r.id,
           title: r.title,
           sub: `${r.calories} cal · saved`,
           hay: `${r.title} ${r.ingredients.map((i) => i.name).join(" ")}`.toLowerCase(),
+          saved: true,
         })),
       ].filter((r) => r.hay.includes(needle))
     : [];
@@ -68,7 +71,7 @@ export function RecipeSearch() {
       {needle ? (
         <div className="mt-3 space-y-1.5">
           {local.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2">
+            <div key={r.id} className="group flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2">
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{r.title}</span>
                 <span className="block text-[11px] text-muted">{r.sub}</span>
@@ -85,6 +88,15 @@ export function RecipeSearch() {
                 <button onClick={() => plan(r.title, r.id)} className="btn-ghost !px-2.5 !py-1 text-[11px]">
                   Plan dinner
                 </button>
+                {r.saved ? (
+                  <button
+                    onClick={() => removeRecipe(r.id)}
+                    aria-label={`Delete saved recipe ${r.title}`}
+                    className="rounded-full px-1 text-sm text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
+                ) : null}
               </span>
             </div>
           ))}

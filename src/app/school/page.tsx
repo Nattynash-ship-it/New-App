@@ -29,7 +29,7 @@ function GraduationTracker() {
   const updateDegreePlan = useHub((s) => s.updateDegreePlan);
   const stats = graduationStats(state);
   const afterCurrent = stats.completed + stats.inProgress;
-  const pctAfter = Math.round((afterCurrent / stats.total) * 100);
+  const pctAfter = Math.min(100, Math.round((afterCurrent / stats.total) * 100));
   const [editing, setEditing] = useState(false);
 
   return (
@@ -54,14 +54,15 @@ function GraduationTracker() {
       {editing ? (
         <div className="animate-slide-in mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper p-2.5 text-xs">
           <label className="flex items-center gap-1.5 text-muted">
-            Credits earned
+            Prior credits earned
             <input
               type="number"
               min={0}
               max={stats.total}
-              value={stats.completed}
+              value={state.degreePlan.completedCredits}
               onChange={(e) => updateDegreePlan({ completedCredits: Number(e.target.value) || 0 })}
               className="input !w-20 !py-1 text-xs"
+              title="Credits transferred in / earned before the courses tracked here. Passed courses below add to this automatically."
             />
           </label>
           <label className="flex items-center gap-1.5 text-muted">
@@ -226,7 +227,9 @@ function CourseCard({ courseId }: { courseId: string }) {
   const course = useHub((s) => s.courses.find((c) => c.id === courseId));
   const toggleTopic = useHub((s) => s.toggleTopic);
   const addTopic = useHub((s) => s.addTopic);
+  const removeTopic = useHub((s) => s.removeTopic);
   const addUnit = useHub((s) => s.addUnit);
+  const removeUnit = useHub((s) => s.removeUnit);
   const removeCourse = useHub((s) => s.removeCourse);
   const setCourseOutcome = useHub((s) => s.setCourseOutcome);
   const [openUnit, setOpenUnit] = useState<string | null>(null);
@@ -291,20 +294,29 @@ function CourseCard({ courseId }: { courseId: string }) {
           const unitDone = unit.topics.filter((t) => t.completed).length;
           const isOpen = openUnit === unit.id;
           return (
-            <div key={unit.id} className="rounded-xl border border-line">
-              <button
-                onClick={() => setOpenUnit(isOpen ? null : unit.id)}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
-                aria-expanded={isOpen}
-              >
-                <span className="text-xs font-medium">{unit.name}</span>
-                <span className="flex items-center gap-2 text-[11px] text-muted">
-                  {unitDone}/{unit.topics.length}
-                  <span className={`transition-transform ${isOpen ? "rotate-90" : ""}`} aria-hidden>
-                    ›
+            <div key={unit.id} className="group/unit rounded-xl border border-line">
+              <div className="flex items-center gap-1 pr-2">
+                <button
+                  onClick={() => setOpenUnit(isOpen ? null : unit.id)}
+                  className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-xs font-medium">{unit.name}</span>
+                  <span className="flex items-center gap-2 text-[11px] text-muted">
+                    {unitDone}/{unit.topics.length}
+                    <span className={`transition-transform ${isOpen ? "rotate-90" : ""}`} aria-hidden>
+                      ›
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+                <button
+                  onClick={() => removeUnit(course.id, unit.id)}
+                  aria-label={`Delete ${unit.name}`}
+                  className="rounded-full px-1 text-sm text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover/unit:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
               {isOpen ? (
                 <div className="border-t border-line px-2 py-1.5">
                   {unit.topics.map((t) => (
@@ -312,6 +324,7 @@ function CourseCard({ courseId }: { courseId: string }) {
                       key={t.id}
                       checked={t.completed}
                       onChange={() => toggleTopic(course.id, unit.id, t.id)}
+                      onRemove={() => removeTopic(course.id, unit.id, t.id)}
                       label={t.name}
                     />
                   ))}

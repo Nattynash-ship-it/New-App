@@ -74,7 +74,7 @@ function DayRow({ day, week, date }: { day: ProgramDay; week: number; date: stri
             ))}
           </span>
         </button>
-        <span className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`} aria-hidden onClick={() => setOpen((v) => !v)}>
+        <span className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`} aria-hidden>
           ›
         </span>
       </div>

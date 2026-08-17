@@ -241,7 +241,9 @@ export interface HubState {
     courses: Array<{ code: string; name: string; credits: number }>,
   ) => number;
   addUnit: (courseId: string, name: string) => void;
+  removeUnit: (courseId: string, unitId: string) => void;
   addTopic: (courseId: string, unitId: string, name: string) => void;
+  removeTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleAssignment: (id: string) => void;
   addAssignment: (a: Omit<Assignment, "id" | "done">) => void;
@@ -263,6 +265,7 @@ export interface HubState {
   removeGroceryItem: (id: string) => void;
   restoreGroceryItem: (item: GroceryItem) => void;
   saveRecipe: (r: Recipe) => void;
+  removeRecipe: (id: string) => void;
   planMeal: (date: string, slot: MealSlot, title: string, recipeId?: string) => void;
   removePlannedMeal: (id: string) => void;
   generateGroceryList: () => void;
@@ -727,7 +730,11 @@ export const useHub = create<HubState>()(
         const fresh = courses.filter((c) => !have.has(c.name.trim().toLowerCase()));
         if (fresh.length > 0) {
           set((st) => ({
-            degreePlan: { ...st.degreePlan, programName, totalCredits },
+            // Loading a full program plan starts the tracker fresh: earned
+            // credits come from marking courses passed, so we don't stack the
+            // template's in-progress load on top of a stale earned-credit base
+            // (which could push the plan over 100%).
+            degreePlan: { ...st.degreePlan, programName, totalCredits, completedCredits: 0 },
             courses: [
               ...st.courses,
               ...fresh.map((c) => ({
@@ -755,6 +762,25 @@ export const useHub = create<HubState>()(
             c.id !== courseId
               ? c
               : { ...c, units: [...c.units, { id: newId("unit"), name, topics: [] }] },
+          ),
+        })),
+      removeUnit: (courseId, unitId) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId ? c : { ...c, units: c.units.filter((u) => u.id !== unitId) },
+          ),
+        })),
+      removeTopic: (courseId, unitId, topicId) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId
+              ? c
+              : {
+                  ...c,
+                  units: c.units.map((u) =>
+                    u.id !== unitId ? u : { ...u, topics: u.topics.filter((t) => t.id !== topicId) },
+                  ),
+                },
           ),
         })),
       addTopic: (courseId, unitId, name) =>
@@ -892,6 +918,7 @@ export const useHub = create<HubState>()(
             : { groceryList: [...s.groceryList, item] },
         ),
       saveRecipe: (r) => set((s) => ({ recipes: [r, ...s.recipes].slice(0, 30) })),
+      removeRecipe: (id) => set((s) => ({ recipes: s.recipes.filter((r) => r.id !== id) })),
       planMeal: (date, slot, title, recipeId) =>
         set((s) => ({
           plannedMeals: [...s.plannedMeals, { id: newId("meal"), date, slot, title, recipeId }],
@@ -905,6 +932,12 @@ export const useHub = create<HubState>()(
           s.plannedMeals.filter((m) => m.date >= todayISO()).map((m) => m.recipeId),
         );
         const needed = new Map<string, GroceryItem>();
+
+        // Preserve anything already on the list (incl. manually-added items and
+        // their checked state) — Regenerate should add to it, never wipe it.
+        for (const item of s.groceryList) {
+          needed.set(item.name.toLowerCase(), item);
+        }
 
         // Ingredients from planned recipes that aren't on hand
         const onHand = new Set(

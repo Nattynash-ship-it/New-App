@@ -496,12 +496,15 @@
     background: var(--selection);
   }
   /* Touch devices have no hover, so controls revealed only on `group-hover`
-   * (delete ×, remove buttons) were unreachable. Reveal them on touch. */
+   * (delete ×, remove buttons) were unreachable. Reveal them on touch. The
+   * compound selectors also catch NAMED groups (group-hover/kid:flex,
+   * group-hover/ms:opacity-100) while never matching plain responsive
+   * `md:flex` (which has no group-hover class). */
   @media (hover: none) {
-    [class*="group-hover:opacity-100"] {
+    [class*="group-hover"][class*=":opacity-100"] {
       opacity: 1 !important;
     }
-    [class*="group-hover:flex"] {
+    [class*="group-hover"][class*=":flex"] {
       display: flex !important;
     }
   }

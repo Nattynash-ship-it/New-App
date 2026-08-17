@@ -74,9 +74,13 @@ import type {
   Todo,
   Urgency,
   WaterLog,
+  WeightEntry,
+  WeightUnit,
+  FoodEntry,
   WorkoutLog,
   WorkProject,
 } from "../types";
+import { PROGRAM_DEFAULT_START, programCellKey, programCurrentWeek } from "../fitness/pdfTracker";
 
 /** Canonical list of persisted data slices (no action fns). Export/import walk
  *  this so a newly-added slice can never be silently dropped from a backup. */
@@ -84,6 +88,8 @@ export const DATA_KEYS = [
   "profile", "checkIns", "events", "projects", "meetings", "courses", "assignments",
   "studyBlocks", "degreePlan", "pantry", "recipes", "plannedMeals", "groceryList",
   "routines", "workoutLogs", "fitnessGoals", "weeklySessionTarget", "equipment",
+  "weightLog", "weightGoal", "weightUnit", "programProgress", "programWeek", "trackerStartDate",
+  "foodLog", "calorieGoal", "proteinGoal",
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
@@ -131,6 +137,21 @@ export interface HubState {
   fitnessGoals: FitnessGoal[];
   weeklySessionTarget: number;
   equipment: Equipment[];
+  /** Weight-loss accountability: body-weight entries, goal, and unit. */
+  weightLog: WeightEntry[];
+  weightGoal: number | null;
+  weightUnit: WeightUnit;
+  /** PDF tracker (src/core/fitness/pdfTracker.ts): which (week,day) cells are
+   *  done + the active week. Kept separate from the day-by-day program's
+   *  `programDone`/`programExtras` so the two trackers never mix progress. */
+  programProgress: Record<string, boolean>;
+  programWeek: number;
+  /** PDF tracker's calendar anchor: the Sunday Week 1 begins on (Sun → Sat). */
+  trackerStartDate: string;
+  /** Food/calorie counting: logged foods + daily calorie & protein targets. */
+  foodLog: FoodEntry[];
+  calorieGoal: number;
+  proteinGoal: number;
   // Attachments (files uploaded to any section)
   attachments: Attachment[];
   // Notes & journal
@@ -192,6 +213,15 @@ export interface HubState {
 
   // --- Work actions ---
   addProject: (name: string, category: string) => void;
+  /** Create a fully-specified project in one step (professional add flow). */
+  createProject: (input: {
+    name: string;
+    category: string;
+    status?: ProjectStatus;
+    notes?: string;
+    trackingRefs?: string[];
+    firstMilestone?: { title: string; targetDate?: string };
+  }) => void;
   removeProject: (id: string) => void;
   setProjectStatus: (id: string, status: ProjectStatus) => void;
   toggleWorkTask: (projectId: string, taskId: string) => void;
@@ -221,7 +251,9 @@ export interface HubState {
     courses: Array<{ code: string; name: string; credits: number }>,
   ) => number;
   addUnit: (courseId: string, name: string) => void;
+  removeUnit: (courseId: string, unitId: string) => void;
   addTopic: (courseId: string, unitId: string, name: string) => void;
+  removeTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleTopic: (courseId: string, unitId: string, topicId: string) => void;
   toggleAssignment: (id: string) => void;
   addAssignment: (a: Omit<Assignment, "id" | "done">) => void;
@@ -243,6 +275,7 @@ export interface HubState {
   removeGroceryItem: (id: string) => void;
   restoreGroceryItem: (item: GroceryItem) => void;
   saveRecipe: (r: Recipe) => void;
+  removeRecipe: (id: string) => void;
   planMeal: (date: string, slot: MealSlot, title: string, recipeId?: string) => void;
   removePlannedMeal: (id: string) => void;
   generateGroceryList: () => void;
@@ -265,6 +298,29 @@ export interface HubState {
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setWeeklySessionTarget: (n: number) => void;
   setEquipment: (equipment: Equipment[]) => void;
+
+  // --- Weight tracking ---
+  /** Record a weight for a day (one entry per day — a repeat replaces it). */
+  logWeight: (weight: number, date?: string) => void;
+  removeWeightEntry: (id: string) => void;
+  setWeightGoal: (goal: number | null) => void;
+  /** Switch lb/kg, converting every stored weight + goal to the new unit. */
+  setWeightUnit: (unit: WeightUnit) => void;
+
+  // --- PDF tracker (W1–W8 grid, Sunday rest) ---
+  /** Check/uncheck a training day for a given tracker week. */
+  toggleTrackerDay: (week: number, day: number) => void;
+  /** Set the active tracker week (1–8). */
+  setProgramWeek: (week: number) => void;
+  /** Restart the tracker on a new start date: clears all completion and jumps
+   *  the active week to wherever `today` falls in the fresh schedule. */
+  restartTracker: (startDate: string) => void;
+
+  // --- Food / calorie counting ---
+  logFood: (name: string, calories: number, protein?: number, date?: string) => void;
+  removeFoodEntry: (id: string) => void;
+  setCalorieGoal: (n: number) => void;
+  setProteinGoal: (n: number) => void;
 
   // --- Attachments ---
   /** Record uploaded-file metadata (bytes are stored on-device separately). */
@@ -355,6 +411,15 @@ function initialState() {
     fitnessGoals: ["sculpt", "strength"] as FitnessGoal[],
     weeklySessionTarget: 4,
     equipment: seedEquipment(),
+    weightLog: [] as WeightEntry[],
+    weightGoal: null as number | null,
+    weightUnit: "lb" as WeightUnit,
+    programProgress: {} as Record<string, boolean>,
+    programWeek: programCurrentWeek(PROGRAM_DEFAULT_START),
+    trackerStartDate: PROGRAM_DEFAULT_START,
+    foodLog: [] as FoodEntry[],
+    calorieGoal: 1500,
+    proteinGoal: 100,
     attachments: [] as Attachment[],
     notes: seedNotes(),
     todos: seedTodos(),
@@ -437,9 +502,20 @@ export const useHub = create<HubState>()(
         })),
 
       addFromIntent: (intent) => {
-        const { kind, title, date, time } = intent;
+        const { kind, title, date, time, endTime, color, alert } = intent;
+        // Minutes-of-day for a "HH:MM" string, or null.
+        const mins = (t?: string) => {
+          if (!t) return null;
+          const parts = t.split(":");
+          const h = Number(parts[0]);
+          const m = Number(parts[1] ?? 0);
+          return Number.isFinite(h) ? h * 60 + (Number.isFinite(m) ? m : 0) : null;
+        };
         if (kind === "meeting") {
-          get().addMeeting({ title, date, time: time ?? "09:00", durationMin: 30 });
+          const s = mins(time);
+          const e = mins(endTime);
+          const durationMin = s != null && e != null && e > s ? e - s : 30;
+          get().addMeeting({ title, date, time: time ?? "09:00", durationMin });
         } else if (kind === "assignment") {
           get().addAssignment({ title, dueDate: date, dueTime: time });
         } else if (kind === "family_activity") {
@@ -460,7 +536,10 @@ export const useHub = create<HubState>()(
                 title,
                 date,
                 time,
+                ...(endTime ? { endTime } : {}),
                 domain: kind === "workout" ? "fitness" : "compass",
+                ...(color ? { color } : {}),
+                ...(alert ? { alert: true } : {}),
                 createdAt: nowISO(),
               },
             ],
@@ -490,6 +569,33 @@ export const useHub = create<HubState>()(
               milestones: [],
               trackingRefs: [],
               notes: "",
+            },
+          ],
+        })),
+      createProject: (input) =>
+        set((s) => ({
+          projects: [
+            ...s.projects,
+            {
+              id: newId("proj"),
+              name: input.name.trim(),
+              category: input.category.trim() || "General",
+              status: input.status ?? ("active" as const),
+              tasks: [],
+              milestones: input.firstMilestone?.title.trim()
+                ? [
+                    {
+                      id: newId("ms"),
+                      title: input.firstMilestone.title.trim(),
+                      targetDate: input.firstMilestone.targetDate || undefined,
+                      done: false,
+                    },
+                  ]
+                : [],
+              trackingRefs: (input.trackingRefs ?? [])
+                .map((r) => r.trim())
+                .filter(Boolean),
+              notes: input.notes?.trim() ?? "",
             },
           ],
         })),
@@ -642,7 +748,11 @@ export const useHub = create<HubState>()(
         const fresh = courses.filter((c) => !have.has(c.name.trim().toLowerCase()));
         if (fresh.length > 0) {
           set((st) => ({
-            degreePlan: { ...st.degreePlan, programName, totalCredits },
+            // Loading a full program plan starts the tracker fresh: earned
+            // credits come from marking courses passed, so we don't stack the
+            // template's in-progress load on top of a stale earned-credit base
+            // (which could push the plan over 100%).
+            degreePlan: { ...st.degreePlan, programName, totalCredits, completedCredits: 0 },
             courses: [
               ...st.courses,
               ...fresh.map((c) => ({
@@ -670,6 +780,25 @@ export const useHub = create<HubState>()(
             c.id !== courseId
               ? c
               : { ...c, units: [...c.units, { id: newId("unit"), name, topics: [] }] },
+          ),
+        })),
+      removeUnit: (courseId, unitId) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId ? c : { ...c, units: c.units.filter((u) => u.id !== unitId) },
+          ),
+        })),
+      removeTopic: (courseId, unitId, topicId) =>
+        set((s) => ({
+          courses: s.courses.map((c) =>
+            c.id !== courseId
+              ? c
+              : {
+                  ...c,
+                  units: c.units.map((u) =>
+                    u.id !== unitId ? u : { ...u, topics: u.topics.filter((t) => t.id !== topicId) },
+                  ),
+                },
           ),
         })),
       addTopic: (courseId, unitId, name) =>
@@ -807,6 +936,7 @@ export const useHub = create<HubState>()(
             : { groceryList: [...s.groceryList, item] },
         ),
       saveRecipe: (r) => set((s) => ({ recipes: [r, ...s.recipes].slice(0, 30) })),
+      removeRecipe: (id) => set((s) => ({ recipes: s.recipes.filter((r) => r.id !== id) })),
       planMeal: (date, slot, title, recipeId) =>
         set((s) => ({
           plannedMeals: [...s.plannedMeals, { id: newId("meal"), date, slot, title, recipeId }],
@@ -820,6 +950,12 @@ export const useHub = create<HubState>()(
           s.plannedMeals.filter((m) => m.date >= todayISO()).map((m) => m.recipeId),
         );
         const needed = new Map<string, GroceryItem>();
+
+        // Preserve anything already on the list (incl. manually-added items and
+        // their checked state) — Regenerate should add to it, never wipe it.
+        for (const item of s.groceryList) {
+          needed.set(item.name.toLowerCase(), item);
+        }
 
         // Ingredients from planned recipes that aren't on hand
         const onHand = new Set(
@@ -930,6 +1066,80 @@ export const useHub = create<HubState>()(
       setFitnessGoals: (goals) => set({ fitnessGoals: goals }),
       setWeeklySessionTarget: (n) => set({ weeklySessionTarget: Math.min(7, Math.max(1, n)) }),
       setEquipment: (equipment) => set({ equipment }),
+
+      // --- Weight tracking ---
+      logWeight: (weight, date) =>
+        set((s) => {
+          const w = Math.round(Math.max(0, weight) * 10) / 10;
+          if (!w) return s;
+          const day = date ?? todayISO();
+          // One entry per day — a new reading for the same day replaces it.
+          const rest = s.weightLog.filter((e) => e.date !== day);
+          return {
+            weightLog: [...rest, { id: newId("wt"), date: day, weight: w }].sort((a, b) =>
+              a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+            ),
+          };
+        }),
+      removeWeightEntry: (id) =>
+        set((s) => ({ weightLog: s.weightLog.filter((e) => e.id !== id) })),
+      setWeightGoal: (goal) =>
+        set({ weightGoal: goal === null ? null : Math.round(Math.max(0, goal) * 10) / 10 }),
+      setWeightUnit: (unit) =>
+        set((s) => {
+          if (unit === s.weightUnit) return s;
+          const LB_PER_KG = 2.2046226218;
+          const convert = (v: number) =>
+            Math.round((unit === "kg" ? v / LB_PER_KG : v * LB_PER_KG) * 10) / 10;
+          return {
+            weightUnit: unit,
+            weightGoal: s.weightGoal === null ? null : convert(s.weightGoal),
+            weightLog: s.weightLog.map((e) => ({ ...e, weight: convert(e.weight) })),
+          };
+        }),
+
+      // --- PDF tracker (W1–W8 grid, Sunday rest) ---
+      toggleTrackerDay: (week, day) =>
+        set((s) => {
+          const key = programCellKey(week, day);
+          const next = { ...s.programProgress };
+          if (next[key]) delete next[key];
+          else next[key] = true;
+          return { programProgress: next };
+        }),
+      setProgramWeek: (week) => set({ programWeek: Math.min(8, Math.max(1, Math.round(week))) }),
+      restartTracker: (startDate) => {
+        const clean = (startDate || "").slice(0, 10) || PROGRAM_DEFAULT_START;
+        set({
+          trackerStartDate: clean,
+          programProgress: {},
+          programWeek: programCurrentWeek(clean),
+        });
+      },
+
+      // --- Food / calorie counting ---
+      logFood: (name, calories, protein, date) =>
+        set((s) => {
+          const clean = name.trim();
+          if (!clean) return s;
+          return {
+            foodLog: [
+              {
+                id: newId("food"),
+                date: date ?? todayISO(),
+                name: clean,
+                calories: Math.max(0, Math.round(calories) || 0),
+                ...(protein != null && protein > 0
+                  ? { protein: Math.max(0, Math.round(protein)) }
+                  : {}),
+              },
+              ...s.foodLog,
+            ],
+          };
+        }),
+      removeFoodEntry: (id) => set((s) => ({ foodLog: s.foodLog.filter((f) => f.id !== id) })),
+      setCalorieGoal: (n) => set({ calorieGoal: Math.min(6000, Math.max(0, Math.round(n) || 0)) }),
+      setProteinGoal: (n) => set({ proteinGoal: Math.min(400, Math.max(0, Math.round(n) || 0)) }),
 
       // --- Attachments ---
       addAttachment: (att) => set((s) => ({ attachments: [att, ...s.attachments] })),
@@ -1189,6 +1399,15 @@ export const useHub = create<HubState>()(
           fitnessGoals: p.fitnessGoals ?? current.fitnessGoals,
           weeklySessionTarget: p.weeklySessionTarget ?? current.weeklySessionTarget,
           equipment: p.equipment ?? current.equipment,
+          weightLog: p.weightLog ?? current.weightLog,
+          weightGoal: p.weightGoal ?? current.weightGoal,
+          weightUnit: p.weightUnit ?? current.weightUnit,
+          programProgress: p.programProgress ?? current.programProgress,
+          programWeek: p.programWeek ?? current.programWeek,
+          trackerStartDate: p.trackerStartDate ?? current.trackerStartDate,
+          foodLog: p.foodLog ?? current.foodLog,
+          calorieGoal: p.calorieGoal ?? current.calorieGoal,
+          proteinGoal: p.proteinGoal ?? current.proteinGoal,
           attachments: p.attachments ?? current.attachments,
           notes: p.notes ?? current.notes,
           todos: p.todos ?? current.todos,

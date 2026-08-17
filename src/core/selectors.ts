@@ -89,6 +89,8 @@ export interface DayBlock {
    * calendar (meetings, events, meals, activities). Assignments and recurring
    * study blocks are managed in their own sections, so they're left in place. */
   removable: boolean;
+  /** Custom colour swatch id (events only) — overrides the domain colour. */
+  color?: string;
 }
 
 export interface DaySchedule {
@@ -122,9 +124,10 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     dur: number,
     subtitle?: string,
     removable = true,
+    color?: string,
   ) => {
     if (start == null) allDay.push({ id, domain, title });
-    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable });
+    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable, color });
   };
 
   for (const m of s.meetings.filter((m) => m.date === date)) {
@@ -148,7 +151,12 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     add(meal.id, "meals", meal.title, start, dur, meal.slot);
   }
   for (const ev of s.events.filter((e) => e.date === date)) {
-    add(ev.id, ev.domain, ev.title, hmToMin(ev.time), 45);
+    const start = hmToMin(ev.time);
+    const end = hmToMin(ev.endTime);
+    const dur = start != null && end != null && end > start ? end - start : 45;
+    const subtitle =
+      start != null && end != null && end > start ? `until ${formatTime(ev.endTime!)}` : undefined;
+    add(ev.id, ev.domain, ev.title, start, dur, subtitle, true, ev.color);
   }
   const weekday = fromISODate(date).getDay();
   for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {
@@ -353,7 +361,7 @@ export function graduationStats(s: HubState): GraduationStats {
     completed,
     inProgress,
     total: totalCredits,
-    pct: totalCredits === 0 ? 0 : Math.round((completed / totalCredits) * 100),
+    pct: totalCredits === 0 ? 0 : Math.min(100, Math.round((completed / totalCredits) * 100)),
     targetGraduation,
   };
 }
@@ -734,6 +742,86 @@ export function fitnessWeek(s: HubState): FitnessWeek {
 }
 
 // ---------------------------------------------------------------------------
+// Weight-loss accountability
+// ---------------------------------------------------------------------------
+
+export interface WeightStats {
+  unit: string;
+  /** Most recent reading, or null if nothing logged yet. */
+  latest: number | null;
+  /** First reading (the starting point), or null. */
+  start: number | null;
+  goal: number | null;
+  /** latest − start (negative = lost weight). null until ≥1 entry. */
+  changeFromStart: number | null;
+  /** latest − goal (positive = still to lose). null without both. */
+  toGoal: number | null;
+  /** 0–100: how far from start → goal the latest reading is. null if N/A. */
+  goalPct: number | null;
+  entryCount: number;
+}
+
+/** Body-weight progress: start, latest, goal, and how far along. Entries are
+ *  assumed date-sorted ascending (the store keeps them that way). */
+export function weightStats(s: HubState): WeightStats {
+  const log = s.weightLog;
+  const latest = log.length ? log[log.length - 1]!.weight : null;
+  const start = log.length ? log[0]!.weight : null;
+  const goal = s.weightGoal;
+  const changeFromStart = latest !== null && start !== null ? Math.round((latest - start) * 10) / 10 : null;
+  const toGoal = latest !== null && goal !== null ? Math.round((latest - goal) * 10) / 10 : null;
+
+  let goalPct: number | null = null;
+  if (latest !== null && start !== null && goal !== null && start !== goal) {
+    const raw = ((start - latest) / (start - goal)) * 100;
+    goalPct = Math.max(0, Math.min(100, Math.round(raw)));
+  }
+
+  return {
+    unit: s.weightUnit,
+    latest,
+    start,
+    goal,
+    changeFromStart,
+    toGoal,
+    goalPct,
+    entryCount: log.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Food / calorie counting
+// ---------------------------------------------------------------------------
+
+export interface FoodDay {
+  entries: HubState["foodLog"];
+  calories: number;
+  protein: number;
+  calorieGoal: number;
+  proteinGoal: number;
+  /** calorieGoal − calories (negative = over budget). */
+  caloriesLeft: number;
+  /** proteinGoal − protein (negative = goal met/exceeded). */
+  proteinLeft: number;
+}
+
+/** Everything logged for a day plus totals against the calorie & protein goals. */
+export function foodDay(s: HubState, date: ISODate = todayISO()): FoodDay {
+  const entries = s.foodLog.filter((f) => f.date === date);
+  const calories = entries.reduce((sum, f) => sum + f.calories, 0);
+  const protein = entries.reduce((sum, f) => sum + (f.protein ?? 0), 0);
+  return {
+    entries,
+    calories,
+    protein,
+    calorieGoal: s.calorieGoal,
+    proteinGoal: s.proteinGoal,
+    caloriesLeft: s.calorieGoal - calories,
+    proteinLeft: s.proteinGoal - protein,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Meals: SuperCook-style "cook with what you have"
 // ---------------------------------------------------------------------------
 
@@ -753,6 +841,30 @@ function normalize(name: string): string {
  */
 export function recipeVideoUrl(title: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} recipe`)}`;
+}
+
+/**
+ * For wellness habits, a YouTube search that actually helps you do the habit —
+ * e.g. a "Meditate" habit links to guided meditations. Returns null for habits
+ * with no obvious video (so we don't show an irrelevant link).
+ */
+export function habitVideoUrl(name: string): { url: string; label: string } | null {
+  const n = name.toLowerCase();
+  const rules: Array<[RegExp, string, string]> = [
+    [/medit|mindful|calm|breath/, "guided meditation", "guided"],
+    [/yoga/, "yoga for beginners", "follow along"],
+    [/stretch|mobility/, "stretching routine", "follow along"],
+    [/workout|exercise|gym|hiit|strength/, "home workout follow along", "follow along"],
+    [/run|jog/, "beginner running guide", "watch"],
+    [/walk/, "indoor walking workout", "follow along"],
+    [/journal|gratitude/, "journaling prompts", "ideas"],
+  ];
+  for (const [re, q, label] of rules) {
+    if (re.test(n)) {
+      return { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label };
+    }
+  }
+  return null;
 }
 
 /**

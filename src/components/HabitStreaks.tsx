@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, InlineAdd, SectionTitle } from "./ui";
 import { addDays, todayISO } from "@/core/dates";
-import { habitBestStreak, habitDoneToday, habitStreak } from "@/core/selectors";
+import { habitBestStreak, habitDoneToday, habitStreak, habitVideoUrl } from "@/core/selectors";
 import { useHub } from "@/core/store/hub";
 
 /** GitHub-style 28-day heatmap + streak stats for one habit. */
@@ -72,6 +72,7 @@ export function HabitStreaks({ manage = false }: { manage?: boolean }) {
         {habits.map((h) => {
           const done = habitDoneToday(h.history);
           const streak = habitStreak(h.history);
+          const vid = habitVideoUrl(h.name);
           return (
             <div key={h.id} className="group relative flex flex-col items-center gap-1 text-center">
               <button
@@ -105,6 +106,18 @@ export function HabitStreaks({ manage = false }: { manage?: boolean }) {
                   {streak === 1 ? "day" : "days"}
                 </span>
               </span>
+              {vid ? (
+                <a
+                  href={vid.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  title={`Open ${h.name} videos on YouTube`}
+                  className="text-[10px] font-semibold text-meals-bright hover:underline"
+                >
+                  ▶ {vid.label}
+                </a>
+              ) : null}
               {manage ? (
                 <button
                   onClick={() => removeHabit(h.id)}

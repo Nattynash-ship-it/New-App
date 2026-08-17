@@ -56,7 +56,7 @@ function MealCell({ kidId, day, slot }: { kidId: string; day: number; slot: Meal
           className="input !w-14 !py-1 text-xs"
           aria-label="Calories"
         />
-        <button type="submit" className="btn-primary !px-2 !py-1 text-[11px]">
+        <button type="submit" aria-label="Save meal" className="btn-primary !px-2 !py-1 text-[11px]">
           ✓
         </button>
       </form>

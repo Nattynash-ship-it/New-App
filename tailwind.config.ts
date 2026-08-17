@@ -1,8 +1,8 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Tokens resolve to CSS variables set per-theme in globals.css — four built-in
- * themes (Midnight, Daylight, Meadow, Aurora) switchable at runtime.
+ * Tokens resolve to CSS variables set per-theme in globals.css — the built-in
+ * themes (see src/core/themes.ts) are switchable at runtime.
  * Domain identity mid-tones are fixed across themes (validated on both light
  * and dark surfaces); text tints (`bright`) swap per theme via variables.
  */

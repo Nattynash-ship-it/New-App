@@ -79,6 +79,15 @@ export function EnergyPlan() {
 
 function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof useHub.getState> }) {
   const { items, deferred, message } = todaysPlan(state, energy);
+  const removeTimelineItem = useHub((s) => s.removeTimelineItem);
+  // Only one-off scheduled items can be removed straight from the plan;
+  // assignments, tasks, and habits are managed in their own sections.
+  const removable = new Set([
+    ...state.meetings.map((m) => m.id),
+    ...state.events.map((e) => e.id),
+    ...state.plannedMeals.map((m) => m.id),
+    ...state.activities.map((a) => a.id),
+  ]);
 
   return (
     <div>
@@ -95,13 +104,22 @@ function Plan({ energy, state }: { energy: EnergyLevel; state: ReturnType<typeof
             return (
               <li
                 key={`${item.domain}-${item.id}`}
-                className="flex items-center gap-3 rounded-xl border border-line px-3 py-2"
+                className="group flex items-center gap-3 rounded-xl border border-line px-3 py-2"
               >
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.title}</span>
                 <span className={`chip shrink-0 ${style.soft} ${style.text} !text-[10px]`}>{item.tag}</span>
                 {item.time ? (
                   <span className="shrink-0 text-xs tabular-nums text-muted">{formatTime(item.time)}</span>
+                ) : null}
+                {removable.has(item.id) ? (
+                  <button
+                    onClick={() => removeTimelineItem(item.id)}
+                    aria-label={`Remove ${item.title}`}
+                    className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
                 ) : null}
               </li>
             );

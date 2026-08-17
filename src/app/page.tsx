@@ -15,6 +15,7 @@ import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
 import { SmartCapture } from "@/components/SmartCapture";
+import { StudySchedule } from "@/components/StudySchedule";
 import { TimeBlockCalendar } from "@/components/TimeBlockCalendar";
 import { TodoList } from "@/components/TodoList";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
@@ -187,6 +188,9 @@ export default function CompassPage() {
       {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
       <HomeHero />
 
+      {/* Your tasks — front and center */}
+      <TodoList />
+
       <HomeQuickLinks />
 
       <WeatherCard />
@@ -197,12 +201,10 @@ export default function CompassPage() {
       {/* The single most important view: what's happening today */}
       <Timeline />
 
-      {/* Your tasks */}
-      <TodoList />
-
       {/* ── Everything else, one tap away (progressive disclosure) ── */}
-      <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, board & quick capture">
+      <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, study blocks, board & quick capture">
         <TimeBlockCalendar />
+        <StudySchedule />
         <QuickAdd />
         <PlannerBoard />
         <SmartCapture />

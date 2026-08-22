@@ -340,6 +340,7 @@ export interface HubState {
     domain?: Domain,
     dueDate?: string,
     alert?: boolean,
+    dueTime?: string,
   ) => void;
   setTodoDue: (id: string, dueDate?: string) => void;
   toggleTodoAlert: (id: string) => void;
@@ -1181,7 +1182,7 @@ export const useHub = create<HubState>()(
         })),
 
       // --- General to-do list ---
-      addTodo: (title, urgency, domain, dueDate, alert) =>
+      addTodo: (title, urgency, domain, dueDate, alert, dueTime) =>
         set((s) => ({
           todos: [
             {
@@ -1192,6 +1193,7 @@ export const useHub = create<HubState>()(
               createdAt: nowISO(),
               ...(domain ? { domain } : {}),
               ...(dueDate ? { dueDate } : {}),
+              ...(dueTime ? { dueTime } : {}),
               ...(alert ? { alert: true } : {}),
             },
             ...s.todos,

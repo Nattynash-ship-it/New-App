@@ -402,6 +402,8 @@ export interface Todo {
   domain?: Domain;
   /** Optional deadline. */
   dueDate?: ISODate;
+  /** Optional time of day for the deadline (HH:MM), used for reminders. */
+  dueTime?: TimeHHMM;
   /** When true, Vela reminds you (a browser notification) once it's due. */
   alert?: boolean;
 }

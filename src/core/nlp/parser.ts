@@ -13,7 +13,7 @@
  */
 
 import { addDays, todayISO, toISODate, fromISODate } from "../dates";
-import type { ISODate, ParsedIntent, ParsedIntentKind, TimeHHMM } from "../types";
+import type { Domain, ISODate, ParsedIntent, ParsedIntentKind, TimeHHMM, Urgency } from "../types";
 
 const KIND_KEYWORDS: Array<{ kind: ParsedIntentKind; words: RegExp }> = [
   { kind: "meeting", words: /\b(meeting|call|sync|standup|1:1|one[- ]on[- ]one|interview|review session)\b/i },
@@ -185,4 +185,74 @@ export function parseQuickAdd(input: string): ParsedIntent {
     time: timeMatch?.time,
     confidence: Math.min(confidence, 1),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Smart task entry — one typed line → title + due date/time + urgency + section
+// ---------------------------------------------------------------------------
+
+const URGENCY_HIGH = /(!{2,}|!high\b|\basap\b|\burgent(?:ly)?\b|\bimportant\b|\bhigh priority\b)/i;
+const URGENCY_LOW = /(!low\b|\bsomeday\b|\bwhenever\b|\bno rush\b|\beventually\b|\blow priority\b)/i;
+const DOMAIN_TAG = /#(school|work|meals?|fitness|family|home)\b/i;
+
+/** Keyword → section, first match wins. Kept task-focused and unambiguous. */
+const DOMAIN_KEYWORDS: Array<[Domain, RegExp]> = [
+  ["school", /\b(exam|midterm|final|assignment|homework|quiz|study|studying|class|lecture|essay|pset|problem set|course|professor|semester|degree)\b/i],
+  ["meals", /\b(groceries|grocery|cook|dinner|lunch|breakfast|meal ?prep|recipe|pantry|order food)\b/i],
+  ["fitness", /\b(workout|gym|run|running|jog|exercise|yoga|pilates|lift|stretch|glute|leg day|cardio|training)\b/i],
+  ["family", /\b(kid|kids|doctor|dentist|pediatric|appointment|soccer|ballet|swim|playdate|babysitter|pickup|drop[- ]?off|birthday)\b/i],
+  ["work", /\b(meeting|client|project|report|deadline|standup|email|presentation|invoice|proposal|1:1)\b/i],
+];
+
+export interface SmartTask {
+  title: string;
+  dueDate?: ISODate;
+  dueTime?: TimeHHMM;
+  urgency: Urgency;
+  /** Detected section, or undefined for a general task. */
+  domain?: Domain;
+}
+
+/**
+ * Parse one natural-language line into a ready-to-file task. Everything is
+ * optional except the title:
+ *   "order groceries friday 5pm !high"    → Meals task, Fri 17:00, high
+ *   "study for stats exam next monday"     → School task, next Mon
+ *   "call plumber tomorrow morning #home"  → Family task, tomorrow
+ * Deterministic and on-device — no API key needed.
+ */
+export function parseSmartTask(input: string): SmartTask {
+  const text = input.trim();
+  const dateMatch = parseDate(text);
+  const timeMatch = parseTime(text);
+  const removed: string[] = [dateMatch?.matched ?? "", timeMatch?.matched ?? ""];
+
+  let urgency: Urgency = "medium";
+  const hi = text.match(URGENCY_HIGH);
+  const lo = text.match(URGENCY_LOW);
+  if (hi) {
+    urgency = "high";
+    removed.push(hi[0]);
+  } else if (lo) {
+    urgency = "low";
+    removed.push(lo[0]);
+  }
+
+  let domain: Domain | undefined;
+  const tag = text.match(DOMAIN_TAG);
+  if (tag?.[1]) {
+    const raw = tag[1].toLowerCase().replace(/s$/, "");
+    domain = (raw === "home" ? "family" : raw === "meal" ? "meals" : raw) as Domain;
+    removed.push(tag[0]);
+  } else {
+    for (const [d, re] of DOMAIN_KEYWORDS) {
+      if (re.test(text)) {
+        domain = d;
+        break;
+      }
+    }
+  }
+
+  const title = cleanTitle(text, removed);
+  return { title, dueDate: dateMatch?.date, dueTime: timeMatch?.time, urgency, domain };
 }

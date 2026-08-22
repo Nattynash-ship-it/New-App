@@ -157,6 +157,7 @@ export function selectAgenda(s: HubState): Agenda {
       title: t.title,
       subtitle: t.domain && t.domain !== "compass" ? undefined : "Task",
       date: t.dueDate,
+      time: t.dueTime,
       done: false,
       completable: true,
     });

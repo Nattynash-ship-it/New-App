@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { Collapsible } from "@/components/Collapsible";
 import { EnergyPlan } from "@/components/EnergyPlan";
+import { EverythingAgenda } from "@/components/EverythingAgenda";
 import { HomeQuickLinks } from "@/components/HomeQuickLinks";
 import { PlannerBoard } from "@/components/PlannerBoard";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -188,8 +189,8 @@ export default function CompassPage() {
       {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
       <HomeHero />
 
-      {/* Your tasks — front and center */}
-      <TodoList />
+      {/* The one screen: everything due across every section, prioritized */}
+      <EverythingAgenda />
 
       <HomeQuickLinks />
 
@@ -198,13 +199,12 @@ export default function CompassPage() {
       {/* Right-size today in one tap */}
       <EnergyPlan />
 
-      {/* The single most important view: what's happening today */}
-      <Timeline />
-
       {/* ── Everything else, one tap away (progressive disclosure) ── */}
-      <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, study blocks, board & quick capture">
+      <Collapsible icon="🗓️" title="Plan your day" hint="Today's schedule, calendar, tasks, board & capture">
+        <Timeline />
         <TimeBlockCalendar />
         <StudySchedule />
+        <TodoList />
         <QuickAdd />
         <PlannerBoard />
         <SmartCapture />

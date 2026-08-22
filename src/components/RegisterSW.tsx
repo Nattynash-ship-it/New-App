@@ -7,7 +7,10 @@ export function RegisterSW() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
     if (!("serviceWorker" in navigator)) return;
-    const register = () => navigator.serviceWorker.register("/sw.js").catch(() => {});
+    // updateViaCache:'none' forces the browser to revalidate sw.js on every
+    // load, so a new deploy is always noticed instead of served from HTTP cache.
+    const register = () =>
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register);
   }, []);

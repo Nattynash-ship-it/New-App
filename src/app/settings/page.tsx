@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Card, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { DisplaySettings } from "@/components/DisplaySettings";
+import { UpdateApp } from "@/components/UpdateApp";
 import { useHub, useHydrated } from "@/core/store/hub";
 import {
   clearPasscode,
@@ -363,8 +365,10 @@ export default function SettingsPage() {
         <ProfileCard />
         <AppearanceCard />
       </div>
+      <DisplaySettings />
       <PasscodeCard />
       <ConnectionsCard />
+      <UpdateApp />
       <DataCard />
       <AboutCard />
     </div>

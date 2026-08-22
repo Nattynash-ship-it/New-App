@@ -1,5 +1,6 @@
 import { addDays, daysUntil, formatTime, fromISODate, todayISO } from "./dates";
 import { RECIPE_LIBRARY, STAPLES, type LibraryRecipe } from "./data/recipeLibrary";
+import { buildGluteProgram } from "./fitness/program";
 import type { HubState } from "./store/hub";
 import type { CourseTopic, Domain, DomainSummary, EnergyLevel, ISODate, RadarEntry, TimelineEntry } from "./types";
 
@@ -75,6 +76,199 @@ export function selectTimeline(s: HubState, date: ISODate): TimelineEntry[] {
 }
 
 // ---------------------------------------------------------------------------
+// The "Everything" agenda — one prioritized list across every section
+// ---------------------------------------------------------------------------
+
+export type AgendaKind = "task" | "assignment" | "meeting" | "activity" | "event" | "workout";
+export type AgendaBucketKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "nodate";
+
+export interface AgendaItem {
+  id: string;
+  kind: AgendaKind;
+  domain: Domain;
+  title: string;
+  subtitle?: string;
+  /** Deadline / scheduled date. Undefined = an undated to-do. */
+  date?: ISODate;
+  time?: string;
+  done: boolean;
+  /** Can it be checked off here (tasks, assignments, workouts) vs. just shown. */
+  completable: boolean;
+  bucket: AgendaBucketKey;
+}
+
+export interface AgendaBucket {
+  key: AgendaBucketKey;
+  label: string;
+  items: AgendaItem[];
+}
+
+export interface Agenda {
+  buckets: AgendaBucket[];
+  /** Everything that needs attention right now: overdue + due today. */
+  dueNow: number;
+  overdue: number;
+  today: number;
+  total: number;
+}
+
+function bucketOf(date: ISODate | undefined, today: ISODate): AgendaBucketKey {
+  if (!date) return "nodate";
+  if (date < today) return "overdue";
+  if (date === today) return "today";
+  if (date === addDays(today, 1)) return "tomorrow";
+  if (date <= addDays(today, 7)) return "week";
+  return "later";
+}
+
+const AGENDA_LABELS: Record<AgendaBucketKey, string> = {
+  overdue: "Overdue",
+  today: "Today",
+  tomorrow: "Tomorrow",
+  week: "This week",
+  later: "Later",
+  nodate: "No date yet",
+};
+
+/**
+ * Everything the user has to do — tasks, assignments, meetings, family
+ * activities, events, and today's/soon workouts — merged into one list and
+ * grouped Overdue → Today → Tomorrow → This week → Later → No date. This is the
+ * single "keep track of everything" view. Events that have already passed are
+ * dropped; only actionable things (tasks/assignments/workouts) surface as
+ * overdue.
+ */
+export function selectAgenda(s: HubState): Agenda {
+  const today = todayISO();
+  const items: AgendaItem[] = [];
+
+  const push = (it: Omit<AgendaItem, "bucket">) => {
+    // Non-completable events in the past are gone — don't clutter the agenda.
+    if (!it.completable && it.date && it.date < today) return;
+    items.push({ ...it, bucket: bucketOf(it.date, today) });
+  };
+
+  // Tasks (todos) — open only
+  for (const t of s.todos.filter((t) => !t.done)) {
+    push({
+      id: t.id,
+      kind: "task",
+      domain: t.domain ?? "compass",
+      title: t.title,
+      subtitle: t.domain && t.domain !== "compass" ? undefined : "Task",
+      date: t.dueDate,
+      done: false,
+      completable: true,
+    });
+  }
+
+  // School assignments / exams — open only
+  for (const a of s.assignments.filter((a) => !a.done)) {
+    const course = s.courses.find((c) => c.id === a.courseId);
+    push({
+      id: a.id,
+      kind: "assignment",
+      domain: "school",
+      title: a.title,
+      subtitle: course ? course.code : "Assignment",
+      date: a.dueDate,
+      time: a.dueTime,
+      done: false,
+      completable: true,
+    });
+  }
+
+  // Work meetings
+  for (const m of s.meetings) {
+    push({
+      id: m.id,
+      kind: "meeting",
+      domain: "work",
+      title: m.title,
+      subtitle: `${m.durationMin} min meeting`,
+      date: m.date,
+      time: m.time,
+      done: false,
+      completable: false,
+    });
+  }
+
+  // Family activities
+  for (const act of s.activities) {
+    const kid = s.kids.find((k) => k.id === act.kidId);
+    push({
+      id: act.id,
+      kind: "activity",
+      domain: "family",
+      title: act.title,
+      subtitle: kid?.name ?? "Family",
+      date: act.date,
+      time: act.time,
+      done: false,
+      completable: false,
+    });
+  }
+
+  // Quick-add events
+  for (const ev of s.events) {
+    push({
+      id: ev.id,
+      kind: "event",
+      domain: ev.domain,
+      title: ev.title,
+      date: ev.date,
+      time: ev.time,
+      done: false,
+      completable: false,
+    });
+  }
+
+  // Workouts — the 8-week program, but only what's near (recent overdue → +7d)
+  const from = addDays(today, -7);
+  const to = addDays(today, 7);
+  const doneSet = new Set(s.programDone);
+  for (const d of buildGluteProgram(s.programStartDate)) {
+    if (d.date < from || d.date > to || doneSet.has(d.date)) continue;
+    push({
+      id: `workout-${d.date}`,
+      kind: "workout",
+      domain: "fitness",
+      title: d.workout.name.replace(/^Glute Program · Day \d+ — /, ""),
+      subtitle: `Workout · ${d.workout.durationMin} min`,
+      date: d.date,
+      done: false,
+      completable: true,
+    });
+  }
+
+  const order: AgendaBucketKey[] = ["overdue", "today", "tomorrow", "week", "later", "nodate"];
+  const buckets: AgendaBucket[] = order
+    .map((key) => ({
+      key,
+      label: AGENDA_LABELS[key],
+      items: items
+        .filter((it) => it.bucket === key)
+        .sort(
+          (a, b) =>
+            (a.date ?? "9999").localeCompare(b.date ?? "9999") ||
+            (a.time ?? "99:99").localeCompare(b.time ?? "99:99"),
+        ),
+    }))
+    .filter((b) => b.items.length > 0);
+
+  const overdue = items.filter((i) => i.bucket === "overdue").length;
+  const todayCount = items.filter((i) => i.bucket === "today").length;
+
+  return {
+    buckets,
+    overdue,
+    today: todayCount,
+    dueNow: overdue + todayCount,
+    total: items.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Time-block calendar — a day laid out on an hour grid
 // ---------------------------------------------------------------------------
 
@@ -89,6 +283,8 @@ export interface DayBlock {
    * calendar (meetings, events, meals, activities). Assignments and recurring
    * study blocks are managed in their own sections, so they're left in place. */
   removable: boolean;
+  /** Custom colour swatch id (events only) — overrides the domain colour. */
+  color?: string;
 }
 
 export interface DaySchedule {
@@ -122,9 +318,10 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     dur: number,
     subtitle?: string,
     removable = true,
+    color?: string,
   ) => {
     if (start == null) allDay.push({ id, domain, title });
-    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable });
+    else timed.push({ id, domain, title, subtitle, startMin: start, endMin: start + dur, removable, color });
   };
 
   for (const m of s.meetings.filter((m) => m.date === date)) {
@@ -148,7 +345,12 @@ export function selectDayBlocks(s: HubState, date: ISODate): DaySchedule {
     add(meal.id, "meals", meal.title, start, dur, meal.slot);
   }
   for (const ev of s.events.filter((e) => e.date === date)) {
-    add(ev.id, ev.domain, ev.title, hmToMin(ev.time), 45);
+    const start = hmToMin(ev.time);
+    const end = hmToMin(ev.endTime);
+    const dur = start != null && end != null && end > start ? end - start : 45;
+    const subtitle =
+      start != null && end != null && end > start ? `until ${formatTime(ev.endTime!)}` : undefined;
+    add(ev.id, ev.domain, ev.title, start, dur, subtitle, true, ev.color);
   }
   const weekday = fromISODate(date).getDay();
   for (const block of s.studyBlocks.filter((b) => b.dayOfWeek === weekday)) {
@@ -353,7 +555,7 @@ export function graduationStats(s: HubState): GraduationStats {
     completed,
     inProgress,
     total: totalCredits,
-    pct: totalCredits === 0 ? 0 : Math.round((completed / totalCredits) * 100),
+    pct: totalCredits === 0 ? 0 : Math.min(100, Math.round((completed / totalCredits) * 100)),
     targetGraduation,
   };
 }
@@ -734,6 +936,86 @@ export function fitnessWeek(s: HubState): FitnessWeek {
 }
 
 // ---------------------------------------------------------------------------
+// Weight-loss accountability
+// ---------------------------------------------------------------------------
+
+export interface WeightStats {
+  unit: string;
+  /** Most recent reading, or null if nothing logged yet. */
+  latest: number | null;
+  /** First reading (the starting point), or null. */
+  start: number | null;
+  goal: number | null;
+  /** latest − start (negative = lost weight). null until ≥1 entry. */
+  changeFromStart: number | null;
+  /** latest − goal (positive = still to lose). null without both. */
+  toGoal: number | null;
+  /** 0–100: how far from start → goal the latest reading is. null if N/A. */
+  goalPct: number | null;
+  entryCount: number;
+}
+
+/** Body-weight progress: start, latest, goal, and how far along. Entries are
+ *  assumed date-sorted ascending (the store keeps them that way). */
+export function weightStats(s: HubState): WeightStats {
+  const log = s.weightLog;
+  const latest = log.length ? log[log.length - 1]!.weight : null;
+  const start = log.length ? log[0]!.weight : null;
+  const goal = s.weightGoal;
+  const changeFromStart = latest !== null && start !== null ? Math.round((latest - start) * 10) / 10 : null;
+  const toGoal = latest !== null && goal !== null ? Math.round((latest - goal) * 10) / 10 : null;
+
+  let goalPct: number | null = null;
+  if (latest !== null && start !== null && goal !== null && start !== goal) {
+    const raw = ((start - latest) / (start - goal)) * 100;
+    goalPct = Math.max(0, Math.min(100, Math.round(raw)));
+  }
+
+  return {
+    unit: s.weightUnit,
+    latest,
+    start,
+    goal,
+    changeFromStart,
+    toGoal,
+    goalPct,
+    entryCount: log.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Food / calorie counting
+// ---------------------------------------------------------------------------
+
+export interface FoodDay {
+  entries: HubState["foodLog"];
+  calories: number;
+  protein: number;
+  calorieGoal: number;
+  proteinGoal: number;
+  /** calorieGoal − calories (negative = over budget). */
+  caloriesLeft: number;
+  /** proteinGoal − protein (negative = goal met/exceeded). */
+  proteinLeft: number;
+}
+
+/** Everything logged for a day plus totals against the calorie & protein goals. */
+export function foodDay(s: HubState, date: ISODate = todayISO()): FoodDay {
+  const entries = s.foodLog.filter((f) => f.date === date);
+  const calories = entries.reduce((sum, f) => sum + f.calories, 0);
+  const protein = entries.reduce((sum, f) => sum + (f.protein ?? 0), 0);
+  return {
+    entries,
+    calories,
+    protein,
+    calorieGoal: s.calorieGoal,
+    proteinGoal: s.proteinGoal,
+    caloriesLeft: s.calorieGoal - calories,
+    proteinLeft: s.proteinGoal - protein,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Meals: SuperCook-style "cook with what you have"
 // ---------------------------------------------------------------------------
 
@@ -753,6 +1035,30 @@ function normalize(name: string): string {
  */
 export function recipeVideoUrl(title: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} recipe`)}`;
+}
+
+/**
+ * For wellness habits, a YouTube search that actually helps you do the habit —
+ * e.g. a "Meditate" habit links to guided meditations. Returns null for habits
+ * with no obvious video (so we don't show an irrelevant link).
+ */
+export function habitVideoUrl(name: string): { url: string; label: string } | null {
+  const n = name.toLowerCase();
+  const rules: Array<[RegExp, string, string]> = [
+    [/medit|mindful|calm|breath/, "guided meditation", "guided"],
+    [/yoga/, "yoga for beginners", "follow along"],
+    [/stretch|mobility/, "stretching routine", "follow along"],
+    [/workout|exercise|gym|hiit|strength/, "home workout follow along", "follow along"],
+    [/run|jog/, "beginner running guide", "watch"],
+    [/walk/, "indoor walking workout", "follow along"],
+    [/journal|gratitude/, "journaling prompts", "ideas"],
+  ];
+  for (const [re, q, label] of rules) {
+    if (re.test(n)) {
+      return { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, label };
+    }
+  }
+  return null;
 }
 
 /**

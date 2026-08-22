@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Work, school, meals, fitness, and family in one calm place — Vela keeps the day on course.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0B0F13",
-    theme_color: "#0B0F13",
+    background_color: "#E4EAF8",
+    theme_color: "#E4EAF8",
     orientation: "portrait",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

@@ -45,7 +45,13 @@ export interface ScheduledEvent {
   title: string;
   date: ISODate;
   time?: TimeHHMM;
+  /** Optional end time — gives the block a real length on the day grid. */
+  endTime?: TimeHHMM;
   domain: Domain;
+  /** Colour swatch id (see EVENT_COLORS) for colour-coding the day. */
+  color?: string;
+  /** When true, Vela fires a browser reminder as the event starts. */
+  alert?: boolean;
   createdAt: ISODateTime;
 }
 
@@ -258,6 +264,27 @@ export interface WorkoutLog {
   note: string;
 }
 
+/** Unit weights are stored and displayed in. */
+export type WeightUnit = "lb" | "kg";
+
+/** A body-weight measurement on a given day (one kept per day — latest wins). */
+export interface WeightEntry {
+  id: Id;
+  date: ISODate;
+  /** In the user's current `weightUnit`. */
+  weight: number;
+}
+
+/** A logged food/meal for calorie + protein counting, keyed to a day. */
+export interface FoodEntry {
+  id: Id;
+  date: ISODate;
+  name: string;
+  calories: number;
+  /** Grams of protein, if entered (the program leans on hitting a protein goal). */
+  protein?: number;
+}
+
 /** Daily habit with one-tap check-ins and streak history. */
 export interface Habit {
   id: Id;
@@ -412,6 +439,12 @@ export interface ParsedIntent {
   title: string;
   date: ISODate;
   time?: TimeHHMM;
+  /** Optional end time (used to size events/meetings on the calendar). */
+  endTime?: TimeHHMM;
+  /** Optional colour swatch id for events. */
+  color?: string;
+  /** Optional start reminder for events. */
+  alert?: boolean;
   /** 0–1: how confident the parser is. Low confidence can defer to the AI route. */
   confidence: number;
 }

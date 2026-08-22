@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { Collapsible } from "@/components/Collapsible";
 import { EnergyPlan } from "@/components/EnergyPlan";
+import { EverythingAgenda } from "@/components/EverythingAgenda";
 import { HomeQuickLinks } from "@/components/HomeQuickLinks";
 import { PlannerBoard } from "@/components/PlannerBoard";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -15,6 +16,7 @@ import { MotivationBanner } from "@/components/MotivationBanner";
 import { OverviewStrip } from "@/components/OverviewStrip";
 import { QuickAdd } from "@/components/QuickAdd";
 import { SmartCapture } from "@/components/SmartCapture";
+import { StudySchedule } from "@/components/StudySchedule";
 import { TimeBlockCalendar } from "@/components/TimeBlockCalendar";
 import { TodoList } from "@/components/TodoList";
 import { TomorrowHeadsUp } from "@/components/TomorrowHeadsUp";
@@ -187,6 +189,9 @@ export default function CompassPage() {
       {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
       <HomeHero />
 
+      {/* The one screen: everything due across every section, prioritized */}
+      <EverythingAgenda />
+
       <HomeQuickLinks />
 
       <WeatherCard />
@@ -194,15 +199,12 @@ export default function CompassPage() {
       {/* Right-size today in one tap */}
       <EnergyPlan />
 
-      {/* The single most important view: what's happening today */}
-      <Timeline />
-
-      {/* Your tasks */}
-      <TodoList />
-
       {/* ── Everything else, one tap away (progressive disclosure) ── */}
-      <Collapsible icon="🗓️" title="Plan your day" hint="Calendar, board & quick capture">
+      <Collapsible icon="🗓️" title="Plan your day" hint="Today's schedule, calendar, tasks, board & capture">
+        <Timeline />
         <TimeBlockCalendar />
+        <StudySchedule />
+        <TodoList />
         <QuickAdd />
         <PlannerBoard />
         <SmartCapture />

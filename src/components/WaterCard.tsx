@@ -51,7 +51,7 @@ export function WaterCard() {
         {Array.from({ length: goal }, (_, i) => (
           <button
             key={i}
-            onClick={() => logWater(i + 1 <= cups ? -(cups - i) : i + 1 - cups)}
+            onClick={() => logWater(i + 1 - cups)}
             aria-label={`Set water to ${i + 1} cups`}
             className={`h-7 w-5 rounded-b-md rounded-t-sm border transition-all ${
               i < cups

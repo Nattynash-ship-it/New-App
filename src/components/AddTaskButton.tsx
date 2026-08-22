@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MicButton } from "./MicButton";
 import { DOMAIN_STYLES } from "./ui";
 import { useHub } from "@/core/store/hub";
+import { parseSmartTask } from "@/core/nlp/parser";
+import { addDays, formatShort, formatTime, todayISO } from "@/core/dates";
 import type { Domain, Urgency } from "@/core/types";
 
 /** Which life-domain a task belongs to, inferred from the page you're on. */
@@ -23,10 +25,18 @@ const URGENCY: Array<{ id: Urgency; label: string }> = [
   { id: "low", label: "Later" },
 ];
 
+function dateLabel(iso: string): string {
+  const t = todayISO();
+  if (iso === t) return "Today";
+  if (iso === addDays(t, 1)) return "Tomorrow";
+  return formatShort(iso);
+}
+
 /**
  * Global "add a task from anywhere" button. Floats above the bottom nav on
- * every screen; the task is tagged with the section you're on (Work, School,
- * Meals, …) and lands in your to-do list. Type or dictate.
+ * every screen. It reads what you type — "order groceries friday 5pm !high" —
+ * and fills the due date, time, urgency, and section automatically, so a whole
+ * task is one line. Manual controls still override. Type or dictate.
  */
 export function AddTaskButton() {
   const pathname = usePathname();
@@ -34,20 +44,46 @@ export function AddTaskButton() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [urgency, setUrgency] = useState<Urgency>("medium");
+  const [touchedUrgency, setTouchedUrgency] = useState(false);
   const [due, setDue] = useState("");
   const [alert, setAlert] = useState(false);
   const [added, setAdded] = useState(false);
 
-  const domain = domainForPath(pathname);
-  const style = DOMAIN_STYLES[domain];
+  const routeDomain = domainForPath(pathname);
+  const parsed = useMemo(() => parseSmartTask(title), [title]);
 
-  function submit() {
-    const t = title.trim();
-    if (!t) return;
-    addTodo(t, urgency, domain, due || undefined, alert);
+  // Effective values = what the parse found, unless you overrode it manually.
+  const effUrgency = touchedUrgency ? urgency : parsed.urgency;
+  const effDomain = parsed.domain ?? routeDomain;
+  const effDue = due || parsed.dueDate;
+  const effTime = parsed.dueTime;
+  const style = DOMAIN_STYLES[effDomain];
+
+  const hasPreview =
+    title.trim().length > 0 &&
+    (parsed.dueDate || parsed.dueTime || parsed.domain || effUrgency !== "medium");
+
+  function reset() {
     setTitle("");
     setDue("");
     setAlert(false);
+    setUrgency("medium");
+    setTouchedUrgency(false);
+  }
+
+  function submit() {
+    const p = parseSmartTask(title);
+    const finalTitle = p.title || title.trim();
+    if (!finalTitle) return;
+    addTodo(
+      finalTitle,
+      touchedUrgency ? urgency : p.urgency,
+      p.domain ?? routeDomain,
+      due || p.dueDate,
+      alert || Boolean(p.dueDate), // auto-remind when a deadline was detected
+      p.dueTime,
+    );
+    reset();
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   }
@@ -90,20 +126,40 @@ export function AddTaskButton() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") submit();
                 }}
-                placeholder="What needs doing?"
+                placeholder='e.g. "order groceries friday 5pm !high"'
                 className="input flex-1 !py-2 text-sm"
               />
               <MicButton value={title} onChange={setTitle} />
             </div>
 
+            {/* Live smart-parse preview */}
+            {hasPreview ? (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg bg-accent-soft/40 px-2.5 py-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Reads as</span>
+                {effDue ? <span className="chip !text-[10px] bg-surface">📅 {dateLabel(effDue)}</span> : null}
+                {effTime ? <span className="chip !text-[10px] bg-surface">🕒 {formatTime(effTime)}</span> : null}
+                {effUrgency !== "medium" ? (
+                  <span className="chip !text-[10px] bg-surface">
+                    ⚡ {effUrgency === "high" ? "Urgent" : "Later"}
+                  </span>
+                ) : null}
+                {parsed.domain ? (
+                  <span className={`chip !text-[10px] ${style.soft} ${style.text}`}>{style.label}</span>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="mt-2 flex items-center gap-1.5">
               {URGENCY.map((u) => (
                 <button
                   key={u.id}
-                  onClick={() => setUrgency(u.id)}
-                  aria-pressed={urgency === u.id}
+                  onClick={() => {
+                    setUrgency(u.id);
+                    setTouchedUrgency(true);
+                  }}
+                  aria-pressed={effUrgency === u.id}
                   className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    urgency === u.id ? "border-accent bg-accent-soft text-accent" : "border-line text-muted"
+                    effUrgency === u.id ? "border-accent bg-accent-soft text-accent" : "border-line text-muted"
                   }`}
                 >
                   {u.label}
@@ -116,7 +172,7 @@ export function AddTaskButton() {
                 Due
                 <input
                   type="date"
-                  value={due}
+                  value={due || parsed.dueDate || ""}
                   onChange={(e) => setDue(e.target.value)}
                   className="input !w-auto !py-1 text-xs"
                   aria-label="Due date (optional)"
@@ -144,7 +200,8 @@ export function AddTaskButton() {
               <p className="mt-2 text-xs text-meals-bright">Added to your to-do list ✓ — add another, or close.</p>
             ) : (
               <p className="mt-2 text-[11px] text-muted">
-                Tagged <span className="font-medium">{style.label}</span> and saved to your to-do list on Today.
+                Type a date, time, <span className="font-medium">!high</span>, or a keyword like{" "}
+                <span className="font-medium">groceries</span> and Vela files it for you.
               </p>
             )}
           </div>

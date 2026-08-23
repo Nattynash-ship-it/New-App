@@ -19,6 +19,7 @@ import { StudySchedule } from "@/components/StudySchedule";
 import { addDays, daysUntil, formatFriendly, formatShort, todayISO } from "@/core/dates";
 import { courseProgress, graduationStats, selectReviewQueue } from "@/core/selectors";
 import { SectionTasks } from "@/components/SectionTasks";
+import { StudyAppConnect } from "@/components/StudyAppConnect";
 import { useHub, useHydrated } from "@/core/store/hub";
 import { useUndo } from "@/core/store/undo";
 
@@ -432,6 +433,7 @@ export default function SchoolPage() {
       />
       <SchoolQuickLinks />
       <SectionTasks domain="school" title="School tasks" />
+      <StudyAppConnect />
       <GraduationTracker />
       <Card>
         <SectionTitle right={<span className="text-xs text-muted">private · on this device</span>}>

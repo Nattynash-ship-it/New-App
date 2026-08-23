@@ -14,6 +14,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO } from "../dates";
 import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
+import type { StudyClass } from "../integrations/studyImport";
 import {
   seedActivities,
   seedAssignments,
@@ -93,7 +94,7 @@ export const DATA_KEYS = [
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
-  "programStartDate", "programDone", "programExtras",
+  "programStartDate", "programDone", "programExtras", "studyAppUrl",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -192,6 +193,8 @@ export interface HubState {
   programDone: string[];
   /** Extra app workouts the user added to a program day: date → workout ids. */
   programExtras: Record<string, string[]>;
+  /** Study-app link: the URL of its published classes JSON (for re-pulling). */
+  studyAppUrl: string;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -258,6 +261,10 @@ export interface HubState {
   toggleAssignment: (id: string) => void;
   addAssignment: (a: Omit<Assignment, "id" | "done">) => void;
   removeAssignment: (id: string) => void;
+  /** Merge classes pulled from the study app into courses + assignments. */
+  importStudyClasses: (classes: StudyClass[]) => { courses: number; items: number };
+  /** Remembered URL of the study app's published classes JSON. */
+  setStudyAppUrl: (url: string) => void;
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -443,6 +450,7 @@ function initialState() {
     programStartDate: todayISO(),
     programDone: [] as string[],
     programExtras: {} as Record<string, string[]>,
+    studyAppUrl: "",
   };
 }
 
@@ -854,6 +862,68 @@ export const useHub = create<HubState>()(
         set((s) => ({ assignments: [...s.assignments, { ...a, id: newId("asg"), done: false }] })),
       removeAssignment: (id) =>
         set((s) => ({ assignments: s.assignments.filter((a) => a.id !== id) })),
+      setStudyAppUrl: (url) => set({ studyAppUrl: url.trim() }),
+      importStudyClasses: (classes) => {
+        let addedCourses = 0;
+        let addedItems = 0;
+        set((s) => {
+          const courses = [...s.courses];
+          const byCode = new Map(courses.map((c) => [c.code.toLowerCase(), c]));
+          const assignments = [...s.assignments];
+          const seen = new Set(
+            assignments.map((a) => `${a.title.toLowerCase()}|${a.dueDate}`),
+          );
+          for (const cls of classes) {
+            const code = (cls.code || "").trim();
+            let course = code ? byCode.get(code.toLowerCase()) : undefined;
+            if (!course) {
+              course = {
+                id: newId("course"),
+                code: code || cls.name || "CLASS",
+                name: (cls.name || code || "Class").trim(),
+                credits: cls.credits ?? 3,
+                units: [{ id: newId("unit"), name: "Unit 1", topics: [] }],
+                completed: Boolean(cls.completed),
+                ...(cls.completed ? { completedAt: nowISO(), outcome: "passed" as const } : {}),
+              };
+              courses.push(course);
+              byCode.set(course.code.toLowerCase(), course);
+              addedCourses += 1;
+            }
+            const items = [
+              ...(cls.assignments ?? []).map((a) => ({
+                title: a.title,
+                dueDate: a.dueDate,
+                dueTime: a.dueTime,
+                done: Boolean(a.done),
+              })),
+              ...(cls.exams ?? []).map((e) => ({
+                title: e.title,
+                dueDate: e.date,
+                dueTime: e.time,
+                done: false,
+              })),
+            ];
+            for (const it of items) {
+              if (!it.title || !it.dueDate) continue;
+              const key = `${it.title.toLowerCase()}|${it.dueDate}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+              assignments.push({
+                id: newId("asg"),
+                courseId: course.id,
+                title: it.title.trim(),
+                dueDate: it.dueDate,
+                ...(it.dueTime ? { dueTime: it.dueTime } : {}),
+                done: it.done,
+              });
+              addedItems += 1;
+            }
+          }
+          return { courses, assignments };
+        });
+        return { courses: addedCourses, items: addedItems };
+      },
       addStudyBlock: (b) =>
         set((s) => ({ studyBlocks: [...s.studyBlocks, { ...b, id: newId("sb") }] })),
       removeStudyBlock: (id) =>
@@ -1418,6 +1488,7 @@ export const useHub = create<HubState>()(
           programStartDate: p.programStartDate ?? current.programStartDate,
           programDone: p.programDone ?? current.programDone,
           programExtras: p.programExtras ?? current.programExtras,
+          studyAppUrl: p.studyAppUrl ?? current.studyAppUrl,
         };
       },
     },

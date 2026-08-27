@@ -7,6 +7,7 @@ import { formatTime, weekStartISO } from "@/core/dates";
 import { CATEGORY_META, toMinutes, type BlockCategory } from "@/core/data/weeklySchedule";
 import { workoutById } from "@/core/fitness/program";
 import { formVideoUrl, LEVEL_META } from "@/core/fitness/library";
+import { downloadWeeklyICS, type WeeklyCalEvent } from "@/lib/calendar";
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon-first
 const DAY_LABEL: Record<number, string> = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
@@ -37,6 +38,7 @@ export function WeekSchedule() {
   const removeWeekBlock = useHub((s) => s.removeWeekBlock);
   const resetWeekBlocks = useHub((s) => s.resetWeekBlocks);
   const toggleWeekBlockDone = useHub((s) => s.toggleWeekBlockDone);
+  const toggleWeekBlockReminder = useHub((s) => s.toggleWeekBlockReminder);
 
   const thisWeek = weekStartISO();
   const isDone = (id: string) => weekChecks[id] === thisWeek;
@@ -63,6 +65,7 @@ export function WeekSchedule() {
   const pos = (d: number) => (d + 6) % 7;
   const checkable = pos(sel) <= pos(today);
   const doneCount = dayBlocks.filter((b) => isDone(b.id)).length;
+  const reminderCount = weekBlocks.filter((b) => b.reminder).length;
 
   function submitAdd() {
     if (!draft.start || !draft.end || !draft.title.trim()) return;
@@ -168,6 +171,17 @@ export function WeekSchedule() {
                   <span className={`min-w-0 flex-1 text-[13px] ${done ? "text-muted line-through" : ""}`}>{b.title}</span>
                 )}
                 <button
+                  onClick={() => toggleWeekBlockReminder(b.id)}
+                  aria-label={b.reminder ? `Reminder on for ${b.title}` : `Remind me at ${b.title}`}
+                  aria-pressed={Boolean(b.reminder)}
+                  title={b.reminder ? "Reminder on — tap to turn off" : "Remind me when this starts"}
+                  className={`shrink-0 rounded-full px-1 text-[13px] ${
+                    b.reminder ? "text-accent" : "text-muted/50 opacity-0 hover:text-muted group-hover:opacity-100"
+                  }`}
+                >
+                  🔔
+                </button>
+                <button
                   onClick={() => removeWeekBlock(b.id)}
                   aria-label={`Remove ${b.title}`}
                   className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
@@ -218,6 +232,29 @@ export function WeekSchedule() {
           <li className="px-1.5 py-3 text-center text-xs text-muted">No blocks yet — add one below.</li>
         ) : null}
       </ul>
+
+      {reminderCount > 0 ? (
+        <button
+          onClick={() =>
+            downloadWeeklyICS(
+              "vela-schedule-reminders",
+              weekBlocks
+                .filter((b) => b.reminder)
+                .map<WeeklyCalEvent>((b) => ({
+                  id: b.id,
+                  title: b.title,
+                  day: b.day,
+                  time: b.start,
+                  durationMin: toMinutes(b.end) - toMinutes(b.start),
+                })),
+            )
+          }
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line py-2 text-xs text-muted transition-colors hover:border-accent hover:text-accent"
+          title="Adds the 🔔 blocks to your phone's calendar as weekly reminders — so they alert you even when Vela is closed"
+        >
+          📅 Add your {reminderCount} reminders to your calendar
+        </button>
+      ) : null}
 
       {adding ? (
         <div className="mt-2 space-y-2 rounded-xl border border-line bg-paper p-2.5">

@@ -29,6 +29,8 @@ export interface WeekBlock {
   /** For movement blocks: the app workout (WORKOUT_LIBRARY id) to do then, so
    *  the block opens to its exercises + form videos. */
   workoutId?: string;
+  /** Fire a reminder when this block starts (in-app, and via calendar export). */
+  reminder?: boolean;
 }
 
 /** Which app workout each day's 5–6 AM movement block maps to — chosen to match
@@ -225,4 +227,19 @@ export function ensureTidyBlocks(blocks: WeekBlock[]): WeekBlock[] {
   return out;
 }
 
-export const DEFAULT_WEEK_BLOCKS: WeekBlock[] = ensureTidyBlocks(BASE_BLOCKS);
+/** The "anchor" blocks that get a reminder by default: the 5 AM movement, the
+ *  7 PM reading ritual, and the daily tidy-up. */
+export function isAnchorBlock(b: WeekBlock): boolean {
+  return b.category === "workout" || /reads to me/i.test(b.title) || b.title === TIDY_TITLE;
+}
+
+/** Turn reminders on for the anchor blocks — but only where the flag hasn't been
+ *  set yet, so a user's own on/off choices are always preserved. Idempotent, so
+ *  it backfills into existing saved schedules via the persist merge. */
+export function ensureAnchorReminders(blocks: WeekBlock[]): WeekBlock[] {
+  return blocks.map((b) =>
+    b.reminder === undefined && isAnchorBlock(b) ? { ...b, reminder: true } : b,
+  );
+}
+
+export const DEFAULT_WEEK_BLOCKS: WeekBlock[] = ensureAnchorReminders(ensureTidyBlocks(BASE_BLOCKS));

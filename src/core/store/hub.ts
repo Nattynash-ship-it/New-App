@@ -14,7 +14,12 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO, weekStartISO } from "../dates";
 import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
-import { DEFAULT_WEEK_BLOCKS, ensureTidyBlocks, type WeekBlock } from "../data/weeklySchedule";
+import {
+  DEFAULT_WEEK_BLOCKS,
+  ensureAnchorReminders,
+  ensureTidyBlocks,
+  type WeekBlock,
+} from "../data/weeklySchedule";
 import type { StudyClass } from "../integrations/studyImport";
 import {
   seedActivities,
@@ -277,6 +282,8 @@ export interface HubState {
   resetWeekBlocks: () => void;
   /** Tick/untick a schedule block for the current week (auto-recycles weekly). */
   toggleWeekBlockDone: (id: string) => void;
+  /** Turn a block's start-time reminder on or off. */
+  toggleWeekBlockReminder: (id: string) => void;
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -885,6 +892,10 @@ export const useHub = create<HubState>()(
           return { weekBlocks: s.weekBlocks.filter((b) => b.id !== id), weekChecks: rest };
         }),
       resetWeekBlocks: () => set({ weekBlocks: DEFAULT_WEEK_BLOCKS, weekChecks: {} }),
+      toggleWeekBlockReminder: (id) =>
+        set((s) => ({
+          weekBlocks: s.weekBlocks.map((b) => (b.id === id ? { ...b, reminder: !b.reminder } : b)),
+        })),
       toggleWeekBlockDone: (id) =>
         set((s) => {
           const week = weekStartISO();
@@ -1523,8 +1534,8 @@ export const useHub = create<HubState>()(
           programDone: p.programDone ?? current.programDone,
           programExtras: p.programExtras ?? current.programExtras,
           studyAppUrl: p.studyAppUrl ?? current.studyAppUrl,
-          // Backfill a daily tidy-up block into existing saved schedules too.
-          weekBlocks: ensureTidyBlocks(p.weekBlocks ?? current.weekBlocks),
+          // Backfill the daily tidy block + anchor reminders into existing saves.
+          weekBlocks: ensureAnchorReminders(ensureTidyBlocks(p.weekBlocks ?? current.weekBlocks)),
           weekChecks: p.weekChecks ?? current.weekChecks,
         };
       },

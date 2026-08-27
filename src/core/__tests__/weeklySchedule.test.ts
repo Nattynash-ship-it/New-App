@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_WEEK_BLOCKS, ensureTidyBlocks, TIDY_TITLE, toMinutes } from "../data/weeklySchedule";
+import {
+  DEFAULT_WEEK_BLOCKS,
+  ensureAnchorReminders,
+  ensureTidyBlocks,
+  isAnchorBlock,
+  TIDY_TITLE,
+  toMinutes,
+} from "../data/weeklySchedule";
 import { workoutById } from "../fitness/program";
+import { buildWeeklyICS } from "../../lib/calendar";
 import { weekStartISO } from "../dates";
 
 describe("default weekly schedule", () => {
@@ -50,6 +58,31 @@ describe("default weekly schedule", () => {
     const again = ensureTidyBlocks(DEFAULT_WEEK_BLOCKS);
     expect(again.filter((b) => b.title === TIDY_TITLE)).toHaveLength(7);
     expect(again.length).toBe(DEFAULT_WEEK_BLOCKS.length);
+  });
+
+  it("defaults reminders on for anchor blocks (movement, reading, tidy)", () => {
+    const anchors = DEFAULT_WEEK_BLOCKS.filter(isAnchorBlock);
+    // 7 movement + 7 reading + 7 tidy = 21
+    expect(anchors.length).toBe(21);
+    expect(anchors.every((b) => b.reminder === true)).toBe(true);
+    // Non-anchors stay off.
+    expect(DEFAULT_WEEK_BLOCKS.some((b) => !isAnchorBlock(b) && b.reminder)).toBe(false);
+  });
+
+  it("preserves a user's reminder choice (doesn't re-enable a turned-off anchor)", () => {
+    const off = DEFAULT_WEEK_BLOCKS.map((b) =>
+      isAnchorBlock(b) ? { ...b, reminder: false } : b,
+    );
+    const after = ensureAnchorReminders(off);
+    expect(after.some((b) => isAnchorBlock(b) && b.reminder)).toBe(false);
+  });
+
+  it("exports weekly-recurring calendar events with an alarm", () => {
+    const ics = buildWeeklyICS([{ id: "m", title: "Movement", day: 1, time: "05:00", durationMin: 60 }]);
+    expect(ics).toContain("RRULE:FREQ=WEEKLY;BYDAY=MO");
+    expect(ics).toContain("SUMMARY:Movement");
+    expect(ics).toContain("BEGIN:VALARM");
+    expect(ics).toContain("TRIGGER:-PT5M");
   });
 
   it("has no overlapping blocks within a day", () => {

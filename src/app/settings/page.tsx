@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Card, PageHeader, SectionTitle, Skeleton } from "@/components/ui";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { GitHubSync } from "@/components/GitHubSync";
 import { DisplaySettings } from "@/components/DisplaySettings";
 import { UpdateApp } from "@/components/UpdateApp";
 import { useHub, useHydrated } from "@/core/store/hub";
@@ -366,6 +367,7 @@ export default function SettingsPage() {
         <AppearanceCard />
       </div>
       <DisplaySettings />
+      <GitHubSync />
       <PasscodeCard />
       <ConnectionsCard />
       <UpdateApp />

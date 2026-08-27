@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_WEEK_BLOCKS, toMinutes } from "../data/weeklySchedule";
+import { workoutById } from "../fitness/program";
 import { weekStartISO } from "../dates";
 
 describe("default weekly schedule", () => {
@@ -17,6 +18,17 @@ describe("default weekly schedule", () => {
       const move = blocks.filter((b) => b.category === "workout").reduce((n, b) => n + (toMinutes(b.end) - toMinutes(b.start)), 0);
       expect(study, `day ${day} study`).toBeGreaterThanOrEqual(180); // 3h
       expect(move, `day ${day} movement`).toBeGreaterThanOrEqual(60); // 1h
+    }
+  });
+
+  it("links every movement block to a real app workout", () => {
+    const moves = DEFAULT_WEEK_BLOCKS.filter((b) => b.category === "workout");
+    expect(moves).toHaveLength(7); // one a day
+    for (const m of moves) {
+      expect(m.workoutId, `${m.title} has a workoutId`).toBeTruthy();
+      const w = workoutById(m.workoutId!);
+      expect(w, `${m.workoutId} resolves`).toBeTruthy();
+      expect(w!.exercises.length).toBeGreaterThan(0);
     }
   });
 

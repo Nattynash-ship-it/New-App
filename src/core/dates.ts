@@ -23,6 +23,13 @@ export function fromISODate(iso: ISODate): Date {
   return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
 }
 
+/** The Monday that starts the week containing `iso` (defaults to today). Used
+ *  to scope recurring-schedule check-offs to the current week so they recycle. */
+export function weekStartISO(iso: ISODate = todayISO()): ISODate {
+  const diff = (fromISODate(iso).getDay() + 6) % 7; // Monday-based
+  return addDays(iso, -diff);
+}
+
 export function isSameDay(a: ISODate, b: ISODate): boolean {
   return a === b;
 }

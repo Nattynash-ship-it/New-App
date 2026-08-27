@@ -14,6 +14,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO } from "../dates";
 import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
+import { DEFAULT_WEEK_BLOCKS, type WeekBlock } from "../data/weeklySchedule";
 import type { StudyClass } from "../integrations/studyImport";
 import {
   seedActivities,
@@ -94,7 +95,7 @@ export const DATA_KEYS = [
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
-  "programStartDate", "programDone", "programExtras", "studyAppUrl",
+  "programStartDate", "programDone", "programExtras", "studyAppUrl", "weekBlocks",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -195,6 +196,8 @@ export interface HubState {
   programExtras: Record<string, string[]>;
   /** Study-app link: the URL of its published classes JSON (for re-pulling). */
   studyAppUrl: string;
+  /** Recurring weekly time-block schedule (the "My Week" view). */
+  weekBlocks: WeekBlock[];
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -265,6 +268,9 @@ export interface HubState {
   importStudyClasses: (classes: StudyClass[]) => { courses: number; items: number };
   /** Remembered URL of the study app's published classes JSON. */
   setStudyAppUrl: (url: string) => void;
+  addWeekBlock: (block: Omit<WeekBlock, "id">) => void;
+  removeWeekBlock: (id: string) => void;
+  resetWeekBlocks: () => void;
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -451,6 +457,7 @@ function initialState() {
     programDone: [] as string[],
     programExtras: {} as Record<string, string[]>,
     studyAppUrl: "",
+    weekBlocks: DEFAULT_WEEK_BLOCKS,
   };
 }
 
@@ -863,6 +870,10 @@ export const useHub = create<HubState>()(
       removeAssignment: (id) =>
         set((s) => ({ assignments: s.assignments.filter((a) => a.id !== id) })),
       setStudyAppUrl: (url) => set({ studyAppUrl: url.trim() }),
+      addWeekBlock: (block) =>
+        set((s) => ({ weekBlocks: [...s.weekBlocks, { ...block, id: newId("wk") }] })),
+      removeWeekBlock: (id) => set((s) => ({ weekBlocks: s.weekBlocks.filter((b) => b.id !== id) })),
+      resetWeekBlocks: () => set({ weekBlocks: DEFAULT_WEEK_BLOCKS }),
       importStudyClasses: (classes) => {
         let addedCourses = 0;
         let addedItems = 0;
@@ -1489,6 +1500,7 @@ export const useHub = create<HubState>()(
           programDone: p.programDone ?? current.programDone,
           programExtras: p.programExtras ?? current.programExtras,
           studyAppUrl: p.studyAppUrl ?? current.studyAppUrl,
+          weekBlocks: p.weekBlocks ?? current.weekBlocks,
         };
       },
     },

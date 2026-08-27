@@ -187,14 +187,14 @@ export default function CompassPage() {
 
   return (
     <div className="space-y-5">
-      {/* ── The glance: greeting, what's next, weather, today's plan, tasks ── */}
+      {/* ── The glance: greeting, then your day's time blocks ── */}
       <HomeHero />
+
+      {/* The recurring weekly rhythm — today's time blocks, up front */}
+      <WeekSchedule />
 
       {/* The one screen: everything due across every section, prioritized */}
       <EverythingAgenda />
-
-      {/* The recurring weekly rhythm — today's time blocks, editable */}
-      <WeekSchedule />
 
       <HomeQuickLinks />
 

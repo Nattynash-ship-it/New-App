@@ -2,7 +2,7 @@
  * Network-first for navigations (fresh content when online, cached fallback
  * when not); cache-first for static assets. */
 
-const CACHE = "vela-v38";
+const CACHE = "vela-v39";
 const APP_SHELL = ["/", "/work", "/school", "/meals", "/fitness", "/family", "/notes", "/settings", "/connections"];
 
 self.addEventListener("install", (event) => {

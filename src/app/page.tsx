@@ -5,6 +5,7 @@ import { AffirmationsCard } from "@/components/AffirmationsCard";
 import { Collapsible } from "@/components/Collapsible";
 import { EnergyPlan } from "@/components/EnergyPlan";
 import { EverythingAgenda } from "@/components/EverythingAgenda";
+import { WeekSchedule } from "@/components/WeekSchedule";
 import { HomeQuickLinks } from "@/components/HomeQuickLinks";
 import { PlannerBoard } from "@/components/PlannerBoard";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -191,6 +192,9 @@ export default function CompassPage() {
 
       {/* The one screen: everything due across every section, prioritized */}
       <EverythingAgenda />
+
+      {/* The recurring weekly rhythm — today's time blocks, editable */}
+      <WeekSchedule />
 
       <HomeQuickLinks />
 

@@ -14,7 +14,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { addDays, nowISO, todayISO, weekStartISO } from "../dates";
 import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
-import { DEFAULT_WEEK_BLOCKS, type WeekBlock } from "../data/weeklySchedule";
+import { DEFAULT_WEEK_BLOCKS, ensureTidyBlocks, type WeekBlock } from "../data/weeklySchedule";
 import type { StudyClass } from "../integrations/studyImport";
 import {
   seedActivities,
@@ -1523,7 +1523,8 @@ export const useHub = create<HubState>()(
           programDone: p.programDone ?? current.programDone,
           programExtras: p.programExtras ?? current.programExtras,
           studyAppUrl: p.studyAppUrl ?? current.studyAppUrl,
-          weekBlocks: p.weekBlocks ?? current.weekBlocks,
+          // Backfill a daily tidy-up block into existing saved schedules too.
+          weekBlocks: ensureTidyBlocks(p.weekBlocks ?? current.weekBlocks),
           weekChecks: p.weekChecks ?? current.weekChecks,
         };
       },

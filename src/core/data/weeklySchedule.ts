@@ -173,7 +173,7 @@ const RAW: Raw[] = [
   [6, "20:00", "21:30", "self", "Wind-down · bed"],
 ];
 
-export const DEFAULT_WEEK_BLOCKS: WeekBlock[] = RAW.map(([day, start, end, category, title], i) => ({
+const BASE_BLOCKS: WeekBlock[] = RAW.map(([day, start, end, category, title], i) => ({
   id: `wk_${day}_${start.replace(":", "")}_${i}`,
   day,
   start,
@@ -188,3 +188,41 @@ export function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
+
+function fromMinutes(mins: number): string {
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+export const TIDY_TITLE = "Tidy up the apartment";
+
+/**
+ * Ensure every day has a short daily tidy-up block. Idempotent — skips days
+ * that already have one — so it can run over the default set AND over an
+ * existing (possibly customized) saved schedule without duplicating or wiping
+ * anything. The tidy slot is carved from the front of that evening's wind-down
+ * block, which is trimmed to match so nothing overlaps.
+ */
+export function ensureTidyBlocks(blocks: WeekBlock[]): WeekBlock[] {
+  const out = [...blocks];
+  for (let day = 0; day < 7; day++) {
+    if (out.some((b) => b.day === day && b.title === TIDY_TITLE)) continue;
+    const target = out
+      .filter(
+        (b) =>
+          b.day === day &&
+          (b.category === "self" || b.category === "son") &&
+          /wind|bedtime|family/i.test(b.title),
+      )
+      .sort((a, b) => toMinutes(b.end) - toMinutes(a.end))[0];
+    if (!target) continue;
+    const dur = toMinutes(target.end) - toMinutes(target.start);
+    if (dur < 20) continue; // too short to borrow from — leave it be
+    const tidyLen = Math.min(20, dur - 10); // always leave ≥10 min of wind-down
+    const tidyEnd = fromMinutes(toMinutes(target.start) + tidyLen);
+    out.push({ id: `wk_${day}_tidy`, day, start: target.start, end: tidyEnd, title: TIDY_TITLE, category: "home" });
+    out[out.indexOf(target)] = { ...target, start: tidyEnd };
+  }
+  return out;
+}
+
+export const DEFAULT_WEEK_BLOCKS: WeekBlock[] = ensureTidyBlocks(BASE_BLOCKS);

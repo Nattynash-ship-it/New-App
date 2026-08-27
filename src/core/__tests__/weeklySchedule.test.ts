@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_WEEK_BLOCKS, toMinutes } from "../data/weeklySchedule";
+import { DEFAULT_WEEK_BLOCKS, ensureTidyBlocks, TIDY_TITLE, toMinutes } from "../data/weeklySchedule";
 import { workoutById } from "../fitness/program";
 import { weekStartISO } from "../dates";
 
@@ -39,6 +39,17 @@ describe("default weekly schedule", () => {
       );
       expect(reading, `day ${day} reading`).toBeTruthy();
     }
+  });
+
+  it("gives every day a daily tidy block, idempotently and without overlap", () => {
+    for (let day = 0; day < 7; day++) {
+      const tidy = DEFAULT_WEEK_BLOCKS.filter((b) => b.day === day && b.title === TIDY_TITLE);
+      expect(tidy, `day ${day} tidy`).toHaveLength(1);
+    }
+    // Running it again adds nothing (idempotent).
+    const again = ensureTidyBlocks(DEFAULT_WEEK_BLOCKS);
+    expect(again.filter((b) => b.title === TIDY_TITLE)).toHaveLength(7);
+    expect(again.length).toBe(DEFAULT_WEEK_BLOCKS.length);
   });
 
   it("has no overlapping blocks within a day", () => {

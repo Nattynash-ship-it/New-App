@@ -26,7 +26,22 @@ export interface WeekBlock {
   end: string; // "HH:MM"
   title: string;
   category: BlockCategory;
+  /** For movement blocks: the app workout (WORKOUT_LIBRARY id) to do then, so
+   *  the block opens to its exercises + form videos. */
+  workoutId?: string;
 }
+
+/** Which app workout each day's 5–6 AM movement block maps to — chosen to match
+ *  the user's kit (rower, bike, dumbbells, medicine ball, weighted ropes). */
+export const WORKOUT_BY_DAY: Record<number, string> = {
+  0: "lib_active_recovery", // Sun — mobility / recovery
+  1: "lib_rower_strength_combo", // Mon — row + dumbbells
+  2: "lib_bike_hiit", // Tue — bike sprints
+  3: "lib_rope_conditioning", // Wed — weighted rope
+  4: "lib_row_intervals", // Thu — rower
+  5: "lib_medball_core", // Fri — medicine ball
+  6: "lib_full_body_dumbbell", // Sat — full-body dumbbells
+};
 
 export const CATEGORY_META: Record<BlockCategory, { label: string; color: string }> = {
   work: { label: "Work", color: "#3f66e0" },
@@ -45,7 +60,7 @@ type Raw = [number, string, string, BlockCategory, string];
 const RAW: Raw[] = [
   // Sunday (0) — reset: laundry, clean, meal-prep
   [0, "05:00", "06:00", "home", "Start laundry + coffee"],
-  [0, "06:00", "07:00", "workout", "Movement — mobility + light row (recovery)"],
+  [0, "06:00", "07:00", "workout", "Movement — Active Recovery & Mobility"],
   [0, "07:00", "10:00", "home", "Clean the apartment"],
   [0, "10:00", "10:30", "meals", "Groceries arrive · put away"],
   [0, "10:30", "12:30", "meals", "Meal prep — batch-cook the week"],
@@ -60,7 +75,7 @@ const RAW: Raw[] = [
 
   // Monday (1) — WFH, work 10–7
   [1, "04:30", "05:00", "sleep", "Wake · coffee"],
-  [1, "05:00", "06:00", "workout", "Movement — row intervals + 10 lb upper"],
+  [1, "05:00", "06:00", "workout", "Movement — Row & Dumbbell Combo"],
   [1, "06:00", "07:30", "son", "Get my son ready for school"],
   [1, "07:30", "08:00", "home", "Sort laundry + tidy up"],
   [1, "08:00", "09:00", "study", "Study — block 1"],
@@ -78,7 +93,7 @@ const RAW: Raw[] = [
 
   // Tuesday (2) — office
   [2, "04:30", "05:00", "sleep", "Wake · coffee"],
-  [2, "05:00", "06:00", "workout", "Movement — bike HIIT + med-ball core"],
+  [2, "05:00", "06:00", "workout", "Movement — Bike HIIT Sprints"],
   [2, "06:00", "07:30", "son", "Get my son ready for school"],
   [2, "07:30", "07:45", "home", "Get ready + leave"],
   [2, "07:45", "09:00", "study", "Commute — study on the train"],
@@ -94,7 +109,7 @@ const RAW: Raw[] = [
 
   // Wednesday (3) — office
   [3, "04:30", "05:00", "sleep", "Wake · coffee"],
-  [3, "05:00", "06:00", "workout", "Movement — weighted-rope + 5/10 lb full body"],
+  [3, "05:00", "06:00", "workout", "Movement — Weighted Rope Burner"],
   [3, "06:00", "07:30", "son", "Get my son ready for school"],
   [3, "07:30", "07:45", "home", "Get ready + leave"],
   [3, "07:45", "09:00", "study", "Commute — study on the train"],
@@ -110,7 +125,7 @@ const RAW: Raw[] = [
 
   // Thursday (4) — WFH, work 8–4
   [4, "04:30", "05:00", "sleep", "Wake · coffee"],
-  [4, "05:00", "06:00", "workout", "Movement — row steady + 10 lb glutes/lower"],
+  [4, "05:00", "06:00", "workout", "Movement — Rower Intervals"],
   [4, "06:00", "07:30", "son", "Get my son ready for school"],
   [4, "07:30", "08:00", "home", "Breakfast + quick tidy"],
   [4, "08:00", "12:00", "work", "Work (from home)"],
@@ -127,7 +142,7 @@ const RAW: Raw[] = [
 
   // Friday (5) — WFH, work 8–4
   [5, "04:30", "05:00", "sleep", "Wake · coffee"],
-  [5, "05:00", "06:00", "workout", "Movement — bike intervals + med-ball core"],
+  [5, "05:00", "06:00", "workout", "Movement — Medicine Ball Core"],
   [5, "06:00", "07:30", "son", "Get my son ready for school"],
   [5, "07:30", "08:00", "home", "Breakfast + quick tidy"],
   [5, "08:00", "12:00", "work", "Work (from home)"],
@@ -144,7 +159,7 @@ const RAW: Raw[] = [
 
   // Saturday (6) — free: plan & shop
   [6, "06:00", "07:00", "sleep", "Slow morning"],
-  [6, "07:00", "08:00", "workout", "Movement — long row or bike + weights"],
+  [6, "07:00", "08:00", "workout", "Movement — Full-Body Dumbbell Strength"],
   [6, "08:00", "09:00", "son", "Breakfast together"],
   [6, "09:00", "12:00", "study", "Study — bank the week (3h)"],
   [6, "12:00", "13:00", "meals", "Cook lunch together"],
@@ -165,6 +180,7 @@ export const DEFAULT_WEEK_BLOCKS: WeekBlock[] = RAW.map(([day, start, end, categ
   end,
   title,
   category,
+  ...(category === "workout" && WORKOUT_BY_DAY[day] ? { workoutId: WORKOUT_BY_DAY[day] } : {}),
 }));
 
 /** Minutes past midnight, for sorting/summing. */

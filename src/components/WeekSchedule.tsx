@@ -5,6 +5,8 @@ import { Card, SectionTitle } from "./ui";
 import { useHub } from "@/core/store/hub";
 import { formatTime, weekStartISO } from "@/core/dates";
 import { CATEGORY_META, toMinutes, type BlockCategory } from "@/core/data/weeklySchedule";
+import { workoutById } from "@/core/fitness/program";
+import { formVideoUrl, LEVEL_META } from "@/core/fitness/library";
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon-first
 const DAY_LABEL: Record<number, string> = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
@@ -16,6 +18,11 @@ const CATS = Object.keys(CATEGORY_META) as BlockCategory[];
 function hoursFor(mins: number): string {
   const h = mins / 60;
   return Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
+}
+
+/** A search link for the whole workout session, done at home. */
+function sessionVideoUrl(name: string): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${name} at home workout`)}`;
 }
 
 /**
@@ -37,6 +44,7 @@ export function WeekSchedule() {
   const [sel, setSel] = useState(today);
   const [adding, setAdding] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [openWorkout, setOpenWorkout] = useState<string | null>(null);
   const [draft, setDraft] = useState({ start: "", end: "", title: "", category: "study" as BlockCategory });
 
   const dayBlocks = weekBlocks
@@ -117,39 +125,92 @@ export function WeekSchedule() {
         {dayBlocks.map((b) => {
           const meta = CATEGORY_META[b.category];
           const done = isDone(b.id);
+          const workout = b.workoutId ? workoutById(b.workoutId) : undefined;
+          const expanded = openWorkout === b.id;
           return (
-            <li key={b.id} className="group flex items-start gap-2 rounded-lg px-1.5 py-1.5 hover:bg-paper">
-              {checkable ? (
+            <li key={b.id} className="group rounded-lg px-1.5 py-1.5 hover:bg-paper">
+              <div className="flex items-start gap-2">
+                {checkable ? (
+                  <button
+                    onClick={() => toggleWeekBlockDone(b.id)}
+                    role="checkbox"
+                    aria-checked={done}
+                    aria-label={done ? `Undo ${b.title}` : `Mark ${b.title} done`}
+                    className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+                      done ? "border-meals bg-meals text-white" : "border-ink/25 bg-surface hover:border-meals-bright"
+                    }`}
+                    style={done ? { borderColor: meta.color, background: meta.color } : undefined}
+                  >
+                    {done ? (
+                      <svg width="11" height="9" viewBox="0 0 10 8" fill="none" aria-hidden>
+                        <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : null}
+                  </button>
+                ) : (
+                  <span className="mt-[7px] h-2 w-2 shrink-0 rounded-sm" style={{ background: meta.color }} aria-hidden />
+                )}
+                <span className="w-[86px] shrink-0 pt-0.5 text-[11px] font-medium tabular-nums text-muted">
+                  {formatTime(b.start)}–{formatTime(b.end)}
+                </span>
+                {workout ? (
+                  <button
+                    onClick={() => setOpenWorkout(expanded ? null : b.id)}
+                    aria-expanded={expanded}
+                    className={`min-w-0 flex-1 text-left text-[13px] ${done ? "text-muted line-through" : ""}`}
+                  >
+                    {b.title}
+                    <span className="ml-1.5 whitespace-nowrap text-[11px] font-semibold text-fitness-bright">
+                      {expanded ? "▾ hide" : "▸ exercises"}
+                    </span>
+                  </button>
+                ) : (
+                  <span className={`min-w-0 flex-1 text-[13px] ${done ? "text-muted line-through" : ""}`}>{b.title}</span>
+                )}
                 <button
-                  onClick={() => toggleWeekBlockDone(b.id)}
-                  role="checkbox"
-                  aria-checked={done}
-                  aria-label={done ? `Undo ${b.title}` : `Mark ${b.title} done`}
-                  className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-                    done ? "border-meals bg-meals text-white" : "border-ink/25 bg-surface hover:border-meals-bright"
-                  }`}
-                  style={done ? { borderColor: meta.color, background: meta.color } : undefined}
+                  onClick={() => removeWeekBlock(b.id)}
+                  aria-label={`Remove ${b.title}`}
+                  className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
                 >
-                  {done ? (
-                    <svg width="11" height="9" viewBox="0 0 10 8" fill="none" aria-hidden>
-                      <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : null}
+                  ×
                 </button>
-              ) : (
-                <span className="mt-[7px] h-2 w-2 shrink-0 rounded-sm" style={{ background: meta.color }} aria-hidden />
-              )}
-              <span className="w-[86px] shrink-0 pt-0.5 text-[11px] font-medium tabular-nums text-muted">
-                {formatTime(b.start)}–{formatTime(b.end)}
-              </span>
-              <span className={`min-w-0 flex-1 text-[13px] ${done ? "text-muted line-through" : ""}`}>{b.title}</span>
-              <button
-                onClick={() => removeWeekBlock(b.id)}
-                aria-label={`Remove ${b.title}`}
-                className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
-              >
-                ×
-              </button>
+              </div>
+
+              {workout && expanded ? (
+                <div className="animate-slide-in ml-[26px] mt-1.5 rounded-lg border border-line bg-paper p-2.5">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-muted">
+                      {workout.durationMin} min · {LEVEL_META[workout.level].label}
+                    </span>
+                    <a
+                      href={sessionVideoUrl(workout.name)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-[11px] font-semibold text-fitness-bright hover:underline"
+                    >
+                      ▶ Watch the session
+                    </a>
+                  </div>
+                  <ul className="space-y-1">
+                    {workout.exercises.map((ex) => (
+                      <li key={ex.name} className="flex items-start justify-between gap-2 text-[11px]">
+                        <span className="min-w-0">
+                          <span className="font-medium">{ex.name}</span>
+                          <span className="text-muted"> · {ex.target}</span>
+                        </span>
+                        <a
+                          href={formVideoUrl(ex.name)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 font-semibold text-fitness-bright hover:underline"
+                        >
+                          ▶ Form
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </li>
           );
         })}

@@ -9,6 +9,7 @@ import { AddTaskButton } from "./AddTaskButton";
 import { DueTaskAlerts } from "./DueTaskAlerts";
 import { DailyDigest } from "./DailyDigest";
 import { ScheduleReminders } from "./ScheduleReminders";
+import { SyncManager } from "./SyncManager";
 import { EventAlerts } from "./EventAlerts";
 
 const NAV = [
@@ -31,6 +32,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <DueTaskAlerts />
       <DailyDigest />
       <ScheduleReminders />
+      <SyncManager />
       <EventAlerts />
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:border-line md:bg-surface/60 md:px-4 md:py-8 md:sticky md:top-0 md:h-dvh md:overflow-y-auto">

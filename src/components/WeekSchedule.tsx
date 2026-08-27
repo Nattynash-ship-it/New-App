@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, SectionTitle } from "./ui";
 import { useHub } from "@/core/store/hub";
-import { formatTime } from "@/core/dates";
+import { formatTime, weekStartISO } from "@/core/dates";
 import { CATEGORY_META, toMinutes, type BlockCategory } from "@/core/data/weeklySchedule";
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon-first
@@ -25,10 +25,14 @@ function hoursFor(mins: number): string {
  */
 export function WeekSchedule() {
   const weekBlocks = useHub((s) => s.weekBlocks);
+  const weekChecks = useHub((s) => s.weekChecks);
   const addWeekBlock = useHub((s) => s.addWeekBlock);
   const removeWeekBlock = useHub((s) => s.removeWeekBlock);
   const resetWeekBlocks = useHub((s) => s.resetWeekBlocks);
+  const toggleWeekBlockDone = useHub((s) => s.toggleWeekBlockDone);
 
+  const thisWeek = weekStartISO();
+  const isDone = (id: string) => weekChecks[id] === thisWeek;
   const today = new Date().getDay();
   const [sel, setSel] = useState(today);
   const [adding, setAdding] = useState(false);
@@ -46,6 +50,12 @@ export function WeekSchedule() {
     .filter((b) => b.category === "workout")
     .reduce((n, b) => n + (toMinutes(b.end) - toMinutes(b.start)), 0);
 
+  // Checkboxes appear "as the day approaches": on today and earlier days this
+  // week, not on days still ahead. (Mon-based position in the week.)
+  const pos = (d: number) => (d + 6) % 7;
+  const checkable = pos(sel) <= pos(today);
+  const doneCount = dayBlocks.filter((b) => isDone(b.id)).length;
+
   function submitAdd() {
     if (!draft.start || !draft.end || !draft.title.trim()) return;
     addWeekBlock({ day: sel, start: draft.start, end: draft.end, title: draft.title.trim(), category: draft.category });
@@ -58,8 +68,8 @@ export function WeekSchedule() {
       <span className="absolute inset-x-0 top-0 h-[3px] bg-accent" aria-hidden />
       <SectionTitle right={<span className="text-xs text-muted">recurring</span>}>My week</SectionTitle>
       <p className="-mt-1 mb-2 text-xs text-muted">
-        Your weekly rhythm — movement at 5&nbsp;AM, study on the train, dinner &amp; reading at 7. Tap a day
-        to see or edit it.
+        Your weekly rhythm — movement at 5&nbsp;AM, study on the train, dinner &amp; reading at 7. Check
+        blocks off as you go; they reset fresh every Monday.
       </p>
 
       {/* Day tabs */}
@@ -88,7 +98,12 @@ export function WeekSchedule() {
           {DAY_FULL[sel]}
           {sel === today ? <span className="ml-1.5 text-[11px] font-normal text-accent">today</span> : null}
         </span>
-        <span className="flex gap-1.5">
+        <span className="flex flex-wrap justify-end gap-1.5">
+          {checkable ? (
+            <span className={`chip !text-[10px] ${doneCount === dayBlocks.length && dayBlocks.length ? "bg-meals-soft text-meals-bright" : "border border-line text-muted"}`}>
+              ✓ {doneCount}/{dayBlocks.length}
+            </span>
+          ) : null}
           <span className="chip !text-[10px]" style={{ background: `${CATEGORY_META.study.color}1f`, color: CATEGORY_META.study.color }}>
             📚 {hoursFor(studyMin)}
           </span>
@@ -101,13 +116,33 @@ export function WeekSchedule() {
       <ul className="mt-2 space-y-0.5">
         {dayBlocks.map((b) => {
           const meta = CATEGORY_META[b.category];
+          const done = isDone(b.id);
           return (
-            <li key={b.id} className="group flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-paper">
-              <span className="w-[92px] shrink-0 pt-0.5 text-[11px] font-medium tabular-nums text-muted">
+            <li key={b.id} className="group flex items-start gap-2 rounded-lg px-1.5 py-1.5 hover:bg-paper">
+              {checkable ? (
+                <button
+                  onClick={() => toggleWeekBlockDone(b.id)}
+                  role="checkbox"
+                  aria-checked={done}
+                  aria-label={done ? `Undo ${b.title}` : `Mark ${b.title} done`}
+                  className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+                    done ? "border-meals bg-meals text-white" : "border-ink/25 bg-surface hover:border-meals-bright"
+                  }`}
+                  style={done ? { borderColor: meta.color, background: meta.color } : undefined}
+                >
+                  {done ? (
+                    <svg width="11" height="9" viewBox="0 0 10 8" fill="none" aria-hidden>
+                      <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : null}
+                </button>
+              ) : (
+                <span className="mt-[7px] h-2 w-2 shrink-0 rounded-sm" style={{ background: meta.color }} aria-hidden />
+              )}
+              <span className="w-[86px] shrink-0 pt-0.5 text-[11px] font-medium tabular-nums text-muted">
                 {formatTime(b.start)}–{formatTime(b.end)}
               </span>
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-sm" style={{ background: meta.color }} aria-hidden />
-              <span className="min-w-0 flex-1 text-[13px]">{b.title}</span>
+              <span className={`min-w-0 flex-1 text-[13px] ${done ? "text-muted line-through" : ""}`}>{b.title}</span>
               <button
                 onClick={() => removeWeekBlock(b.id)}
                 aria-label={`Remove ${b.title}`}

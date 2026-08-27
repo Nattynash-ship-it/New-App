@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_WEEK_BLOCKS, toMinutes } from "../data/weeklySchedule";
+import { weekStartISO } from "../dates";
 
 describe("default weekly schedule", () => {
   it("covers all 7 days with unique ids", () => {
@@ -56,5 +57,28 @@ describe("weekBlocks store actions", () => {
 
     useHub.getState().resetWeekBlocks();
     expect(useHub.getState().weekBlocks.length).toBe(base);
+  });
+
+  it("checks blocks off for this week and recycles old weeks", async () => {
+    const { useHub } = await import("../store/hub");
+    useHub.setState({ weekChecks: {} });
+    const id = DEFAULT_WEEK_BLOCKS[0]!.id;
+    const thisWeek = weekStartISO();
+
+    useHub.getState().toggleWeekBlockDone(id);
+    expect(useHub.getState().weekChecks[id]).toBe(thisWeek);
+
+    // Toggling again clears it.
+    useHub.getState().toggleWeekBlockDone(id);
+    expect(useHub.getState().weekChecks[id]).toBeUndefined();
+
+    // A check left over from a previous week is pruned on the next toggle,
+    // so nothing from last week shows as done this week.
+    const other = DEFAULT_WEEK_BLOCKS[1]!.id;
+    useHub.setState({ weekChecks: { [id]: "2000-01-03" } }); // an old Monday
+    useHub.getState().toggleWeekBlockDone(other);
+    const checks = useHub.getState().weekChecks;
+    expect(checks[id]).toBeUndefined(); // last week's check gone
+    expect(checks[other]).toBe(thisWeek);
   });
 });

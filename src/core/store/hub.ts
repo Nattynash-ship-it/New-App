@@ -11,7 +11,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { addDays, nowISO, todayISO } from "../dates";
+import { addDays, nowISO, todayISO, weekStartISO } from "../dates";
 import { DEFAULT_WEATHER_LOCATION, type WeatherLocation } from "../weather";
 import { RECIPE_LIBRARY } from "../data/recipeLibrary";
 import { DEFAULT_WEEK_BLOCKS, type WeekBlock } from "../data/weeklySchedule";
@@ -95,7 +95,7 @@ export const DATA_KEYS = [
   "attachments", "notes", "todos", "habits", "water", "waterGoal", "energyLog",
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
-  "programStartDate", "programDone", "programExtras", "studyAppUrl", "weekBlocks",
+  "programStartDate", "programDone", "programExtras", "studyAppUrl", "weekBlocks", "weekChecks",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -198,6 +198,10 @@ export interface HubState {
   studyAppUrl: string;
   /** Recurring weekly time-block schedule (the "My Week" view). */
   weekBlocks: WeekBlock[];
+  /** Checked-off blocks for the current week: blockId → the week-start it was
+   *  ticked for. A block reads as done only when this equals the current week,
+   *  so checks recycle automatically every Monday. */
+  weekChecks: Record<string, string>;
 
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
@@ -271,6 +275,8 @@ export interface HubState {
   addWeekBlock: (block: Omit<WeekBlock, "id">) => void;
   removeWeekBlock: (id: string) => void;
   resetWeekBlocks: () => void;
+  /** Tick/untick a schedule block for the current week (auto-recycles weekly). */
+  toggleWeekBlockDone: (id: string) => void;
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -458,6 +464,7 @@ function initialState() {
     programExtras: {} as Record<string, string[]>,
     studyAppUrl: "",
     weekBlocks: DEFAULT_WEEK_BLOCKS,
+    weekChecks: {} as Record<string, string>,
   };
 }
 
@@ -872,8 +879,24 @@ export const useHub = create<HubState>()(
       setStudyAppUrl: (url) => set({ studyAppUrl: url.trim() }),
       addWeekBlock: (block) =>
         set((s) => ({ weekBlocks: [...s.weekBlocks, { ...block, id: newId("wk") }] })),
-      removeWeekBlock: (id) => set((s) => ({ weekBlocks: s.weekBlocks.filter((b) => b.id !== id) })),
-      resetWeekBlocks: () => set({ weekBlocks: DEFAULT_WEEK_BLOCKS }),
+      removeWeekBlock: (id) =>
+        set((s) => {
+          const { [id]: _drop, ...rest } = s.weekChecks;
+          return { weekBlocks: s.weekBlocks.filter((b) => b.id !== id), weekChecks: rest };
+        }),
+      resetWeekBlocks: () => set({ weekBlocks: DEFAULT_WEEK_BLOCKS, weekChecks: {} }),
+      toggleWeekBlockDone: (id) =>
+        set((s) => {
+          const week = weekStartISO();
+          // Keep only this week's checks — that's what recycles them each Monday.
+          const next: Record<string, string> = {};
+          for (const [bid, wk] of Object.entries(s.weekChecks)) {
+            if (wk === week) next[bid] = wk;
+          }
+          if (next[id] === week) delete next[id];
+          else next[id] = week;
+          return { weekChecks: next };
+        }),
       importStudyClasses: (classes) => {
         let addedCourses = 0;
         let addedItems = 0;
@@ -1501,6 +1524,7 @@ export const useHub = create<HubState>()(
           programExtras: p.programExtras ?? current.programExtras,
           studyAppUrl: p.studyAppUrl ?? current.studyAppUrl,
           weekBlocks: p.weekBlocks ?? current.weekBlocks,
+          weekChecks: p.weekChecks ?? current.weekChecks,
         };
       },
     },

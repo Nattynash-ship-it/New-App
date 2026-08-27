@@ -79,6 +79,70 @@ export function downloadICS(filename: string, events: CalEvent[]): void {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+export interface WeeklyCalEvent {
+  id: string;
+  title: string;
+  /** 0 = Sunday … 6 = Saturday. */
+  day: number;
+  time: string; // "HH:MM"
+  durationMin?: number;
+  description?: string;
+}
+
+const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+function weeklyVevent(e: WeeklyCalEvent): string {
+  const now = new Date();
+  const [hh, mm] = e.time.split(":").map(Number);
+  const diff = (e.day - now.getDay() + 7) % 7; // next occurrence of that weekday
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, hh ?? 0, mm ?? 0);
+  const end = new Date(start.getTime() + (e.durationMin ?? 20) * 60_000);
+  return [
+    "BEGIN:VEVENT",
+    `UID:${e.id}-weekly@vela`,
+    `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[e.day]}`,
+    `SUMMARY:${esc(e.title)}`,
+    e.description ? `DESCRIPTION:${esc(e.description)}` : "",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT5M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder",
+    "END:VALARM",
+    "END:VEVENT",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+}
+
+/** Build a calendar of weekly-recurring events (each with a 5-min-before alarm)
+ *  — for the schedule anchors, so the phone reminds even when Vela is closed. */
+export function buildWeeklyICS(events: WeeklyCalEvent[]): string {
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Vela//Life Hub//EN",
+    "CALSCALE:GREGORIAN",
+    ...events.map(weeklyVevent),
+    "END:VCALENDAR",
+  ].join("\r\n");
+}
+
+export function downloadWeeklyICS(filename: string, events: WeeklyCalEvent[]): void {
+  if (events.length === 0) return;
+  const blob = new Blob([buildWeeklyICS(events)], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename.endsWith(".ics") ? filename : `${filename}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 /** A Google Calendar "add event" link — one tap on mobile, no file needed. */
 export function googleCalUrl(e: CalEvent): string {
   const [y, m, d] = e.date.split("-").map(Number);

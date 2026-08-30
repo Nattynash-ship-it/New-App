@@ -278,6 +278,8 @@ export interface HubState {
   /** Remembered URL of the study app's published classes JSON. */
   setStudyAppUrl: (url: string) => void;
   addWeekBlock: (block: Omit<WeekBlock, "id">) => void;
+  /** Move/edit a block in place — change its day, time, title, or category. */
+  editWeekBlock: (id: string, patch: Partial<Omit<WeekBlock, "id">>) => void;
   removeWeekBlock: (id: string) => void;
   resetWeekBlocks: () => void;
   /** Tick/untick a schedule block for the current week (auto-recycles weekly). */
@@ -886,6 +888,10 @@ export const useHub = create<HubState>()(
       setStudyAppUrl: (url) => set({ studyAppUrl: url.trim() }),
       addWeekBlock: (block) =>
         set((s) => ({ weekBlocks: [...s.weekBlocks, { ...block, id: newId("wk") }] })),
+      editWeekBlock: (id, patch) =>
+        set((s) => ({
+          weekBlocks: s.weekBlocks.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+        })),
       removeWeekBlock: (id) =>
         set((s) => {
           const { [id]: _drop, ...rest } = s.weekChecks;

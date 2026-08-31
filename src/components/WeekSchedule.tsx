@@ -35,6 +35,7 @@ export function WeekSchedule() {
   const weekBlocks = useHub((s) => s.weekBlocks);
   const weekChecks = useHub((s) => s.weekChecks);
   const addWeekBlock = useHub((s) => s.addWeekBlock);
+  const editWeekBlock = useHub((s) => s.editWeekBlock);
   const removeWeekBlock = useHub((s) => s.removeWeekBlock);
   const resetWeekBlocks = useHub((s) => s.resetWeekBlocks);
   const toggleWeekBlockDone = useHub((s) => s.toggleWeekBlockDone);
@@ -47,6 +48,8 @@ export function WeekSchedule() {
   const [adding, setAdding] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [openWorkout, setOpenWorkout] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState({ day: today, start: "", end: "", title: "" });
   const [draft, setDraft] = useState({ start: "", end: "", title: "", category: "study" as BlockCategory });
 
   const dayBlocks = weekBlocks
@@ -74,13 +77,33 @@ export function WeekSchedule() {
     setAdding(false);
   }
 
+  function startEdit(b: { id: string; day: number; start: string; end: string; title: string }) {
+    setEditingId(b.id);
+    setOpenWorkout(null);
+    setEditDraft({ day: b.day, start: b.start, end: b.end, title: b.title });
+  }
+
+  function submitEdit() {
+    if (!editingId || !editDraft.start || !editDraft.end || !editDraft.title.trim()) return;
+    editWeekBlock(editingId, {
+      day: editDraft.day,
+      start: editDraft.start,
+      end: editDraft.end,
+      title: editDraft.title.trim(),
+    });
+    // Follow the block to its new day so you can see where it landed.
+    setSel(editDraft.day);
+    setEditingId(null);
+  }
+
   return (
     <Card className="relative overflow-hidden">
       <span className="absolute inset-x-0 top-0 h-[3px] bg-accent" aria-hidden />
       <SectionTitle right={<span className="text-xs text-muted">recurring</span>}>My week</SectionTitle>
       <p className="-mt-1 mb-2 text-xs text-muted">
         Your weekly rhythm — movement at 5&nbsp;AM, study on the train, dinner &amp; reading at 7. Check
-        blocks off as you go; they reset fresh every Monday.
+        blocks off as you go; they reset fresh every Monday. Tap <span className="text-accent">✎</span> on
+        any block to move it to another day or time.
       </p>
 
       {/* Day tabs */}
@@ -182,6 +205,17 @@ export function WeekSchedule() {
                   🔔
                 </button>
                 <button
+                  onClick={() => (editingId === b.id ? setEditingId(null) : startEdit(b))}
+                  aria-label={`Move or edit ${b.title}`}
+                  aria-pressed={editingId === b.id}
+                  title="Move to another day or time"
+                  className={`shrink-0 rounded-full px-1 text-[13px] transition-opacity hover:text-accent ${
+                    editingId === b.id ? "text-accent opacity-100" : "text-muted/50 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  ✎
+                </button>
+                <button
                   onClick={() => removeWeekBlock(b.id)}
                   aria-label={`Remove ${b.title}`}
                   className="shrink-0 rounded-full px-1 text-muted opacity-0 transition-opacity hover:text-fitness-bright group-hover:opacity-100"
@@ -189,6 +223,46 @@ export function WeekSchedule() {
                   ×
                 </button>
               </div>
+
+              {editingId === b.id ? (
+                <div className="animate-slide-in ml-[26px] mt-1.5 space-y-2 rounded-lg border border-line bg-paper p-2.5">
+                  <label className="flex items-center gap-1.5 text-[11px] text-muted">
+                    Day
+                    <select
+                      value={editDraft.day}
+                      onChange={(e) => setEditDraft({ ...editDraft, day: Number(e.target.value) })}
+                      className="input !w-auto !py-1 text-xs"
+                      aria-label="Move to day"
+                    >
+                      {DAY_ORDER.map((d) => (
+                        <option key={d} value={d}>{DAY_FULL[d]}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-1 text-[11px] text-muted">
+                      From
+                      <input type="time" value={editDraft.start} onChange={(e) => setEditDraft({ ...editDraft, start: e.target.value })} className="input !w-auto !py-1 text-xs" />
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px] text-muted">
+                      to
+                      <input type="time" value={editDraft.end} onChange={(e) => setEditDraft({ ...editDraft, end: e.target.value })} className="input !w-auto !py-1 text-xs" />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={editDraft.title}
+                      onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })}
+                      placeholder="What is it?"
+                      className="input flex-1 !py-1.5 text-xs"
+                    />
+                    <button onClick={submitEdit} disabled={!editDraft.start || !editDraft.end || !editDraft.title.trim()} className="btn-primary shrink-0 !px-3 !py-1.5 text-xs">
+                      Save
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-[11px] text-muted hover:text-ink">Cancel</button>
+                  </div>
+                </div>
+              ) : null}
 
               {workout && expanded ? (
                 <div className="animate-slide-in ml-[26px] mt-1.5 rounded-lg border border-line bg-paper p-2.5">

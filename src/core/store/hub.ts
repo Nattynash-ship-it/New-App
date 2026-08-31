@@ -22,6 +22,14 @@ import {
 } from "../data/weeklySchedule";
 import type { StudyClass } from "../integrations/studyImport";
 import {
+  monthKey,
+  seedBills,
+  seedBudgetExpenses,
+  seedBudgetIncomes,
+  type Bill,
+  type BudgetLine,
+} from "../data/budget";
+import {
   seedActivities,
   seedAssignments,
   seedChores,
@@ -101,6 +109,7 @@ export const DATA_KEYS = [
   "preferredStore", "groceryConnections", "focus", "kids", "activities", "chores",
   "rewards", "ledger", "kidMeals", "schoolPortalUrl", "alertsEnabled", "weatherLocation",
   "programStartDate", "programDone", "programExtras", "studyAppUrl", "weekBlocks", "weekChecks",
+  "budgetIncomes", "budgetExpenses", "bills", "billChecks",
 ] as const;
 
 export function newId(prefix: string): string {
@@ -208,6 +217,17 @@ export interface HubState {
    *  so checks recycle automatically every Monday. */
   weekChecks: Record<string, string>;
 
+  // Budget & bills
+  /** Monthly income lines (label + amount). */
+  budgetIncomes: BudgetLine[];
+  /** Monthly expense lines (planned + actual, grouped by category). */
+  budgetExpenses: BudgetLine[];
+  /** Recurring bills that can be checked off each month. */
+  bills: Bill[];
+  /** Paid ticks: billId → the "YYYY-MM" it was paid for. A bill reads as paid
+   *  only when this equals the current month, so ticks recycle monthly. */
+  billChecks: Record<string, string>;
+
   // --- Profile / settings actions ---
   setProfileName: (name: string) => void;
   setRoles: (roles: string[]) => void;
@@ -286,6 +306,20 @@ export interface HubState {
   toggleWeekBlockDone: (id: string) => void;
   /** Turn a block's start-time reminder on or off. */
   toggleWeekBlockReminder: (id: string) => void;
+
+  // --- Budget & bills actions ---
+  addIncome: (label: string, amount: number) => void;
+  updateIncome: (id: string, patch: Partial<Omit<BudgetLine, "id">>) => void;
+  removeIncome: (id: string) => void;
+  addExpense: (label: string, amount: number, category?: string) => void;
+  updateExpense: (id: string, patch: Partial<Omit<BudgetLine, "id">>) => void;
+  removeExpense: (id: string) => void;
+  addBill: (bill: Omit<Bill, "id">) => void;
+  updateBill: (id: string, patch: Partial<Omit<Bill, "id">>) => void;
+  removeBill: (id: string) => void;
+  /** Tick/untick a bill as paid this month (auto-recycles monthly). */
+  toggleBillPaid: (id: string) => void;
+
   addStudyBlock: (b: Omit<StudyBlock, "id">) => void;
   removeStudyBlock: (id: string) => void;
   updateDegreePlan: (patch: Partial<DegreePlan>) => void;
@@ -474,6 +508,10 @@ function initialState() {
     studyAppUrl: "",
     weekBlocks: DEFAULT_WEEK_BLOCKS,
     weekChecks: {} as Record<string, string>,
+    budgetIncomes: seedBudgetIncomes(),
+    budgetExpenses: seedBudgetExpenses(),
+    bills: seedBills(),
+    billChecks: {} as Record<string, string>,
   };
 }
 
@@ -914,6 +952,53 @@ export const useHub = create<HubState>()(
           else next[id] = week;
           return { weekChecks: next };
         }),
+
+      // --- Budget & bills ---
+      addIncome: (label, amount) =>
+        set((s) => ({
+          budgetIncomes: [...s.budgetIncomes, { id: newId("in"), label: label.trim() || "Income", amount }],
+        })),
+      updateIncome: (id, patch) =>
+        set((s) => ({
+          budgetIncomes: s.budgetIncomes.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+        })),
+      removeIncome: (id) =>
+        set((s) => ({ budgetIncomes: s.budgetIncomes.filter((l) => l.id !== id) })),
+      addExpense: (label, amount, category) =>
+        set((s) => ({
+          budgetExpenses: [
+            ...s.budgetExpenses,
+            { id: newId("ex"), label: label.trim() || "Expense", amount, actual: 0, category },
+          ],
+        })),
+      updateExpense: (id, patch) =>
+        set((s) => ({
+          budgetExpenses: s.budgetExpenses.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+        })),
+      removeExpense: (id) =>
+        set((s) => ({ budgetExpenses: s.budgetExpenses.filter((l) => l.id !== id) })),
+      addBill: (bill) =>
+        set((s) => ({ bills: [...s.bills, { ...bill, name: bill.name.trim() || "Bill", id: newId("bill") }] })),
+      updateBill: (id, patch) =>
+        set((s) => ({ bills: s.bills.map((b) => (b.id === id ? { ...b, ...patch } : b)) })),
+      removeBill: (id) =>
+        set((s) => {
+          const { [id]: _drop, ...rest } = s.billChecks;
+          return { bills: s.bills.filter((b) => b.id !== id), billChecks: rest };
+        }),
+      toggleBillPaid: (id) =>
+        set((s) => {
+          const month = monthKey();
+          // Keep only this month's ticks — that's what recycles them monthly.
+          const next: Record<string, string> = {};
+          for (const [bId, mk] of Object.entries(s.billChecks)) {
+            if (mk === month) next[bId] = mk;
+          }
+          if (next[id] === month) delete next[id];
+          else next[id] = month;
+          return { billChecks: next };
+        }),
+
       importStudyClasses: (classes) => {
         let addedCourses = 0;
         let addedItems = 0;
@@ -1543,6 +1628,10 @@ export const useHub = create<HubState>()(
           // Backfill the daily tidy block + anchor reminders into existing saves.
           weekBlocks: ensureAnchorReminders(ensureTidyBlocks(p.weekBlocks ?? current.weekBlocks)),
           weekChecks: p.weekChecks ?? current.weekChecks,
+          budgetIncomes: p.budgetIncomes ?? current.budgetIncomes,
+          budgetExpenses: p.budgetExpenses ?? current.budgetExpenses,
+          bills: p.bills ?? current.bills,
+          billChecks: p.billChecks ?? current.billChecks,
         };
       },
     },

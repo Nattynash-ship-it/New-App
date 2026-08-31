@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, SectionTitle } from "./ui";
 import { useHub } from "@/core/store/hub";
 import { formatTime, weekStartISO } from "@/core/dates";
-import { CATEGORY_META, toMinutes, type BlockCategory } from "@/core/data/weeklySchedule";
+import { CATEGORY_META, toMinutes, TIDY_TITLE, type BlockCategory } from "@/core/data/weeklySchedule";
 import { workoutById } from "@/core/fitness/program";
 import { formVideoUrl, LEVEL_META } from "@/core/fitness/library";
 import { downloadWeeklyICS, type WeeklyCalEvent } from "@/lib/calendar";
@@ -15,6 +15,9 @@ const DAY_FULL: Record<number, string> = {
   0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday",
 };
 const CATS = Object.keys(CATEGORY_META) as BlockCategory[];
+// Only these make-up-able chores/goals carry forward when missed — never the
+// daily tidy or time-anchored routines (son, meals, therapy, sleep…).
+const CARRY_CATS = new Set<BlockCategory>(["home", "study", "workout"]);
 
 function hoursFor(mins: number): string {
   const h = mins / 60;
@@ -70,6 +73,19 @@ export function WeekSchedule() {
   const doneCount = dayBlocks.filter((b) => isDone(b.id)).length;
   const reminderCount = weekBlocks.filter((b) => b.reminder).length;
 
+  // Blocks from earlier THIS week you never checked off — surfaced up top so a
+  // missed chore doesn't quietly disappear at Monday's reset.
+  const missed = weekBlocks
+    .filter((b) => pos(b.day) < pos(today) && !isDone(b.id))
+    .filter((b) => CARRY_CATS.has(b.category) && b.title !== TIDY_TITLE)
+    .sort((a, b) => pos(a.day) - pos(b.day) || toMinutes(a.start) - toMinutes(b.start));
+
+  function bumpToToday(id: string) {
+    editWeekBlock(id, { day: today });
+    setSel(today);
+    setEditingId(null);
+  }
+
   function submitAdd() {
     if (!draft.start || !draft.end || !draft.title.trim()) return;
     addWeekBlock({ day: sel, start: draft.start, end: draft.end, title: draft.title.trim(), category: draft.category });
@@ -105,6 +121,36 @@ export function WeekSchedule() {
         blocks off as you go; they reset fresh every Monday. Tap <span className="text-accent">✎</span> on
         any block to move it to another day or time.
       </p>
+
+      {missed.length > 0 ? (
+        <div className="mb-3 rounded-xl border border-fitness/40 bg-fitness/[0.06] p-2.5">
+          <p className="mb-1.5 text-xs font-semibold text-fitness-bright">
+            ↩ Still to do from earlier this week
+          </p>
+          <ul className="space-y-1">
+            {missed.map((b) => (
+              <li key={b.id} className="flex items-center gap-2 text-[12px]">
+                <span className="w-[74px] shrink-0 text-[10px] font-medium tabular-nums text-muted">
+                  {DAY_LABEL[b.day]} {formatTime(b.start)}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                <button
+                  onClick={() => bumpToToday(b.id)}
+                  className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-ink"
+                >
+                  → Today
+                </button>
+                <button
+                  onClick={() => toggleWeekBlockDone(b.id)}
+                  className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold text-muted hover:text-meals-bright"
+                >
+                  ✓ Did it
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* Day tabs */}
       <div className="flex gap-1 overflow-x-auto pb-1">
@@ -204,6 +250,16 @@ export function WeekSchedule() {
                 >
                   🔔
                 </button>
+                {b.day !== today ? (
+                  <button
+                    onClick={() => bumpToToday(b.id)}
+                    aria-label={`Move ${b.title} to today`}
+                    title="Move this to today"
+                    className="shrink-0 rounded-full px-1.5 text-[10px] font-semibold text-muted/60 opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+                  >
+                    → Today
+                  </button>
+                ) : null}
                 <button
                   onClick={() => (editingId === b.id ? setEditingId(null) : startEdit(b))}
                   aria-label={`Move or edit ${b.title}`}

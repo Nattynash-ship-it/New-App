@@ -22,6 +22,7 @@ import {
 } from "../data/weeklySchedule";
 import type { StudyClass } from "../integrations/studyImport";
 import {
+  isUntouchedPlaceholderBills,
   monthKey,
   seedBills,
   seedBudgetExpenses,
@@ -1630,8 +1631,14 @@ export const useHub = create<HubState>()(
           weekChecks: p.weekChecks ?? current.weekChecks,
           budgetIncomes: p.budgetIncomes ?? current.budgetIncomes,
           budgetExpenses: p.budgetExpenses ?? current.budgetExpenses,
-          bills: p.bills ?? current.bills,
-          billChecks: p.billChecks ?? current.billChecks,
+          // One-time swap: replace the untouched placeholder bills with the real
+          // list. Only fires when nothing's been filled in, so real edits are safe.
+          bills: isUntouchedPlaceholderBills(p.bills, p.billChecks)
+            ? seedBills()
+            : p.bills ?? current.bills,
+          billChecks: isUntouchedPlaceholderBills(p.bills, p.billChecks)
+            ? {}
+            : p.billChecks ?? current.billChecks,
         };
       },
     },

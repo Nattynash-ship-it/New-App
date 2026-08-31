@@ -1,5 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { monthKey, monthLabel } from "../data/budget";
+import {
+  BILL_NAMES,
+  isUntouchedPlaceholderBills,
+  monthKey,
+  monthLabel,
+  seedBills,
+} from "../data/budget";
 
 beforeAll(() => {
   const mem = new Map<string, string>();
@@ -21,6 +27,45 @@ describe("budget month helpers", () => {
   });
   it("gives a friendly month label", () => {
     expect(monthLabel(new Date(2026, 7, 15))).toMatch(/August 2026/);
+  });
+});
+
+describe("real bills seed + safe placeholder swap", () => {
+  it("seeds the real bill names at $0", () => {
+    const bills = seedBills();
+    expect(bills.map((b) => b.name)).toEqual([...BILL_NAMES]);
+    expect(bills.every((b) => b.amount === 0)).toBe(true);
+  });
+
+  it("detects an untouched placeholder set (safe to replace)", () => {
+    const placeholders = [
+      { id: "1", name: "Rent", amount: 0 },
+      { id: "2", name: "Electric", amount: 0 },
+      { id: "3", name: "Internet", amount: 0 },
+      { id: "4", name: "Phone", amount: 0 },
+    ];
+    expect(isUntouchedPlaceholderBills(placeholders, {})).toBe(true);
+  });
+
+  it("won't replace once a bill has an amount or a paid tick", () => {
+    const edited = [
+      { id: "1", name: "Rent", amount: 1400 },
+      { id: "2", name: "Electric", amount: 0 },
+      { id: "3", name: "Internet", amount: 0 },
+      { id: "4", name: "Phone", amount: 0 },
+    ];
+    expect(isUntouchedPlaceholderBills(edited, {})).toBe(false);
+    const ticked = [
+      { id: "1", name: "Rent", amount: 0 },
+      { id: "2", name: "Electric", amount: 0 },
+      { id: "3", name: "Internet", amount: 0 },
+      { id: "4", name: "Phone", amount: 0 },
+    ];
+    expect(isUntouchedPlaceholderBills(ticked, { "1": monthKey() })).toBe(false);
+  });
+
+  it("won't replace the real list (different names/length)", () => {
+    expect(isUntouchedPlaceholderBills(seedBills(), {})).toBe(false);
   });
 });
 

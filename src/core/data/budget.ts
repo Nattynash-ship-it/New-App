@@ -74,12 +74,41 @@ export function seedBudgetIncomes(): BudgetLine[] {
   return [{ id: bid("in"), label: "Paycheck", amount: 0 }];
 }
 
-/** A small starter list of common bills — all editable, at $0 to fill in. */
+/** Natasha's real recurring bills. Amounts start blank because they vary each
+ *  month — fill them in as they come. Add anything else right in the app. */
+export const BILL_NAMES = [
+  "Netflix",
+  "Spotify",
+  "Groceries",
+  "School",
+  "Savings",
+  "Rent",
+  "Chase S",
+  "Chase F",
+  "Phone bill",
+  "American Express",
+  "Optimum",
+  "Cap 1",
+  "Con Edison",
+] as const;
+
 export function seedBills(): Bill[] {
-  return [
-    { id: bid("bill"), name: "Rent", amount: 0, dueDay: 1 },
-    { id: bid("bill"), name: "Electric", amount: 0, dueDay: 15 },
-    { id: bid("bill"), name: "Internet", amount: 0, dueDay: 20 },
-    { id: bid("bill"), name: "Phone", amount: 0, dueDay: 25 },
-  ];
+  return BILL_NAMES.map((name) => ({ id: bid("bill"), name, amount: 0 }));
+}
+
+/** The old placeholder bill set, used only to detect an untouched first-run
+ *  bills list so we can safely swap in the real ones without clobbering edits. */
+export const LEGACY_PLACEHOLDER_BILLS = ["Rent", "Electric", "Internet", "Phone"];
+
+/** True when the saved bills are still exactly the untouched placeholders
+ *  (all at $0, none ticked) — safe to replace with the real list. */
+export function isUntouchedPlaceholderBills(
+  bills: Bill[] | undefined,
+  billChecks: Record<string, string> | undefined,
+): boolean {
+  if (!Array.isArray(bills) || bills.length !== LEGACY_PLACEHOLDER_BILLS.length) return false;
+  if (billChecks && Object.keys(billChecks).length > 0) return false;
+  return bills.every(
+    (b) => LEGACY_PLACEHOLDER_BILLS.includes(b.name) && !(b.amount > 0),
+  );
 }

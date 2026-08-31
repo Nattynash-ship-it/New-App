@@ -1,15 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useHub } from "@/core/store/hub";
 
 const OUTLOOK_URL = "https://outlook.office.com/mail/";
 
-/** One-tap jumps that live on the home page: school portal + school email. */
+/** One-tap jumps that live on the home page: budget, school portal + school email. */
 export function HomeQuickLinks() {
   const portal = useHub((s) => s.schoolPortalUrl);
 
   return (
     <div className="flex flex-wrap gap-2">
+      <Link
+        href="/budget"
+        className="btn-ghost !px-3 !py-1.5 text-xs"
+        title="Open your budget and bills"
+      >
+        $ Budget &amp; bills →
+      </Link>
       <a
         href={portal || "/connections"}
         target={portal ? "_blank" : undefined}

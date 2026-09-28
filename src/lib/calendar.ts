@@ -107,7 +107,7 @@ function weeklyVevent(e: WeeklyCalEvent): string {
     `SUMMARY:${esc(e.title)}`,
     e.description ? `DESCRIPTION:${esc(e.description)}` : "",
     "BEGIN:VALARM",
-    "TRIGGER:-PT5M",
+    "TRIGGER:-PT15M",
     "ACTION:DISPLAY",
     "DESCRIPTION:Reminder",
     "END:VALARM",

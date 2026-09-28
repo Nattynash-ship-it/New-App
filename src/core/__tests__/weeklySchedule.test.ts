@@ -82,7 +82,7 @@ describe("default weekly schedule", () => {
     expect(ics).toContain("RRULE:FREQ=WEEKLY;BYDAY=MO");
     expect(ics).toContain("SUMMARY:Movement");
     expect(ics).toContain("BEGIN:VALARM");
-    expect(ics).toContain("TRIGGER:-PT5M");
+    expect(ics).toContain("TRIGGER:-PT15M");
   });
 
   it("has no overlapping blocks within a day", () => {
